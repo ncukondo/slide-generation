@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { parse as parseYaml } from 'yaml';
+import { readFile } from 'fs/promises';
 
 // References config schema
 const referencesConfigSchema = z.object({
@@ -75,5 +76,20 @@ export class Parser {
     }
 
     return result.data;
+  }
+
+  async parseFile(filePath: string): Promise<ParsedPresentation> {
+    let content: string;
+
+    try {
+      content = await readFile(filePath, 'utf-8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new ParseError(`File not found: ${filePath}`);
+      }
+      throw new ParseError(`Failed to read file: ${filePath}`, error);
+    }
+
+    return this.parse(content);
   }
 }

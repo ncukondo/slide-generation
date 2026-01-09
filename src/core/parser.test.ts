@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { writeFileSync, mkdirSync, rmSync } from 'fs';
+import { join } from 'path';
 import {
   presentationSchema,
   Parser,
@@ -128,6 +130,52 @@ slides: []
           'Schema validation failed'
         );
       }
+    });
+  });
+
+  describe('parseFile', () => {
+    const testDir = './test-parser-tmp';
+
+    beforeEach(() => {
+      mkdirSync(testDir, { recursive: true });
+    });
+
+    afterEach(() => {
+      rmSync(testDir, { recursive: true, force: true });
+    });
+
+    it('should parse file from path', async () => {
+      const filePath = join(testDir, 'test.yaml');
+      writeFileSync(
+        filePath,
+        `
+meta:
+  title: "File Test"
+slides:
+  - template: section
+    content:
+      title: "Section 1"
+`
+      );
+
+      const parser = new Parser();
+      const result = await parser.parseFile(filePath);
+
+      expect(result.meta.title).toBe('File Test');
+    });
+
+    it('should throw error for nonexistent file', async () => {
+      const parser = new Parser();
+      await expect(parser.parseFile('./nonexistent.yaml')).rejects.toThrow(
+        ParseError
+      );
+    });
+
+    it('should include file path in error message for nonexistent file', async () => {
+      const parser = new Parser();
+      await expect(parser.parseFile('./nonexistent.yaml')).rejects.toThrow(
+        /nonexistent\.yaml/
+      );
     });
   });
 });
