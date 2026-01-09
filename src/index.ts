@@ -9,3 +9,6 @@ export * from './core';
 // export * from './core/transformer';
 // export * from './core/renderer';
 // export * from './core/pipeline';
+
+// Template system
+export * from './templates';
