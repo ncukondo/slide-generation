@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parse as parseYaml } from 'yaml';
 
 // References config schema
 const referencesConfigSchema = z.object({
@@ -33,3 +34,46 @@ export const presentationSchema = z.object({
 export type PresentationMeta = z.infer<typeof metaSchema>;
 export type ParsedSlide = z.infer<typeof slideSchema>;
 export type ParsedPresentation = z.infer<typeof presentationSchema>;
+
+export class ParseError extends Error {
+  constructor(
+    message: string,
+    public details?: unknown
+  ) {
+    super(message);
+    this.name = 'ParseError';
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public details?: unknown
+  ) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class Parser {
+  parse(yamlContent: string): ParsedPresentation {
+    let rawData: unknown;
+
+    try {
+      rawData = parseYaml(yamlContent);
+    } catch (error) {
+      throw new ParseError('Failed to parse YAML', error);
+    }
+
+    const result = presentationSchema.safeParse(rawData);
+
+    if (!result.success) {
+      throw new ValidationError(
+        'Schema validation failed',
+        result.error.format()
+      );
+    }
+
+    return result.data;
+  }
+}
