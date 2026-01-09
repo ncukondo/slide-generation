@@ -134,6 +134,23 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+# pnpm
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

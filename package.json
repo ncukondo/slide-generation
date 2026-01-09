@@ -1,0 +1,67 @@
+{
+  "name": "slide-generation",
+  "version": "0.1.0",
+  "description": "A CLI tool to generate Marp-compatible Markdown from YAML source files",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "slide-gen": "./dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "themes",
+    "icons"
+  ],
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "format": "oxfmt write src",
+    "format:check": "oxfmt check src",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "marp",
+    "slides",
+    "markdown",
+    "yaml",
+    "presentation",
+    "cli"
+  ],
+  "author": "ncukondo",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "chokidar": "^4.0.3",
+    "commander": "^13.1.0",
+    "globby": "^14.0.2",
+    "nunjucks": "^3.2.4",
+    "ora": "^8.1.1",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@types/nunjucks": "^3.2.6",
+    "oxfmt": "^0.23.0",
+    "oxlint": "^0.16.6",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
+  }
+}
