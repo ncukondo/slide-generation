@@ -21,7 +21,7 @@
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 04 | [Template Engine](./04-template-engine.md) | 03 | Pending |
+| 04 | [Template Engine](./completed/04-template-engine.md) | 03 | Done |
 | 05 | [Template Loader](./05-template-loader.md) | 04 | Pending |
 | 06 | [Basic Templates](./06-basic-templates.md) | 05 | Pending |
 
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 3
+- **Completed**: 4
 - **In Progress**: 0
-- **Pending**: 18
+- **Pending**: 17
 
 ## Architecture Overview
 
