@@ -1,0 +1,77 @@
+# Icon Registry Configuration
+# This file defines icon sources, aliases, and defaults for the slide generation system.
+
+# Icon source definitions
+sources:
+  # Material Icons (Web Font)
+  - name: material-icons
+    type: web-font
+    prefix: mi
+    url: "https://fonts.googleapis.com/icon?family=Material+Icons"
+    render: '<span class="material-icons" style="{{ style }}">{{ name }}</span>'
+
+  # Heroicons (SVG CDN)
+  - name: heroicons
+    type: svg-inline
+    prefix: hero
+    url: "https://unpkg.com/heroicons@2.0.0/24/outline/{name}.svg"
+
+  # Iconify (Universal SVG CDN)
+  - name: iconify
+    type: svg-inline
+    prefix: iconify
+    url: "https://api.iconify.design/{set}/{name}.svg"
+
+  # Custom local SVG icons
+  - name: custom
+    type: local-svg
+    prefix: custom
+    path: "./icons/custom/"
+
+# Semantic aliases - map meaningful names to actual icons
+aliases:
+  # Actions
+  planning: "mi:event_note"
+  action: "mi:play_arrow"
+  analysis: "mi:analytics"
+  improvement: "mi:trending_up"
+
+  # Status
+  success: "mi:check_circle"
+  warning: "mi:warning"
+  error: "mi:error"
+  info: "mi:info"
+
+  # Objects
+  document: "mi:description"
+  folder: "mi:folder"
+  database: "mi:storage"
+  settings: "mi:settings"
+
+  # Navigation
+  home: "mi:home"
+  back: "mi:arrow_back"
+  forward: "mi:arrow_forward"
+  up: "mi:arrow_upward"
+  down: "mi:arrow_downward"
+
+  # Communication
+  email: "mi:email"
+  phone: "mi:phone"
+  chat: "mi:chat"
+  notification: "mi:notifications"
+
+# Color palette for icons
+colors:
+  primary: "#1976D2"
+  secondary: "#424242"
+  accent: "#FF4081"
+  success: "#4CAF50"
+  warning: "#FF9800"
+  danger: "#F44336"
+  info: "#2196F3"
+
+# Default icon settings
+defaults:
+  size: "24px"
+  color: "currentColor"
