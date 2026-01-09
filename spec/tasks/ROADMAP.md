@@ -23,7 +23,7 @@
 |---|--------|------|------|
 | 04 | [Template Engine](./completed/04-template-engine.md) | 03 | Done |
 | 05 | [Template Loader](./completed/05-template-loader.md) | 04 | Done |
-| 06 | [Basic Templates](./06-basic-templates.md) | 05 | Pending |
+| 06 | [Basic Templates](./completed/06-basic-templates.md) | 05 | Done |
 
 ## Phase 3: Core Features（コア機能）
 
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 5
+- **Completed**: 6
 - **In Progress**: 0
-- **Pending**: 16
+- **Pending**: 15
 
 ## Architecture Overview
 
