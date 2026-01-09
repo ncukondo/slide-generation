@@ -55,3 +55,20 @@ describe("TemplateEngine filters", () => {
     expect(result).toBe("3");
   });
 });
+
+describe("TemplateEngine icons helper", () => {
+  it("should have icons.render global function", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render('{{ icons.render("test") }}', {});
+    // Stub returns placeholder
+    expect(result).toContain("icon");
+    expect(result).toContain("test");
+  });
+
+  it("should accept options in icons.render", () => {
+    const engine = new TemplateEngine();
+    const template = '{{ icons.render("home", { size: "32px" }) }}';
+    const result = engine.render(template, {});
+    expect(result).toBeDefined();
+  });
+});
