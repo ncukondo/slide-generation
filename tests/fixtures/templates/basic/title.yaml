@@ -16,18 +16,32 @@ schema:
     author:
       type: string
       description: "著者名"
+    date:
+      type: string
+      description: "日付"
+    affiliation:
+      type: string
+      description: "所属"
 
 example:
   title: "プレゼンテーションタイトル"
   subtitle: "サブタイトル"
   author: "著者名"
+  date: "2024-01-15"
+  affiliation: "所属組織"
 
 output: |
   ---
-  <!-- _class: title-slide -->
+  <!-- _class: title -->
 
   # {{ title }}
 
   {% if subtitle %}## {{ subtitle }}{% endif %}
 
-  {% if author %}<div class="author">{{ author }}</div>{% endif %}
+  {% if author or affiliation or date %}
+  <div class="title-meta">
+    {% if author %}<span class="author">{{ author }}</span>{% endif %}
+    {% if affiliation %}<span class="affiliation">{{ affiliation }}</span>{% endif %}
+    {% if date %}<span class="date">{{ date }}</span>{% endif %}
+  </div>
+  {% endif %}

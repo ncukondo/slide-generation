@@ -1,5 +1,5 @@
-name: bullet-list
-description: "箇条書きリスト"
+name: numbered-list
+description: "番号付きリスト"
 category: basic
 
 schema:
@@ -16,24 +16,24 @@ schema:
       description: "リスト項目（文字列またはネスト構造）"
 
 example:
-  title: "主なポイント"
+  title: "手順"
   items:
-    - "項目1"
-    - "項目2"
-    - "項目3"
+    - "最初のステップ"
+    - "次のステップ"
+    - "最後のステップ"
 
 output: |
   ---
 
   # {{ title }}
 
-  {% macro indent(n) %}{% for i in range(n) %}  {% endfor %}{% endmacro %}
+  {% macro indent(n) %}{% for i in range(n) %}   {% endfor %}{% endmacro %}
   {% macro renderItems(items, depth) %}
   {% for item in items %}
   {% if item is string %}
-  {{ indent(depth) }}- {{ refs.expand(item) }}
+  {{ indent(depth) }}{{ loop.index }}. {{ refs.expand(item) }}
   {% elif item.nested %}
-  {{ indent(depth) }}- {{ item.nested.title }}
+  {{ indent(depth) }}{{ loop.index }}. {{ item.nested.title }}
   {{ renderItems(item.nested.items, depth + 1) }}
   {% endif %}
   {% endfor %}
