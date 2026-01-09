@@ -14,7 +14,7 @@
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
 | 01 | [Project Setup](./completed/01-project-setup.md) | - | Done |
-| 02 | [Config System](./02-config-system.md) | 01 | Pending |
+| 02 | [Config System](./completed/02-config-system.md) | 01 | Done |
 | 03 | [YAML Parser](./03-yaml-parser.md) | 02 | Pending |
 
 ## Phase 2: Template System（テンプレートシステム）
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 1
+- **Completed**: 2
 - **In Progress**: 0
-- **Pending**: 20
+- **Pending**: 19
 
 ## Architecture Overview
 
