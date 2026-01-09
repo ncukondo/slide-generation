@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { TemplateLoader, templateDefSchema, type TemplateDefinition } from "./loader";
-import * as fs from "node:fs/promises";
+import { describe, it, expect, beforeEach } from "vitest";
+import { TemplateLoader, templateDefSchema } from "./loader";
 import * as path from "node:path";
 
 describe("Template Definition Schema", () => {
@@ -221,7 +220,7 @@ output: "# ${t.name}"
     it("should return single template in category", () => {
       const data = loader.listByCategory("data");
       expect(data).toHaveLength(1);
-      expect(data[0].name).toBe("table");
+      expect(data[0]?.name).toBe("table");
     });
   });
 
@@ -314,6 +313,101 @@ output: "# Overridden"
     it("should throw error for non-existent file", async () => {
       const filePath = path.resolve(__dirname, "../../tests/fixtures/templates/nonexistent.yaml");
       await expect(loader.loadFromFile(filePath)).rejects.toThrow();
+    });
+  });
+
+  describe("validateContent", () => {
+    beforeEach(async () => {
+      const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/templates");
+      await loader.loadBuiltIn(fixturesDir);
+    });
+
+    it("should validate valid content against template schema", () => {
+      const result = loader.validateContent("title", {
+        title: "Hello World",
+      });
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("should validate content with optional fields", () => {
+      const result = loader.validateContent("title", {
+        title: "Hello World",
+        subtitle: "A subtitle",
+        author: "John Doe",
+      });
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should detect missing required fields", () => {
+      const result = loader.validateContent("title", {
+        subtitle: "Missing title field",
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors.some(e => e.includes("title"))).toBe(true);
+    });
+
+    it("should detect type errors", () => {
+      const result = loader.validateContent("bullet-list", {
+        title: 123, // should be string
+        items: "not an array", // should be array
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it("should validate complex nested structures", () => {
+      const result = loader.validateContent("cycle-diagram", {
+        title: "PDCA Cycle",
+        nodes: [
+          { label: "Plan" },
+          { label: "Do" },
+          { label: "Check" },
+          { label: "Act" },
+        ],
+      });
+
+      expect(result.valid).toBe(true);
+    });
+
+    it("should detect array constraints (minItems)", () => {
+      const result = loader.validateContent("cycle-diagram", {
+        title: "Incomplete Cycle",
+        nodes: [
+          { label: "Only one" },
+        ],
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes("3") || e.includes("min"))).toBe(true);
+    });
+
+    it("should return error for unknown template", () => {
+      const result = loader.validateContent("non-existent", {
+        title: "Test",
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0]).toContain("not found");
+    });
+
+    it("should validate optional fields with patterns", () => {
+      const result = loader.validateContent("cycle-diagram", {
+        title: "Cycle with colors",
+        nodes: [
+          { label: "A", color: "#FF0000" },
+          { label: "B", color: "invalid" }, // Invalid color format
+          { label: "C" },
+        ],
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes("color") || e.includes("pattern"))).toBe(true);
     });
   });
 });

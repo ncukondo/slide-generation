@@ -2,6 +2,11 @@ import { z } from "zod";
 import * as yaml from "yaml";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import {
+  validateWithJsonSchema,
+  type JsonSchema,
+  type ValidationResult,
+} from "./validators";
 
 /**
  * JSON Schema-like structure for template content validation
@@ -112,4 +117,22 @@ export class TemplateLoader {
   listByCategory(category: string): TemplateDefinition[] {
     return this.list().filter(t => t.category === category);
   }
+
+  /**
+   * Validate content against a template's schema
+   */
+  validateContent(templateName: string, content: unknown): ValidationResult {
+    const template = this.get(templateName);
+
+    if (!template) {
+      return {
+        valid: false,
+        errors: [`Template "${templateName}" not found`],
+      };
+    }
+
+    return validateWithJsonSchema(template.schema as JsonSchema, content);
+  }
 }
+
+export type { ValidationResult };
