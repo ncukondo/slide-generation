@@ -1,8 +1,8 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
-import { IconResolver, type IconOptions } from "./resolver.js";
+import { IconResolver } from "./resolver.js";
 import { IconRegistryLoader } from "./registry.js";
 
 describe("IconResolver", () => {

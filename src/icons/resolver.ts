@@ -46,12 +46,12 @@ export class IconResolver {
       throw new Error(`Unknown icon source prefix: "${parsed.prefix}"`);
     }
 
-    // Get defaults
+    // Get defaults and merge options
     const defaults = this.registry.getDefaults();
-    const mergedOptions: IconOptions = {
+    const mergedOptions: Required<Omit<IconOptions, "class">> & Pick<IconOptions, "class"> = {
       size: options?.size ?? defaults.size,
       color: options?.color ?? defaults.color,
-      class: options?.class,
+      ...(options?.class !== undefined ? { class: options.class } : {}),
     };
 
     // Render based on source type

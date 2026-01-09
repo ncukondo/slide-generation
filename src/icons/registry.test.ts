@@ -45,8 +45,8 @@ defaults:
       const registry = await loader.load(registryPath);
 
       expect(registry.sources).toHaveLength(1);
-      expect(registry.sources[0].name).toBe("material-icons");
-      expect(registry.sources[0].type).toBe("web-font");
+      expect(registry.sources[0]?.name).toBe("material-icons");
+      expect(registry.sources[0]?.type).toBe("web-font");
       expect(registry.aliases).toEqual({
         planning: "mi:event_note",
         success: "mi:check_circle",
