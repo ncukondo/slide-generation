@@ -68,3 +68,52 @@ describe('ConfigLoader', () => {
     await expect(loader.load(configPath)).rejects.toThrow();
   });
 });
+
+describe('ConfigLoader.findConfig', () => {
+  const testDir = './test-findconfig-tmp';
+
+  beforeEach(() => {
+    mkdirSync(testDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(testDir, { recursive: true, force: true });
+  });
+
+  it('should find config.yaml in directory', async () => {
+    const configPath = join(testDir, 'config.yaml');
+    writeFileSync(configPath, 'output:\n  theme: "found"');
+
+    const loader = new ConfigLoader();
+    const found = await loader.findConfig(testDir);
+
+    expect(found).toBe(configPath);
+  });
+
+  it('should find slide-gen.yaml as alternative', async () => {
+    const configPath = join(testDir, 'slide-gen.yaml');
+    writeFileSync(configPath, 'output:\n  theme: "alt"');
+
+    const loader = new ConfigLoader();
+    const found = await loader.findConfig(testDir);
+
+    expect(found).toBe(configPath);
+  });
+
+  it('should prefer config.yaml over slide-gen.yaml', async () => {
+    writeFileSync(join(testDir, 'config.yaml'), 'output:\n  theme: "primary"');
+    writeFileSync(join(testDir, 'slide-gen.yaml'), 'output:\n  theme: "secondary"');
+
+    const loader = new ConfigLoader();
+    const found = await loader.findConfig(testDir);
+
+    expect(found).toBe(join(testDir, 'config.yaml'));
+  });
+
+  it('should return undefined when no config found', async () => {
+    const loader = new ConfigLoader();
+    const found = await loader.findConfig(testDir);
+
+    expect(found).toBeUndefined();
+  });
+});
