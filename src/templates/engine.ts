@@ -1,5 +1,50 @@
 import nunjucks from "nunjucks";
 
+/**
+ * Icons helper interface for template rendering
+ */
+export interface IconsHelper {
+  render: (name: string, options?: Record<string, unknown>) => string;
+}
+
+/**
+ * References helper interface for citation handling
+ */
+export interface RefsHelper {
+  cite: (id: string) => string;
+  expand: (text: string) => string;
+}
+
+/**
+ * Slide context passed to templates
+ */
+export interface SlideContext {
+  index: number;
+  total: number;
+}
+
+/**
+ * Meta context for presentation metadata
+ */
+export interface MetaContext {
+  title: string;
+  author?: string;
+  theme: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Full template context interface
+ */
+export interface TemplateContext {
+  content: Record<string, unknown>;
+  meta: MetaContext;
+  slide: SlideContext;
+  icons: IconsHelper;
+  refs: RefsHelper;
+  [key: string]: unknown;
+}
+
 export class TemplateEngine {
   private env: nunjucks.Environment;
 

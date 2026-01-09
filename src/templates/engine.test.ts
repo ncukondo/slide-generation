@@ -86,3 +86,23 @@ describe("TemplateEngine refs helper", () => {
     expect(result).toContain("id");
   });
 });
+
+describe("TemplateEngine context", () => {
+  it("should pass slide context", () => {
+    const engine = new TemplateEngine();
+    const template = "Slide {{ slide.index }} of {{ slide.total }}";
+    const result = engine.render(template, {
+      slide: { index: 1, total: 10 },
+    });
+    expect(result).toBe("Slide 1 of 10");
+  });
+
+  it("should pass meta context", () => {
+    const engine = new TemplateEngine();
+    const template = "Theme: {{ meta.theme }}";
+    const result = engine.render(template, {
+      meta: { theme: "academic" },
+    });
+    expect(result).toBe("Theme: academic");
+  });
+});
