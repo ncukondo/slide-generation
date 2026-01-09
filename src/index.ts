@@ -4,8 +4,8 @@
 
 export const VERSION = "0.1.0";
 
-// Core modules will be exported here
-// export * from './core/parser';
+// Core modules
+export * from './core';
 // export * from './core/transformer';
 // export * from './core/renderer';
 // export * from './core/pipeline';
