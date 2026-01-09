@@ -252,4 +252,68 @@ output: "# Custom: {{ title }}"
       expect(template?.output).toContain("Custom:");
     });
   });
+
+  describe("loadBuiltIn", () => {
+    it("should load all templates from a directory recursively", async () => {
+      const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/templates");
+      await loader.loadBuiltIn(fixturesDir);
+
+      const templates = loader.list();
+      expect(templates.length).toBeGreaterThanOrEqual(3);
+
+      const names = templates.map(t => t.name);
+      expect(names).toContain("title");
+      expect(names).toContain("bullet-list");
+      expect(names).toContain("cycle-diagram");
+    });
+
+    it("should organize templates by category", async () => {
+      const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/templates");
+      await loader.loadBuiltIn(fixturesDir);
+
+      const basic = loader.listByCategory("basic");
+      const diagrams = loader.listByCategory("diagrams");
+
+      expect(basic.length).toBeGreaterThanOrEqual(2);
+      expect(diagrams.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("loadCustom", () => {
+    it("should load custom templates that override built-in", async () => {
+      const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/templates");
+      await loader.loadBuiltIn(fixturesDir);
+
+      // Load a custom template with same name
+      await loader.loadFromString(`
+name: title
+description: Custom overridden title
+category: basic
+schema:
+  type: object
+output: "# Overridden"
+`);
+
+      const template = loader.get("title");
+      expect(template?.description).toBe("Custom overridden title");
+    });
+  });
+
+  describe("loadFromFile", () => {
+    it("should load a single template file", async () => {
+      const filePath = path.resolve(__dirname, "../../tests/fixtures/templates/basic/title.yaml");
+      await loader.loadFromFile(filePath);
+
+      const template = loader.get("title");
+      expect(template).toBeDefined();
+      expect(template?.name).toBe("title");
+      expect(template?.category).toBe("basic");
+      expect(template?.description).toBe("タイトルスライド");
+    });
+
+    it("should throw error for non-existent file", async () => {
+      const filePath = path.resolve(__dirname, "../../tests/fixtures/templates/nonexistent.yaml");
+      await expect(loader.loadFromFile(filePath)).rejects.toThrow();
+    });
+  });
 });

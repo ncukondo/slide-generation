@@ -1,0 +1,34 @@
+name: bullet-list
+description: "箇条書きリスト"
+category: basic
+
+schema:
+  type: object
+  required:
+    - title
+    - items
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    items:
+      type: array
+      description: "リスト項目"
+      items:
+        type: string
+
+example:
+  title: "主なポイント"
+  items:
+    - "項目1"
+    - "項目2"
+    - "項目3"
+
+output: |
+  ---
+
+  # {{ title }}
+
+  {% for item in items %}
+  - {{ item }}
+  {% endfor %}
