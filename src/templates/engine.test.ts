@@ -29,3 +29,29 @@ describe("TemplateEngine", () => {
     expect(result).toBe("Value: ");
   });
 });
+
+describe("TemplateEngine filters", () => {
+  it("should have default filter", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render('{{ value | default("fallback") }}', {});
+    expect(result).toBe("fallback");
+  });
+
+  it("should have trim filter", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render("{{ text | trim }}", { text: "  hello  " });
+    expect(result).toBe("hello");
+  });
+
+  it("should have escape filter for HTML", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render("{{ html | e }}", { html: "<script>" });
+    expect(result).toBe("&lt;script&gt;");
+  });
+
+  it("should have length filter", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render("{{ items | length }}", { items: [1, 2, 3] });
+    expect(result).toBe("3");
+  });
+});
