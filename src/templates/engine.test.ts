@@ -72,3 +72,17 @@ describe("TemplateEngine icons helper", () => {
     expect(result).toBeDefined();
   });
 });
+
+describe("TemplateEngine refs helper", () => {
+  it("should have refs.cite global function", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render('{{ refs.cite("@smith2024") }}', {});
+    expect(result).toContain("smith2024");
+  });
+
+  it("should have refs.expand global function", () => {
+    const engine = new TemplateEngine();
+    const result = engine.render('{{ refs.expand("Text [@id] here") }}', {});
+    expect(result).toContain("id");
+  });
+});

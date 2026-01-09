@@ -31,5 +31,19 @@ export class TemplateEngine {
     };
 
     this.env.addGlobal("icons", icons);
+
+    // Reference helper stub - will be replaced with real implementation
+    const refs = {
+      cite: (id: string): string => {
+        const cleanId = id.replace("@", "");
+        return `(${cleanId})`;
+      },
+      expand: (text: string): string => {
+        // Simple stub - replace [@id] with (id)
+        return text.replace(/\[@(\w+)\]/g, "($1)");
+      },
+    };
+
+    this.env.addGlobal("refs", refs);
   }
 }
