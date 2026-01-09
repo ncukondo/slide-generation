@@ -2,7 +2,7 @@ import type { ParsedSlide, ParsedPresentation } from '../core/parser';
 
 export interface ExtractedCitation {
   id: string;
-  locator?: string;
+  locator?: string | undefined;
   position: { start: number; end: number };
 }
 
@@ -33,13 +33,13 @@ export class CitationExtractor {
       SINGLE_CITATION_PATTERN.lastIndex = 0;
       let singleMatch: RegExpExecArray | null;
 
-      while ((singleMatch = SINGLE_CITATION_PATTERN.exec(bracketContent)) !== null) {
-        const id = singleMatch[1];
+      while ((singleMatch = SINGLE_CITATION_PATTERN.exec(bracketContent!)) !== null) {
+        const id = singleMatch[1]!;
         const locator = singleMatch[2]?.trim();
 
         citations.push({
           id,
-          locator: locator || undefined,
+          locator: locator ?? undefined,
           position: {
             start: bracketStart,
             end: bracketStart + bracketMatch[0].length,
@@ -63,7 +63,7 @@ export class CitationExtractor {
       if (typeof value === 'string') {
         // Check for structured source citation (e.g., source: "@smith2024")
         const sourceMatch = SOURCE_CITATION_PATTERN.exec(value);
-        if (sourceMatch) {
+        if (sourceMatch && sourceMatch[1]) {
           const id = sourceMatch[1];
           if (!seenIds.has(id)) {
             seenIds.add(id);

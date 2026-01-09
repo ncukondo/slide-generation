@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CitationExtractor, ExtractedCitation } from './extractor';
-import { ParsedSlide, ParsedPresentation } from '../core/parser';
+import { CitationExtractor } from './extractor';
+import type { ParsedSlide, ParsedPresentation } from '../core/parser';
 
 describe('CitationExtractor', () => {
   const extractor = new CitationExtractor();
@@ -11,7 +11,7 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0]).toEqual({
+      expect(citations[0]!).toEqual({
         id: 'smith2024',
         locator: undefined,
         position: { start: 18, end: 30 },
@@ -23,7 +23,7 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0]).toEqual({
+      expect(citations[0]!).toEqual({
         id: 'smith2024',
         locator: 'p.42',
         position: { start: 4, end: 22 },
@@ -35,8 +35,8 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(2);
-      expect(citations[0].id).toBe('smith2024');
-      expect(citations[1].id).toBe('tanaka2023');
+      expect(citations[0]!.id).toBe('smith2024');
+      expect(citations[1]!.id).toBe('tanaka2023');
     });
 
     it('should extract citation with complex locator', () => {
@@ -44,8 +44,8 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0].id).toBe('johnson2022');
-      expect(citations[0].locator).toBe('pp.10-15, fig.2');
+      expect(citations[0]!.id).toBe('johnson2022');
+      expect(citations[0]!.locator).toBe('pp.10-15, fig.2');
     });
 
     it('should extract multiple separate citations', () => {
@@ -54,8 +54,8 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(2);
-      expect(citations[0].id).toBe('smith2024');
-      expect(citations[1].id).toBe('tanaka2023');
+      expect(citations[0]!.id).toBe('smith2024');
+      expect(citations[1]!.id).toBe('tanaka2023');
     });
 
     it('should return empty array for text without citations', () => {
@@ -70,7 +70,7 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0].id).toBe('smith-jones2024');
+      expect(citations[0]!.id).toBe('smith-jones2024');
     });
 
     it('should handle underscore in citation IDs', () => {
@@ -78,7 +78,7 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0].id).toBe('smith_2024');
+      expect(citations[0]!.id).toBe('smith_2024');
     });
 
     it('should handle multiple citations with locators', () => {
@@ -86,8 +86,8 @@ describe('CitationExtractor', () => {
       const citations = extractor.extract(text);
 
       expect(citations).toHaveLength(2);
-      expect(citations[0]).toMatchObject({ id: 'smith2024', locator: 'p.42' });
-      expect(citations[1]).toMatchObject({ id: 'tanaka2023', locator: 'ch.3' });
+      expect(citations[0]!).toMatchObject({ id: 'smith2024', locator: 'p.42' });
+      expect(citations[1]!).toMatchObject({ id: 'tanaka2023', locator: 'ch.3' });
     });
   });
 
@@ -121,7 +121,7 @@ describe('CitationExtractor', () => {
       const citations = extractor.extractFromSlide(slide);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0].id).toBe('smith2024');
+      expect(citations[0]!.id).toBe('smith2024');
     });
 
     it('should extract citations from notes', () => {
@@ -134,7 +134,7 @@ describe('CitationExtractor', () => {
       const citations = extractor.extractFromSlide(slide);
 
       expect(citations).toHaveLength(1);
-      expect(citations[0].id).toBe('ref1');
+      expect(citations[0]!.id).toBe('ref1');
     });
 
     it('should deduplicate citations from same slide', () => {
@@ -150,7 +150,7 @@ describe('CitationExtractor', () => {
       // Should deduplicate by id
       const uniqueIds = [...new Set(citations.map((c) => c.id))];
       expect(uniqueIds).toHaveLength(1);
-      expect(uniqueIds[0]).toBe('smith2024');
+      expect(uniqueIds[0]!).toBe('smith2024');
     });
   });
 
@@ -214,8 +214,8 @@ describe('CitationExtractor', () => {
       const ids = citations.map((c) => c.id);
 
       // First occurrences in order
-      expect(ids[0]).toBe('first');
-      expect(ids[1]).toBe('second');
+      expect(ids[0]!).toBe('first');
+      expect(ids[1]!).toBe('second');
     });
   });
 

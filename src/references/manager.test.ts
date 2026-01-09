@@ -86,7 +86,7 @@ describe('ReferenceManager', () => {
       const items = await manager.getAll();
 
       expect(items).toHaveLength(3);
-      expect(items[0].id).toBe('smith2024');
+      expect(items[0]!.id).toBe('smith2024');
       expect(mockExec).toHaveBeenCalledWith(
         'ref list --format json',
         expect.any(Function)

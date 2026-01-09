@@ -92,8 +92,8 @@ export class CitationFormatter {
       SINGLE_CITATION_PATTERN.lastIndex = 0;
 
       let singleMatch: RegExpExecArray | null;
-      while ((singleMatch = SINGLE_CITATION_PATTERN.exec(content)) !== null) {
-        ids.add(singleMatch[1]);
+      while ((singleMatch = SINGLE_CITATION_PATTERN.exec(content!)) !== null) {
+        ids.add(singleMatch[1]!);
       }
     }
 
@@ -103,7 +103,6 @@ export class CitationFormatter {
     // Replace citations
     CITATION_BRACKET_PATTERN.lastIndex = 0;
     let result = text;
-    let offset = 0;
 
     // Reset and iterate again for replacement
     const matches: Array<{
@@ -119,8 +118,8 @@ export class CitationFormatter {
 
       SINGLE_CITATION_PATTERN.lastIndex = 0;
       let singleMatch: RegExpExecArray | null;
-      while ((singleMatch = SINGLE_CITATION_PATTERN.exec(content)) !== null) {
-        const id = singleMatch[1];
+      while ((singleMatch = SINGLE_CITATION_PATTERN.exec(content!)) !== null) {
+        const id = singleMatch[1]!;
         const item = items.get(id);
         if (item) {
           replacements.push(this.formatInlineItem(item));
@@ -137,8 +136,7 @@ export class CitationFormatter {
     }
 
     // Apply replacements from end to start to maintain positions
-    for (let i = matches.length - 1; i >= 0; i--) {
-      const m = matches[i];
+    for (const m of [...matches].reverse()) {
       result = result.slice(0, m.start) + m.replacement + result.slice(m.end);
     }
 
@@ -245,20 +243,21 @@ export class CitationFormatter {
     }
 
     const isJapanese = this.isJapaneseAuthors(authors);
-    const { maxAuthors, etAl, etAlJa, separatorJa } = this.config.author;
+    const { etAl, etAlJa, separatorJa } = this.config.author;
+    const firstAuthor = authors[0]!;
 
     if (authors.length === 1) {
-      return authors[0].family;
+      return firstAuthor.family;
     }
 
     if (authors.length === 2) {
       const separator = isJapanese ? separatorJa : ' & ';
-      return `${authors[0].family}${separator}${authors[1].family}`;
+      return `${firstAuthor.family}${separator}${authors[1]!.family}`;
     }
 
     // 3+ authors
     const suffix = isJapanese ? etAlJa : ` ${etAl}`;
-    return `${authors[0].family}${suffix}`;
+    return `${firstAuthor.family}${suffix}`;
   }
 
   private formatAuthorsFull(
@@ -276,7 +275,7 @@ export class CitationFormatter {
 
     // English: Smith, J., Johnson, A., & Williams, B.
     if (authors.length === 1) {
-      const a = authors[0];
+      const a = authors[0]!;
       const initial = a.given ? `${a.given.charAt(0)}.` : '';
       return `${a.family}, ${initial}`;
     }
@@ -298,7 +297,7 @@ export class CitationFormatter {
       return false;
     }
     // Check first author's family name for Japanese characters
-    return JAPANESE_PATTERN.test(authors[0].family);
+    return JAPANESE_PATTERN.test(authors[0]!.family);
   }
 
   private getFirstAuthorFamily(item: CSLItem): string {
