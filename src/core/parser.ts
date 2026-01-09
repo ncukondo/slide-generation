@@ -1,0 +1,35 @@
+import { z } from 'zod';
+
+// References config schema
+const referencesConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  style: z.string().default('author-year-pmid'),
+});
+
+// Meta schema
+const metaSchema = z.object({
+  title: z.string(),
+  author: z.string().optional(),
+  date: z.string().optional(),
+  theme: z.string().default('default'),
+  references: referencesConfigSchema.optional(),
+});
+
+// Slide schema
+const slideSchema = z.object({
+  template: z.string(),
+  content: z.record(z.unknown()).default({}),
+  class: z.string().optional(),
+  notes: z.string().optional(),
+  raw: z.string().optional(),
+});
+
+// Presentation schema
+export const presentationSchema = z.object({
+  meta: metaSchema,
+  slides: z.array(slideSchema).default([]),
+});
+
+export type PresentationMeta = z.infer<typeof metaSchema>;
+export type ParsedSlide = z.infer<typeof slideSchema>;
+export type ParsedPresentation = z.infer<typeof presentationSchema>;
