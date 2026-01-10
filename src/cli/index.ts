@@ -5,6 +5,7 @@ import { VERSION } from '../index.js';
 import { createConvertCommand } from './commands/convert.js';
 import { createValidateCommand } from './commands/validate.js';
 import { createTemplatesCommand } from './commands/templates.js';
+import { createIconsCommand } from './commands/icons.js';
 
 const program = new Command();
 
@@ -22,6 +23,9 @@ program.addCommand(createValidateCommand());
 // Add templates command
 program.addCommand(createTemplatesCommand());
 
+// Add icons command
+program.addCommand(createIconsCommand());
+
 // Placeholder commands - will be implemented in later tasks
 program
   .command('preview <input>')
@@ -29,14 +33,6 @@ program
   .action((input) => {
     console.log(`Previewing ${input}...`);
     console.log('Note: preview command not yet implemented');
-  });
-
-program
-  .command('icons')
-  .description('Manage icons')
-  .action(() => {
-    console.log('Icons management:');
-    console.log('Note: icons command not yet implemented');
   });
 
 program
