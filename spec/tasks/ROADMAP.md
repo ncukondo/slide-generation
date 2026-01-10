@@ -49,7 +49,7 @@
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 17 | [Diagram Templates](./17-diagram-templates.md) | 06 | Pending |
+| 17 | [Diagram Templates](./completed/17-diagram-templates.md) | 06 | Done |
 | 18 | [Data Templates](./18-data-templates.md) | 06 | Pending |
 | 19 | [Layout Templates](./19-layout-templates.md) | 06 | Pending |
 | 20 | [Special Templates](./20-special-templates.md) | 06, 08 | Pending |
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 16
+- **Completed**: 17
 - **In Progress**: 0
-- **Pending**: 5
+- **Pending**: 4
 
 ## Architecture Overview
 
