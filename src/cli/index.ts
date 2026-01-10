@@ -7,6 +7,8 @@ import { createValidateCommand } from './commands/validate.js';
 import { createTemplatesCommand } from './commands/templates.js';
 import { createIconsCommand } from './commands/icons.js';
 import { createInitCommand } from './commands/init.js';
+import { createWatchCommand } from './commands/watch.js';
+import { createPreviewCommand } from './commands/preview.js';
 
 const program = new Command();
 
@@ -30,13 +32,10 @@ program.addCommand(createIconsCommand());
 // Add init command
 program.addCommand(createInitCommand());
 
-// Placeholder commands - will be implemented in later tasks
-program
-  .command('preview <input>')
-  .description('Preview the generated slides')
-  .action((input) => {
-    console.log(`Previewing ${input}...`);
-    console.log('Note: preview command not yet implemented');
-  });
+// Add watch command
+program.addCommand(createWatchCommand());
+
+// Add preview command
+program.addCommand(createPreviewCommand());
 
 program.parse();
