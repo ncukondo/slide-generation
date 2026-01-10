@@ -8,6 +8,7 @@ describe('CLI: Convert Command', () => {
   const testDir = './test-cli-convert';
   const templatesDir = join(testDir, 'templates').replace(/\\/g, '/');
   const iconsDir = join(testDir, 'icons').replace(/\\/g, '/');
+  const iconsRegistryPath = join(iconsDir, 'registry.yaml').replace(/\\/g, '/');
 
   beforeEach(() => {
     mkdirSync(testDir, { recursive: true });
@@ -70,7 +71,7 @@ templates:
   builtin: "${templatesDir}"
 
 icons:
-  registry: "${join(iconsDir, 'registry.yaml')}"
+  registry: "${iconsRegistryPath}"
 
 references:
   enabled: false

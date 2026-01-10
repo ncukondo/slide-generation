@@ -7,8 +7,9 @@ import { vi } from 'vitest';
 
 describe('E2E: CLI Icons Command', () => {
   const testDir = './test-e2e-cli-icons';
-  const iconsDir = join(testDir, 'icons');
-  const customIconsDir = join(iconsDir, 'custom');
+  const iconsDir = join(testDir, 'icons').replace(/\\/g, '/');
+  const customIconsDir = join(iconsDir, 'custom').replace(/\\/g, '/');
+  const iconsRegistryPath = join(iconsDir, 'registry.yaml').replace(/\\/g, '/');
 
   // Capture console output
   let consoleOutput: string[];
@@ -33,7 +34,7 @@ describe('E2E: CLI Icons Command', () => {
 templates:
   builtin: ./templates
 icons:
-  registry: "${join(iconsDir, 'registry.yaml')}"
+  registry: "${iconsRegistryPath}"
 `;
     writeFileSync(join(testDir, 'config.yaml'), configContent);
 
