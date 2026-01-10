@@ -30,7 +30,7 @@
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
 | 07 | [Icon Registry & Resolver](./completed/07-icon-system.md) | 04 | Done |
-| 08 | [Reference Manager Integration](./08-reference-manager.md) | 04 | Pending |
+| 08 | [Reference Manager Integration](./completed/08-reference-manager.md) | 04 | Done |
 | 09 | [Transformer & Renderer](./09-transformer-renderer.md) | 05, 07, 08 | Pending |
 | 10 | [Pipeline Integration](./10-pipeline.md) | 09 | Pending |
 
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 7
+- **Completed**: 8
 - **In Progress**: 0
-- **Pending**: 14
+- **Pending**: 13
 
 ## Architecture Overview
 
