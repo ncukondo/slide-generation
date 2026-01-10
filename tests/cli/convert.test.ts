@@ -163,7 +163,7 @@ slides:
         '-c',
         configPath,
       ]);
-    } catch (error) {
+    } catch {
       errorThrown = true;
     }
 

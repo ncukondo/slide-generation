@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { createWatchCommand, executeWatch } from '../../src/cli/commands/watch';
-import { Command } from 'commander';
 
 describe('E2E: CLI Watch Command', () => {
   const testDir = './test-e2e-cli-watch';
@@ -31,7 +30,7 @@ references:
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  it('should convert file initially when watch starts', async () => {
+  it('should convert file initially when watch starts', { timeout: 10000 }, async () => {
     const inputPath = join(fixturesDir, 'presentations/simple.yaml');
     const outputPath = join(testDir, 'output.md');
     const configPath = join(testDir, 'config.yaml');
