@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { VERSION } from '../index.js';
 import { createConvertCommand } from './commands/convert.js';
+import { createValidateCommand } from './commands/validate.js';
 
 const program = new Command();
 
@@ -13,6 +14,9 @@ program
 
 // Add convert command
 program.addCommand(createConvertCommand());
+
+// Add validate command
+program.addCommand(createValidateCommand());
 
 // Placeholder commands - will be implemented in later tasks
 program
@@ -29,14 +33,6 @@ program
   .action(() => {
     console.log('Available templates:');
     console.log('Note: templates command not yet implemented');
-  });
-
-program
-  .command('validate <input>')
-  .description('Validate YAML source file')
-  .action((input) => {
-    console.log(`Validating ${input}...`);
-    console.log('Note: validate command not yet implemented');
   });
 
 program

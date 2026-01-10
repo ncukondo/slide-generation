@@ -39,7 +39,7 @@
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
 | 11 | [CLI Convert Command](./completed/11-cli-convert.md) | 10 | Done |
-| 12 | [CLI Validate Command](./12-cli-validate.md) | 03, 05 | Pending |
+| 12 | [CLI Validate Command](./completed/12-cli-validate.md) | 03, 05 | Done |
 | 13 | [CLI Templates Command](./13-cli-templates.md) | 05 | Pending |
 | 14 | [CLI Icons Command](./14-cli-icons.md) | 07 | Pending |
 | 15 | [CLI Init Command](./15-cli-init.md) | 02 | Pending |
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 11
+- **Completed**: 12
 - **In Progress**: 0
-- **Pending**: 10
+- **Pending**: 9
 
 ## Architecture Overview
 
