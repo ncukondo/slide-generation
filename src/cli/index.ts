@@ -6,6 +6,7 @@ import { createConvertCommand } from './commands/convert.js';
 import { createValidateCommand } from './commands/validate.js';
 import { createTemplatesCommand } from './commands/templates.js';
 import { createIconsCommand } from './commands/icons.js';
+import { createInitCommand } from './commands/init.js';
 
 const program = new Command();
 
@@ -26,6 +27,9 @@ program.addCommand(createTemplatesCommand());
 // Add icons command
 program.addCommand(createIconsCommand());
 
+// Add init command
+program.addCommand(createInitCommand());
+
 // Placeholder commands - will be implemented in later tasks
 program
   .command('preview <input>')
@@ -33,14 +37,6 @@ program
   .action((input) => {
     console.log(`Previewing ${input}...`);
     console.log('Note: preview command not yet implemented');
-  });
-
-program
-  .command('init [directory]')
-  .description('Initialize a new project')
-  .action((directory) => {
-    console.log(`Initializing in ${directory ?? '.'}...`);
-    console.log('Note: init command not yet implemented');
   });
 
 program.parse();
