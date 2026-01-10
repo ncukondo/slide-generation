@@ -1,0 +1,94 @@
+name: gallery
+description: "画像ギャラリー"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - title
+    - images
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    images:
+      type: array
+      minItems: 1
+      description: "画像配列"
+      items:
+        type: object
+        required:
+          - src
+        properties:
+          src:
+            type: string
+            description: "画像パス"
+          alt:
+            type: string
+            description: "代替テキスト"
+          caption:
+            type: string
+            description: "キャプション"
+    columns:
+      type: integer
+      minimum: 2
+      maximum: 6
+      default: 3
+      description: "列数"
+
+example:
+  title: "製品ラインナップ"
+  columns: 3
+  images:
+    - src: "product1.png"
+      alt: "製品A"
+      caption: "スタンダードモデル"
+    - src: "product2.png"
+      alt: "製品B"
+      caption: "プロフェッショナルモデル"
+    - src: "product3.png"
+      alt: "製品C"
+      caption: "エンタープライズモデル"
+
+output: |
+  <!-- _class: gallery-slide -->
+
+  # {{ content.title }}
+
+  <div class="gallery-container gallery-cols-{{ content.columns | default(3) }}">
+    {%- for image in content.images %}
+    <figure class="gallery-item">
+      ![{{ image.alt | default('') }}]({{ image.src }})
+      {%- if image.caption %}
+      <figcaption>{{ image.caption }}</figcaption>
+      {%- endif %}
+    </figure>
+    {%- endfor %}
+  </div>
+
+css: |
+  .gallery-slide .gallery-container {
+    display: grid;
+    gap: 1em;
+    width: 100%;
+    justify-items: center;
+  }
+  .gallery-slide .gallery-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .gallery-slide .gallery-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .gallery-slide .gallery-cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .gallery-slide .gallery-cols-5 { grid-template-columns: repeat(5, 1fr); }
+  .gallery-slide .gallery-cols-6 { grid-template-columns: repeat(6, 1fr); }
+  .gallery-slide .gallery-item {
+    text-align: center;
+    margin: 0;
+  }
+  .gallery-slide .gallery-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  .gallery-slide .gallery-item figcaption {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 0.5em;
+  }

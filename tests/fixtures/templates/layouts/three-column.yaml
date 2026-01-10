@@ -1,0 +1,101 @@
+name: three-column
+description: "3カラムレイアウト"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - title
+    - columns
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    columns:
+      type: array
+      minItems: 2
+      maxItems: 4
+      description: "カラム配列"
+      items:
+        type: object
+        required:
+          - content
+        properties:
+          title:
+            type: string
+            description: "カラムタイトル（オプション）"
+          icon:
+            type: string
+            description: "アイコン参照（オプション）"
+          content:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+            description: "カラムのコンテンツ"
+
+example:
+  title: "3つのポイント"
+  columns:
+    - title: "ポイント1"
+      icon: "idea"
+      content: "最初のポイントの説明"
+    - title: "ポイント2"
+      icon: "growth"
+      content: "2番目のポイントの説明"
+    - title: "ポイント3"
+      icon: "success"
+      content: "3番目のポイントの説明"
+
+output: |
+  <!-- _class: three-column-slide -->
+
+  # {{ content.title }}
+
+  <div class="column-container column-count-{{ content.columns | length }}">
+    {%- for column in content.columns %}
+    <div class="column">
+      {%- if column.icon %}
+      <span class="column-icon">{{ icons.render(column.icon) }}</span>
+      {%- endif %}
+      {%- if column.title %}
+      <h3 class="column-title">{{ column.title }}</h3>
+      {%- endif %}
+      <div class="column-content">
+        {%- if column.content is iterable and column.content is not string %}
+        {%- for item in column.content %}
+        - {{ item }}
+        {%- endfor %}
+        {%- else %}
+        {{ column.content }}
+        {%- endif %}
+      </div>
+    </div>
+    {%- endfor %}
+  </div>
+
+css: |
+  .three-column-slide .column-container {
+    display: flex;
+    gap: 1.5em;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .three-column-slide .column {
+    flex: 1;
+    text-align: center;
+    padding: 1em;
+  }
+  .three-column-slide .column-icon {
+    font-size: 2em;
+    display: block;
+    margin-bottom: 0.5em;
+  }
+  .three-column-slide .column-title {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+  }
+  .three-column-slide .column-content {
+    text-align: left;
+  }
