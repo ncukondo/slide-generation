@@ -52,7 +52,7 @@
 | 17 | [Diagram Templates](./completed/17-diagram-templates.md) | 06 | Done |
 | 18 | [Data Templates](./completed/18-data-templates.md) | 06 | Done |
 | 19 | [Layout Templates](./completed/19-layout-templates.md) | 06 | Done |
-| 20 | [Special Templates](./20-special-templates.md) | 06, 08 | Pending |
+| 20 | [Special Templates](./completed/20-special-templates.md) | 06, 08 | Done |
 
 ## Phase 6: Polish（仕上げ）
 
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 19
+- **Completed**: 20
 - **In Progress**: 0
-- **Pending**: 2
+- **Pending**: 1
 
 ## Architecture Overview
 
