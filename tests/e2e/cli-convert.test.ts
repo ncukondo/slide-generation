@@ -6,9 +6,9 @@ import { Command } from 'commander';
 
 describe('E2E: CLI Convert Command', () => {
   const testDir = './test-e2e-cli-convert';
-  const fixturesDir = resolve(__dirname, '../fixtures');
-  const templatesDir = join(fixturesDir, 'templates');
-  const iconsRegistryPath = resolve(__dirname, '../../icons/registry.yaml');
+  const fixturesDir = resolve(__dirname, '../fixtures').replace(/\\/g, '/');
+  const templatesDir = join(fixturesDir, 'templates').replace(/\\/g, '/');
+  const iconsRegistryPath = resolve(__dirname, '../../icons/registry.yaml').replace(/\\/g, '/');
 
   beforeEach(() => {
     mkdirSync(testDir, { recursive: true });
