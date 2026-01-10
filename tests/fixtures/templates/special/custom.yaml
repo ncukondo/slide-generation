@@ -1,0 +1,45 @@
+name: custom
+description: "カスタムMarkdownスライド"
+category: special
+
+schema:
+  type: object
+  required:
+    - markdown
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル（省略可）"
+    markdown:
+      type: string
+      description: "直接記述するMarkdown"
+    class:
+      type: string
+      description: "スライドに適用するCSSクラス"
+
+example:
+  title: "カスタムスライド"
+  class: "custom-style"
+  markdown: |
+    ## サブタイトル
+
+    自由形式のコンテンツ:
+
+    - 箇条書き
+    - **太字** と *斜体*
+    - [リンク](https://example.com)
+
+    > 引用も可能
+
+output: |
+  {%- if content.class %}
+  <!-- _class: {{ content.class }} -->
+  {%- endif %}
+  {%- if content.title %}
+
+  # {{ content.title }}
+  {%- endif %}
+
+  {{ content.markdown }}
+
+css: ""

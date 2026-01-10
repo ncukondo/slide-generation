@@ -1,0 +1,132 @@
+name: bibliography
+description: "参考文献スライド"
+category: special
+
+schema:
+  type: object
+  required:
+    - title
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    references:
+      type: array
+      description: "参考文献リスト"
+      items:
+        type: object
+        required:
+          - id
+          - title
+        properties:
+          id:
+            type: string
+            description: "引用ID"
+          authors:
+            type: array
+            items:
+              type: string
+            description: "著者リスト"
+          title:
+            type: string
+            description: "タイトル"
+          year:
+            type: integer
+            description: "出版年"
+          journal:
+            type: string
+            description: "ジャーナル名"
+          publisher:
+            type: string
+            description: "出版社"
+          volume:
+            type: string
+            description: "巻号"
+          pages:
+            type: string
+            description: "ページ"
+          url:
+            type: string
+            description: "URL"
+          doi:
+            type: string
+            description: "DOI"
+    autoGenerate:
+      type: boolean
+      default: false
+      description: "プレゼンテーション内の引用から自動生成"
+    sortBy:
+      type: string
+      enum:
+        - author
+        - year
+        - title
+      default: author
+      description: "ソート順"
+
+example:
+  title: "参考文献"
+  sortBy: author
+  references:
+    - id: knuth1984
+      authors:
+        - "Knuth, D. E."
+      title: "Literate Programming"
+      year: 1984
+      journal: "The Computer Journal"
+      volume: "27(2)"
+      pages: "97-111"
+    - id: martin2008
+      authors:
+        - "Martin, R. C."
+      title: "Clean Code: A Handbook of Agile Software Craftsmanship"
+      year: 2008
+      publisher: "Prentice Hall"
+
+output: |
+  <!-- _class: bibliography-slide -->
+
+  # {{ content.title }}
+
+  <div class="references-list">
+    {%- for ref in content.references %}
+    <div class="reference-item" id="ref-{{ ref.id }}">
+      <span class="reference-marker">[{{ loop.index }}]</span>
+      <span class="reference-content">
+        {%- if ref.authors %}{{ ref.authors | join(', ') }}{% endif %}
+        {%- if ref.year %} ({{ ref.year }}).{% endif %}
+        <em>{{ ref.title }}</em>.
+        {%- if ref.journal %} {{ ref.journal }}.{% endif %}
+        {%- if ref.volume %} {{ ref.volume }}{% endif %}
+        {%- if ref.pages %}, pp. {{ ref.pages }}{% endif %}
+        {%- if ref.publisher %} {{ ref.publisher }}.{% endif %}
+        {%- if ref.doi %} DOI: {{ ref.doi }}{% endif %}
+        {%- if ref.url %} <{{ ref.url }}>{% endif %}
+      </span>
+    </div>
+    {%- endfor %}
+  </div>
+
+css: |
+  .bibliography-slide .references-list {
+    font-size: 0.85em;
+    line-height: 1.6;
+  }
+  .bibliography-slide .reference-item {
+    display: flex;
+    margin-bottom: 0.8em;
+    padding-left: 1em;
+    text-indent: -1em;
+  }
+  .bibliography-slide .reference-marker {
+    font-weight: bold;
+    color: #333;
+    min-width: 2em;
+    margin-right: 0.5em;
+  }
+  .bibliography-slide .reference-content {
+    flex: 1;
+  }
+  .bibliography-slide .reference-content em {
+    font-style: italic;
+  }

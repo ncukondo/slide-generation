@@ -1,0 +1,76 @@
+name: quote
+description: "引用スライド"
+category: special
+
+schema:
+  type: object
+  required:
+    - text
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル（省略可）"
+    text:
+      type: string
+      description: "引用文"
+    author:
+      type: string
+      description: "著者名"
+    source:
+      type: string
+      description: "引用元（書籍、講演など）"
+
+example:
+  title: "名言"
+  text: "未来を予測する最善の方法は、それを発明することだ。"
+  author: "アラン・ケイ"
+  source: "Xerox PARC"
+
+output: |
+  <!-- _class: quote-slide -->
+  {%- if content.title %}
+
+  # {{ content.title }}
+  {%- endif %}
+
+  <blockquote class="quote-container">
+    <p class="quote-text">{{ content.text }}</p>
+    {%- if content.author or content.source %}
+    <footer class="quote-attribution">
+      {%- if content.author %}
+      <cite class="quote-author">— {{ content.author }}</cite>
+      {%- endif %}
+      {%- if content.source %}
+      <span class="quote-source">{{ content.source }}</span>
+      {%- endif %}
+    </footer>
+    {%- endif %}
+  </blockquote>
+
+css: |
+  .quote-slide .quote-container {
+    font-size: 1.5em;
+    text-align: center;
+    padding: 2em;
+    margin: 1em auto;
+    max-width: 80%;
+    border-left: 4px solid #333;
+    background: #f9f9f9;
+  }
+  .quote-slide .quote-text {
+    font-style: italic;
+    margin-bottom: 1em;
+  }
+  .quote-slide .quote-attribution {
+    font-size: 0.8em;
+    color: #666;
+    text-align: right;
+  }
+  .quote-slide .quote-author {
+    font-style: normal;
+  }
+  .quote-slide .quote-source {
+    display: block;
+    font-size: 0.9em;
+    color: #888;
+  }
