@@ -1,0 +1,24 @@
+meta:
+  title: Simple Presentation
+  author: Test Author
+  date: "2024-01-15"
+  theme: default
+
+slides:
+  - template: title
+    content:
+      title: Welcome
+      subtitle: A simple test presentation
+      author: Test Author
+
+  - template: bullet-list
+    content:
+      title: Key Points
+      items:
+        - First point
+        - Second point
+        - Third point
+
+  - template: section
+    content:
+      title: Summary

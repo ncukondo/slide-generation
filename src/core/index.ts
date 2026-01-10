@@ -18,3 +18,10 @@ export {
   Renderer,
   type RenderOptions,
 } from './renderer';
+
+export {
+  Pipeline,
+  PipelineError,
+  type PipelineOptions,
+  type PipelineResult,
+} from './pipeline';

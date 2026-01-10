@@ -1,0 +1,8 @@
+meta:
+  # Missing required title field
+  author: Test
+
+slides:
+  - template: nonexistent-template
+    content:
+      some: data

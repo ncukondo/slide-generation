@@ -1,0 +1,27 @@
+meta:
+  title: Presentation with Citations
+  author: Researcher
+  date: "2024-03-10"
+  theme: academic
+  references:
+    enabled: true
+    style: author-year-pmid
+
+slides:
+  - template: title
+    content:
+      title: Research Findings
+      author: Researcher
+
+  - template: bullet-list
+    content:
+      title: Literature Review
+      items:
+        - "Previous work by [@smith2024] showed promising results"
+        - "Later research [@johnson2023; @wilson2022] confirmed these findings"
+    notes: |
+      Citation references will be resolved during transformation
+
+  - template: section
+    content:
+      title: References

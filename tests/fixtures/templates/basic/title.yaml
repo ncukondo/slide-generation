@@ -31,17 +31,16 @@ example:
   affiliation: "所属組織"
 
 output: |
-  ---
   <!-- _class: title -->
 
-  # {{ title }}
+  # {{ content.title }}
 
-  {% if subtitle %}## {{ subtitle }}{% endif %}
+  {% if content.subtitle %}## {{ content.subtitle }}{% endif %}
 
-  {% if author or affiliation or date %}
+  {% if content.author or content.affiliation or content.date %}
   <div class="title-meta">
-    {% if author %}<span class="author">{{ author }}</span>{% endif %}
-    {% if affiliation %}<span class="affiliation">{{ affiliation }}</span>{% endif %}
-    {% if date %}<span class="date">{{ date }}</span>{% endif %}
+    {% if content.author %}<span class="author">{{ content.author }}</span>{% endif %}
+    {% if content.affiliation %}<span class="affiliation">{{ content.affiliation }}</span>{% endif %}
+    {% if content.date %}<span class="date">{{ content.date }}</span>{% endif %}
   </div>
   {% endif %}

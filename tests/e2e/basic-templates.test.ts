@@ -18,7 +18,7 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("title");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "プレゼンテーションタイトル",
         subtitle: "サブタイトル",
         author: "著者名",
@@ -26,10 +26,11 @@ describe("E2E: Basic Templates", () => {
         affiliation: "所属組織",
       };
 
-      const validation = loader.validateContent("title", content);
+      const validation = loader.validateContent("title", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      // Wrap in content object as expected by templates
+      const output = engine.render(template!.output, { content: slideContent });
       expect(output).toContain("# プレゼンテーションタイトル");
       expect(output).toContain("## サブタイトル");
       expect(output).toContain("著者名");
@@ -42,14 +43,14 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("title");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "シンプルなタイトル",
       };
 
-      const validation = loader.validateContent("title", content);
+      const validation = loader.validateContent("title", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      const output = engine.render(template!.output, { content: slideContent });
       expect(output).toContain("# シンプルなタイトル");
       // Optional fields should not render if not provided
       expect(output).not.toContain("undefined");
@@ -70,15 +71,15 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("section");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "第1章",
         subtitle: "はじめに",
       };
 
-      const validation = loader.validateContent("section", content);
+      const validation = loader.validateContent("section", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      const output = engine.render(template!.output, { content: slideContent });
       expect(output).toContain("# 第1章");
       expect(output).toContain("はじめに");
       expect(output).toContain("_class: section");
@@ -88,14 +89,14 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("section");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "セクションタイトル",
       };
 
-      const validation = loader.validateContent("section", content);
+      const validation = loader.validateContent("section", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      const output = engine.render(template!.output, { content: slideContent });
       expect(output).toContain("# セクションタイトル");
     });
   });
@@ -105,15 +106,19 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("bullet-list");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "主なポイント",
         items: ["項目1", "項目2", "項目3"],
       };
 
-      const validation = loader.validateContent("bullet-list", content);
+      const validation = loader.validateContent("bullet-list", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      // Need refs helper for template
+      const refs = {
+        expand: (text: string) => text.replace(/\[@(\w+)\]/g, "($1)"),
+      };
+      const output = engine.render(template!.output, { content: slideContent, refs });
       expect(output).toContain("# 主なポイント");
       expect(output).toContain("- 項目1");
       expect(output).toContain("- 項目2");
@@ -124,7 +129,7 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("bullet-list");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "ネストされたリスト",
         items: [
           "親項目1",
@@ -138,10 +143,13 @@ describe("E2E: Basic Templates", () => {
         ],
       };
 
-      const validation = loader.validateContent("bullet-list", content);
+      const validation = loader.validateContent("bullet-list", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      const refs = {
+        expand: (text: string) => text.replace(/\[@(\w+)\]/g, "($1)"),
+      };
+      const output = engine.render(template!.output, { content: slideContent, refs });
       expect(output).toContain("# ネストされたリスト");
       expect(output).toContain("- 親項目1");
       expect(output).toContain("- 親項目2");
@@ -154,7 +162,7 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("bullet-list");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "引用付きリスト",
         items: [
           "この研究 [@smith2024] によると",
@@ -162,11 +170,14 @@ describe("E2E: Basic Templates", () => {
         ],
       };
 
-      const validation = loader.validateContent("bullet-list", content);
+      const validation = loader.validateContent("bullet-list", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
       // refs.expand stub converts [@id] to (id)
+      const refs = {
+        expand: (text: string) => text.replace(/\[@(\w+)\]/g, "($1)"),
+      };
+      const output = engine.render(template!.output, { content: slideContent, refs });
       expect(output).toContain("(smith2024)");
       expect(output).toContain("(jones2023)");
     });
@@ -177,15 +188,18 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("numbered-list");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "手順",
         items: ["最初のステップ", "次のステップ", "最後のステップ"],
       };
 
-      const validation = loader.validateContent("numbered-list", content);
+      const validation = loader.validateContent("numbered-list", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      const refs = {
+        expand: (text: string) => text.replace(/\[@(\w+)\]/g, "($1)"),
+      };
+      const output = engine.render(template!.output, { content: slideContent, refs });
       expect(output).toContain("# 手順");
       expect(output).toContain("1. 最初のステップ");
       expect(output).toContain("2. 次のステップ");
@@ -196,7 +210,7 @@ describe("E2E: Basic Templates", () => {
       const template = loader.get("numbered-list");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "詳細手順",
         items: [
           "準備",
@@ -210,10 +224,13 @@ describe("E2E: Basic Templates", () => {
         ],
       };
 
-      const validation = loader.validateContent("numbered-list", content);
+      const validation = loader.validateContent("numbered-list", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      const refs = {
+        expand: (text: string) => text.replace(/\[@(\w+)\]/g, "($1)"),
+      };
+      const output = engine.render(template!.output, { content: slideContent, refs });
       expect(output).toContain("# 詳細手順");
       expect(output).toContain("1. 準備");
       expect(output).toContain("2. 実行");

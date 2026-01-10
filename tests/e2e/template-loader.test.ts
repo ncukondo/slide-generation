@@ -36,7 +36,7 @@ describe("Template Loader E2E", () => {
       expect(titleTemplate).toBeDefined();
       expect(titleTemplate?.name).toBe("title");
       expect(titleTemplate?.category).toBe("basic");
-      expect(titleTemplate?.output).toContain("{{ title }}");
+      expect(titleTemplate?.output).toContain("{{ content.title }}");
     });
 
     it("should validate content against template schema", () => {
@@ -65,18 +65,18 @@ describe("Template Loader E2E", () => {
       const template = loader.get("title");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "Hello World",
         subtitle: "Welcome",
         author: "John Doe",
       };
 
       // Validate first
-      const validation = loader.validateContent("title", content);
+      const validation = loader.validateContent("title", slideContent);
       expect(validation.valid).toBe(true);
 
-      // Then render
-      const output = engine.render(template!.output, content);
+      // Then render with content wrapper
+      const output = engine.render(template!.output, { content: slideContent });
       expect(output).toContain("# Hello World");
       expect(output).toContain("## Welcome");
       expect(output).toContain("John Doe");
@@ -87,15 +87,19 @@ describe("Template Loader E2E", () => {
       const template = loader.get("bullet-list");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "Key Points",
         items: ["Point 1", "Point 2", "Point 3"],
       };
 
-      const validation = loader.validateContent("bullet-list", content);
+      const validation = loader.validateContent("bullet-list", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      // Need refs helper for template
+      const refs = {
+        expand: (text: string) => text.replace(/\[@(\w+)\]/g, "($1)"),
+      };
+      const output = engine.render(template!.output, { content: slideContent, refs });
       expect(output).toContain("# Key Points");
       expect(output).toContain("- Point 1");
       expect(output).toContain("- Point 2");
@@ -107,7 +111,7 @@ describe("Template Loader E2E", () => {
       const template = loader.get("cycle-diagram");
       expect(template).toBeDefined();
 
-      const content = {
+      const slideContent = {
         title: "PDCA Cycle",
         nodes: [
           { label: "Plan", icon: "planning", color: "#4CAF50" },
@@ -117,10 +121,14 @@ describe("Template Loader E2E", () => {
         ],
       };
 
-      const validation = loader.validateContent("cycle-diagram", content);
+      const validation = loader.validateContent("cycle-diagram", slideContent);
       expect(validation.valid).toBe(true);
 
-      const output = engine.render(template!.output, content);
+      // Need icons helper for template
+      const icons = {
+        render: (name: string) => `[${name}]`,
+      };
+      const output = engine.render(template!.output, { content: slideContent, icons });
       expect(output).toContain("# PDCA Cycle");
       expect(output).toContain("cycle-4");
       expect(output).toContain("Plan");
@@ -151,7 +159,7 @@ schema:
     title:
       type: string
 output: |
-  # CUSTOM: {{ title }}
+  # CUSTOM: {{ content.title }}
 `);
 
       const customTitle = customLoader.get("title");

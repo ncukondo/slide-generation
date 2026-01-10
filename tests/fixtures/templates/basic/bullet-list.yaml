@@ -23,9 +23,7 @@ example:
     - "項目3"
 
 output: |
-  ---
-
-  # {{ title }}
+  # {{ content.title }}
 
   {% macro indent(n) %}{% for i in range(n) %}  {% endfor %}{% endmacro %}
   {% macro renderItems(items, depth) %}
@@ -38,4 +36,4 @@ output: |
   {% endif %}
   {% endfor %}
   {% endmacro %}
-  {{ renderItems(items, 0) }}
+  {{ renderItems(content.items, 0) }}

@@ -32,7 +32,7 @@
 | 07 | [Icon Registry & Resolver](./completed/07-icon-system.md) | 04 | Done |
 | 08 | [Reference Manager Integration](./completed/08-reference-manager.md) | 04 | Done |
 | 09 | [Transformer & Renderer](./completed/09-transformer-renderer.md) | 05, 07, 08 | Done |
-| 10 | [Pipeline Integration](./10-pipeline.md) | 09 | Pending |
+| 10 | [Pipeline Integration](./completed/10-pipeline.md) | 09 | Done |
 
 ## Phase 4: CLI Commands（CLIコマンド）
 
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 9
+- **Completed**: 10
 - **In Progress**: 0
-- **Pending**: 12
+- **Pending**: 11
 
 ## Architecture Overview
 

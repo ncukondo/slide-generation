@@ -19,9 +19,8 @@ example:
   subtitle: "はじめに"
 
 output: |
-  ---
   <!-- _class: section -->
 
-  # {{ title }}
+  # {{ content.title }}
 
-  {% if subtitle %}{{ subtitle }}{% endif %}
+  {% if content.subtitle %}{{ content.subtitle }}{% endif %}
