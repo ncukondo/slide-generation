@@ -1,0 +1,94 @@
+name: table
+description: "基本テーブル"
+category: data
+
+schema:
+  type: object
+  required:
+    - title
+    - headers
+    - rows
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    caption:
+      type: string
+      description: "テーブルキャプション（オプション）"
+    headers:
+      type: array
+      minItems: 1
+      description: "ヘッダー行"
+      items:
+        type: string
+    align:
+      type: array
+      description: "各列の配置（left, center, right）"
+      items:
+        type: string
+        enum:
+          - left
+          - center
+          - right
+    rows:
+      type: array
+      minItems: 1
+      description: "データ行"
+      items:
+        type: array
+        items:
+          type: string
+
+example:
+  title: "製品比較表"
+  caption: "2024年Q1時点のデータ"
+  headers: ["製品名", "価格", "評価"]
+  align: ["left", "right", "center"]
+  rows:
+    - ["製品A", "¥10,000", "★★★★☆"]
+    - ["製品B", "¥15,000", "★★★★★"]
+    - ["製品C", "¥8,000", "★★★☆☆"]
+
+output: |
+  # {{ content.title }}
+
+  {%- if content.caption %}
+
+  *{{ content.caption }}*
+
+  {%- endif %}
+
+  {% macro escape_pipe(text) %}{{ text | replace("|", "\\|") }}{% endmacro %}
+  {% macro align_marker(alignment) %}{% if alignment == 'center' %}:---:{% elif alignment == 'right' %}---:{% else %}:---{% endif %}{% endmacro %}
+  | {% for header in content.headers %}{{ escape_pipe(header) }} | {% endfor %}
+
+  |{% for header in content.headers %} {% if content.align and content.align[loop.index0] %}{{ align_marker(content.align[loop.index0]) }}{% else %}---{% endif %} |{% endfor %}
+
+  {% for row in content.rows %}| {% for cell in row %}{{ escape_pipe(cell) }} | {% endfor %}
+
+  {% endfor %}
+
+css: |
+  .table-slide table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+  }
+  .table-slide th,
+  .table-slide td {
+    border: 1px solid #ddd;
+    padding: 0.5em 1em;
+    text-align: left;
+  }
+  .table-slide th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+  .table-slide tr:nth-child(even) {
+    background-color: #fafafa;
+  }
+  .table-slide caption {
+    font-style: italic;
+    margin-bottom: 0.5em;
+    color: #666;
+  }

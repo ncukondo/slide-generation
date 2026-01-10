@@ -1,0 +1,107 @@
+name: comparison-table
+description: "比較表（強調付き）"
+category: data
+
+schema:
+  type: object
+  required:
+    - title
+    - items
+    - criteria
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    items:
+      type: array
+      minItems: 2
+      description: "比較対象の項目（2つ以上）"
+      items:
+        type: string
+    highlightColumn:
+      type: integer
+      description: "強調する列のインデックス（0始まり）"
+    criteria:
+      type: array
+      minItems: 1
+      description: "比較基準"
+      items:
+        type: object
+        required:
+          - label
+          - values
+        properties:
+          label:
+            type: string
+            description: "基準のラベル"
+          description:
+            type: string
+            description: "基準の説明（オプション）"
+          values:
+            type: array
+            description: "各項目に対する値"
+            items:
+              type: string
+
+example:
+  title: "プラン比較"
+  items: ["Free", "Pro", "Enterprise"]
+  highlightColumn: 1
+  criteria:
+    - label: "ストレージ"
+      values: ["5GB", "100GB", "無制限"]
+    - label: "サポート"
+      description: "カスタマーサポートの種類"
+      values: ["メール", "24時間チャット", "専属担当"]
+    - label: "API"
+      values: ["no", "yes", "yes"]
+    - label: "カスタムドメイン"
+      values: ["no", "partial", "yes"]
+
+output: |
+  <!-- _class: data-slide comparison-slide -->
+
+  # {{ content.title }}
+
+  {% macro escape_pipe(text) %}{{ text | replace("|", "\\|") }}{% endmacro %}
+  {% macro eval_mark(value) %}{% if value == 'yes' or value == 'YES' or value == 'true' %}✓{% elif value == 'no' or value == 'NO' or value == 'false' %}✗{% elif value == 'partial' or value == 'PARTIAL' %}△{% else %}{{ value }}{% endif %}{% endmacro %}
+  {% macro highlight_class(index) %}{% if content.highlightColumn is defined and content.highlightColumn == index %} **{% endif %}{% endmacro %}
+  {% macro highlight_end(index) %}{% if content.highlightColumn is defined and content.highlightColumn == index %}** {% endif %}{% endmacro %}
+  <div class="comparison-container">
+
+  | 比較項目 | {% for item in content.items %}{{ highlight_class(loop.index0) }}{{ escape_pipe(item) }}{{ highlight_end(loop.index0) }} | {% endfor %}
+
+  | --- |{% for item in content.items %} --- |{% endfor %}
+
+  {% for criterion in content.criteria %}| **{{ escape_pipe(criterion.label) }}**{% if criterion.description %} <br><small>{{ escape_pipe(criterion.description) }}</small>{% endif %} | {% for value in criterion.values %}{{ highlight_class(loop.index0) }}{{ eval_mark(value) }}{{ highlight_end(loop.index0) }} | {% endfor %}
+
+  {% endfor %}
+  </div>
+
+css: |
+  .comparison-slide table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .comparison-slide th,
+  .comparison-slide td {
+    border: 1px solid #ddd;
+    padding: 0.75em;
+    text-align: center;
+  }
+  .comparison-slide th:first-child,
+  .comparison-slide td:first-child {
+    text-align: left;
+  }
+  .comparison-slide thead th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+  .comparison-slide .highlight {
+    background-color: #E3F2FD;
+    font-weight: bold;
+  }
+  .comparison-slide small {
+    font-size: 0.8em;
+    color: #666;
+  }
