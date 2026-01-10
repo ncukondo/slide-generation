@@ -1,0 +1,167 @@
+name: timeline
+description: "タイムライン"
+category: diagrams
+
+schema:
+  type: object
+  required:
+    - title
+    - events
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    events:
+      type: array
+      minItems: 2
+      description: "タイムラインのイベント"
+      items:
+        type: object
+        required:
+          - date
+          - label
+        properties:
+          date:
+            type: string
+            description: "日付や時期"
+          label:
+            type: string
+            description: "イベントのラベル"
+          description:
+            type: string
+            description: "イベントの説明"
+          icon:
+            type: string
+            description: "アイコン参照"
+          color:
+            type: string
+            pattern: "^#[0-9A-Fa-f]{6}$"
+            default: "#2196F3"
+            description: "イベントの色"
+    direction:
+      type: string
+      enum:
+        - horizontal
+        - vertical
+      default: horizontal
+      description: "タイムラインの方向"
+
+example:
+  title: "プロジェクト計画"
+  direction: horizontal
+  events:
+    - date: "Q1"
+      label: "企画"
+      description: "要件定義・設計"
+      color: "#4CAF50"
+    - date: "Q2"
+      label: "開発"
+      description: "実装・単体テスト"
+      color: "#2196F3"
+    - date: "Q3"
+      label: "テスト"
+      description: "結合・システムテスト"
+      color: "#FF9800"
+    - date: "Q4"
+      label: "リリース"
+      description: "本番展開・運用開始"
+      color: "#9C27B0"
+
+output: |
+  <!-- _class: diagram-slide timeline-slide -->
+
+  # {{ content.title }}
+
+  <div class="timeline-container timeline-{{ content.direction | default('horizontal') }}">
+    <div class="timeline-line"></div>
+    {%- for event in content.events %}
+    <div class="timeline-event" style="--event-color: {{ event.color | default('#2196F3') }};">
+      <div class="event-marker">
+        {%- if event.icon %}
+        {{ icons.render(event.icon) }}
+        {%- endif %}
+      </div>
+      <div class="event-content">
+        <span class="event-date">{{ event.date }}</span>
+        <span class="event-label">{{ event.label }}</span>
+        {%- if event.description %}
+        <span class="event-description">{{ event.description }}</span>
+        {%- endif %}
+      </div>
+    </div>
+    {%- endfor %}
+  </div>
+
+css: |
+  .timeline-container {
+    position: relative;
+    display: flex;
+    padding: 2em;
+  }
+  .timeline-container.timeline-horizontal {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .timeline-container.timeline-vertical {
+    flex-direction: column;
+    gap: 2em;
+  }
+  .timeline-line {
+    position: absolute;
+    background: #ccc;
+  }
+  .timeline-horizontal .timeline-line {
+    top: 3em;
+    left: 2em;
+    right: 2em;
+    height: 2px;
+  }
+  .timeline-vertical .timeline-line {
+    left: 3em;
+    top: 2em;
+    bottom: 2em;
+    width: 2px;
+  }
+  .timeline-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .timeline-vertical .timeline-event {
+    flex-direction: row;
+    gap: 1em;
+  }
+  .event-marker {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--event-color);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--event-color);
+  }
+  .event-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 1em;
+  }
+  .timeline-vertical .event-content {
+    align-items: flex-start;
+    text-align: left;
+    margin-top: 0;
+  }
+  .event-date {
+    font-weight: bold;
+    color: var(--event-color);
+  }
+  .event-label {
+    font-size: 1.1em;
+  }
+  .event-description {
+    font-size: 0.85em;
+    color: #666;
+  }

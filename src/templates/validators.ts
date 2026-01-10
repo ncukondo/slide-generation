@@ -11,6 +11,7 @@ export interface JsonSchema {
   minItems?: number;
   maxItems?: number;
   pattern?: string;
+  enum?: (string | number | boolean)[];
   default?: unknown;
   description?: string;
 }
@@ -38,6 +39,12 @@ export function jsonSchemaToZod(schema: JsonSchema): ZodTypeAny {
 
   switch (type) {
     case "string": {
+      // Handle enum first (enum values are always valid)
+      if (schema.enum && schema.enum.length > 0) {
+        const enumValues = schema.enum as [string, ...string[]];
+        return z.enum(enumValues);
+      }
+
       let zodSchema = z.string();
       if (schema.pattern) {
         zodSchema = zodSchema.regex(new RegExp(schema.pattern));

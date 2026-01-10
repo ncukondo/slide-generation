@@ -1,0 +1,117 @@
+name: hierarchy
+description: "階層図・組織図"
+category: diagrams
+
+schema:
+  type: object
+  required:
+    - title
+    - root
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    root:
+      type: object
+      required:
+        - label
+      description: "ルートノード"
+      properties:
+        label:
+          type: string
+          description: "ノードのラベル"
+        icon:
+          type: string
+          description: "アイコン参照"
+        color:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          default: "#2196F3"
+          description: "ノードの色"
+        children:
+          type: array
+          description: "子ノードの配列"
+
+example:
+  title: "組織図"
+  root:
+    label: "CEO"
+    icon: "user"
+    color: "#1976D2"
+    children:
+      - label: "CTO"
+        color: "#388E3C"
+        children:
+          - { label: "開発部" }
+          - { label: "インフラ部" }
+      - label: "CFO"
+        color: "#F57C00"
+        children:
+          - { label: "経理部" }
+          - { label: "財務部" }
+      - label: "COO"
+        color: "#7B1FA2"
+        children:
+          - { label: "営業部" }
+          - { label: "マーケ部" }
+
+output: |
+  <!-- _class: diagram-slide hierarchy-slide -->
+
+  # {{ content.title }}
+
+  {% macro renderNode(node, depth) %}
+  <div class="hierarchy-node depth-{{ depth }}" style="--node-color: {{ node.color | default('#2196F3') }};">
+    <div class="node-content">
+      {%- if node.icon %}
+      <span class="node-icon">{{ icons.render(node.icon) }}</span>
+      {%- endif %}
+      <span class="node-label">{{ node.label }}</span>
+    </div>
+    {%- if node.children %}
+    <div class="node-children">
+      {%- for child in node.children %}
+      {{ renderNode(child, depth + 1) }}
+      {%- endfor %}
+    </div>
+    {%- endif %}
+  </div>
+  {% endmacro %}
+
+  <div class="hierarchy-container">
+    {{ renderNode(content.root, 0) }}
+  </div>
+
+css: |
+  .hierarchy-container {
+    display: flex;
+    justify-content: center;
+    padding: 1em;
+  }
+  .hierarchy-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .node-content {
+    background: var(--node-color);
+    color: white;
+    padding: 0.75em 1.25em;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 1em;
+  }
+  .node-children {
+    display: flex;
+    gap: 1em;
+    position: relative;
+  }
+  .node-children::before {
+    content: '';
+    position: absolute;
+    top: -0.5em;
+    left: 50%;
+    width: 1px;
+    height: 0.5em;
+    background: #ccc;
+  }
