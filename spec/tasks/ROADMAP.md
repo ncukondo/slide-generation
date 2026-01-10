@@ -42,7 +42,7 @@
 | 12 | [CLI Validate Command](./completed/12-cli-validate.md) | 03, 05 | Done |
 | 13 | [CLI Templates Command](./completed/13-cli-templates.md) | 05 | Done |
 | 14 | [CLI Icons Command](./completed/14-cli-icons.md) | 07 | Done |
-| 15 | [CLI Init Command](./15-cli-init.md) | 02 | Pending |
+| 15 | [CLI Init Command](./completed/15-cli-init.md) | 02 | Done |
 | 16 | [CLI Watch & Preview](./16-cli-watch-preview.md) | 11 | Pending |
 
 ## Phase 5: Extended Templates（拡張テンプレート）
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 14
+- **Completed**: 15
 - **In Progress**: 0
-- **Pending**: 7
+- **Pending**: 6
 
 ## Architecture Overview
 
