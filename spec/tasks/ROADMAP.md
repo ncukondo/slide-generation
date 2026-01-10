@@ -40,7 +40,7 @@
 |---|--------|------|------|
 | 11 | [CLI Convert Command](./completed/11-cli-convert.md) | 10 | Done |
 | 12 | [CLI Validate Command](./completed/12-cli-validate.md) | 03, 05 | Done |
-| 13 | [CLI Templates Command](./13-cli-templates.md) | 05 | Pending |
+| 13 | [CLI Templates Command](./completed/13-cli-templates.md) | 05 | Done |
 | 14 | [CLI Icons Command](./14-cli-icons.md) | 07 | Pending |
 | 15 | [CLI Init Command](./15-cli-init.md) | 02 | Pending |
 | 16 | [CLI Watch & Preview](./16-cli-watch-preview.md) | 11 | Pending |
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 12
+- **Completed**: 13
 - **In Progress**: 0
-- **Pending**: 9
+- **Pending**: 8
 
 ## Architecture Overview
 
