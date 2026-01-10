@@ -15,13 +15,13 @@ A CLI tool to generate Marp-compatible Markdown from YAML source files, designed
 
 ```bash
 # Using npm
-npm install -g slide-generation
+npm install -g @ncukondo/slide-generation
 
 # Using pnpm
-pnpm add -g slide-generation
+pnpm add -g @ncukondo/slide-generation
 
 # Or run directly with npx
-npx slide-generation convert presentation.yaml
+npx @ncukondo/slide-generation convert presentation.yaml
 ```
 
 **Requirements:** Node.js >= 22.0.0

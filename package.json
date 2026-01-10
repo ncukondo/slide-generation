@@ -1,5 +1,5 @@
 {
-  "name": "slide-generation",
+  "name": "@ncukondo/slide-generation",
   "version": "0.1.0",
   "description": "A CLI tool to generate Marp-compatible Markdown from YAML source files",
   "type": "module",
@@ -18,7 +18,11 @@
     "dist",
     "templates",
     "themes",
-    "icons"
+    "icons",
+    "README.md",
+    "README_ja.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "scripts": {
     "dev": "tsup --watch",
@@ -29,7 +33,7 @@
     "lint": "oxlint",
     "format": "oxfmt write src",
     "format:check": "oxfmt check src",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build && pnpm test && pnpm lint && pnpm typecheck"
   },
   "keywords": [
     "marp",
@@ -37,10 +41,23 @@
     "markdown",
     "yaml",
     "presentation",
-    "cli"
+    "cli",
+    "slide-generation",
+    "template"
   ],
   "author": "ncukondo",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncukondo/slide-generation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ncukondo/slide-generation/issues"
+  },
+  "homepage": "https://github.com/ncukondo/slide-generation#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22.0.0"
   },

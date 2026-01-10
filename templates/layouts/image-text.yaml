@@ -1,0 +1,105 @@
+name: image-text
+description: "画像＋テキストレイアウト"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - title
+    - image
+    - text
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    image:
+      type: string
+      description: "画像パス"
+    alt:
+      type: string
+      description: "画像の代替テキスト（アクセシビリティ用）"
+    caption:
+      type: string
+      description: "画像キャプション"
+    text:
+      oneOf:
+        - type: string
+        - type: array
+          items:
+            type: string
+      description: "テキストコンテンツ"
+    imagePosition:
+      type: string
+      enum:
+        - left
+        - right
+      default: left
+      description: "画像の位置"
+    ratio:
+      type: string
+      pattern: "^\\d+:\\d+$"
+      default: "50:50"
+      description: "画像とテキストの幅比率"
+
+example:
+  title: "製品紹介"
+  image: "product-photo.png"
+  alt: "製品の外観写真"
+  caption: "新製品のデザイン"
+  text:
+    - "高品質な素材を使用"
+    - "エルゴノミクスデザイン"
+    - "3年保証付き"
+  imagePosition: left
+
+output: |
+  <!-- _class: image-text-slide image-{{ content.imagePosition | default('left') }} -->
+
+  # {{ content.title }}
+
+  <div class="image-text-container">
+    <div class="image-section">
+      ![{{ content.alt | default(content.title) }}]({{ content.image }})
+      {%- if content.caption %}
+      <p class="image-caption">{{ content.caption }}</p>
+      {%- endif %}
+    </div>
+    <div class="text-section">
+      {%- if content.text is iterable and content.text is not string %}
+      {%- for item in content.text %}
+      - {{ item }}
+      {%- endfor %}
+      {%- else %}
+      {{ content.text }}
+      {%- endif %}
+    </div>
+  </div>
+
+css: |
+  .image-text-slide .image-text-container {
+    display: flex;
+    gap: 2em;
+    align-items: center;
+    height: 80%;
+  }
+  .image-text-slide.image-right .image-text-container {
+    flex-direction: row-reverse;
+  }
+  .image-text-slide .image-section {
+    flex: 1;
+    text-align: center;
+  }
+  .image-text-slide .image-section img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+  }
+  .image-text-slide .image-caption {
+    font-style: italic;
+    color: #666;
+    margin-top: 0.5em;
+    font-size: 0.9em;
+  }
+  .image-text-slide .text-section {
+    flex: 1;
+  }

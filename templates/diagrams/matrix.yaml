@@ -1,0 +1,163 @@
+name: matrix
+description: "2x2マトリクス"
+category: diagrams
+
+schema:
+  type: object
+  required:
+    - title
+    - quadrants
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    xAxis:
+      type: object
+      properties:
+        label:
+          type: string
+          description: "X軸のラベル"
+        low:
+          type: string
+          description: "X軸の低い側のラベル"
+        high:
+          type: string
+          description: "X軸の高い側のラベル"
+    yAxis:
+      type: object
+      properties:
+        label:
+          type: string
+          description: "Y軸のラベル"
+        low:
+          type: string
+          description: "Y軸の低い側のラベル"
+        high:
+          type: string
+          description: "Y軸の高い側のラベル"
+    quadrants:
+      type: array
+      minItems: 4
+      maxItems: 4
+      description: "4つの象限（左上、右上、左下、右下の順）"
+      items:
+        type: object
+        required:
+          - label
+        properties:
+          label:
+            type: string
+            description: "象限のラベル"
+          color:
+            type: string
+            pattern: "^#[0-9A-Fa-f]{6}$"
+            default: "#E3F2FD"
+            description: "象限の背景色"
+          items:
+            type: array
+            description: "象限内の項目"
+            items:
+              type: string
+
+example:
+  title: "アイゼンハワー・マトリクス"
+  xAxis:
+    label: "緊急度"
+    low: "低"
+    high: "高"
+  yAxis:
+    label: "重要度"
+    low: "低"
+    high: "高"
+  quadrants:
+    - label: "第2象限：計画"
+      color: "#C8E6C9"
+      items: ["長期目標", "スキル開発"]
+    - label: "第1象限：実行"
+      color: "#FFCDD2"
+      items: ["締切タスク", "危機対応"]
+    - label: "第4象限：削除"
+      color: "#F5F5F5"
+      items: ["時間の浪費", "些細な作業"]
+    - label: "第3象限：委任"
+      color: "#FFF9C4"
+      items: ["割り込み", "一部の会議"]
+
+output: |
+  <!-- _class: diagram-slide matrix-slide -->
+
+  # {{ content.title }}
+
+  <div class="matrix-container">
+    {%- if content.yAxis %}
+    <div class="matrix-y-axis">
+      <span class="axis-label">{{ content.yAxis.label | default('') }}</span>
+      <span class="axis-high">{{ content.yAxis.high | default('高') }}</span>
+      <span class="axis-low">{{ content.yAxis.low | default('低') }}</span>
+    </div>
+    {%- endif %}
+    <div class="matrix-grid">
+      {%- for quadrant in content.quadrants %}
+      <div class="matrix-quadrant quadrant-{{ loop.index }}" style="--quadrant-color: {{ quadrant.color | default('#E3F2FD') }};">
+        <span class="quadrant-label">{{ quadrant.label }}</span>
+        {%- if quadrant.items %}
+        <ul class="quadrant-items">
+          {%- for item in quadrant.items %}
+          <li>{{ item }}</li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+      </div>
+      {%- endfor %}
+    </div>
+    {%- if content.xAxis %}
+    <div class="matrix-x-axis">
+      <span class="axis-low">{{ content.xAxis.low | default('低') }}</span>
+      <span class="axis-label">{{ content.xAxis.label | default('') }}</span>
+      <span class="axis-high">{{ content.xAxis.high | default('高') }}</span>
+    </div>
+    {%- endif %}
+  </div>
+
+css: |
+  .matrix-container {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr auto;
+    gap: 0.5em;
+    height: 80%;
+  }
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+  }
+  .matrix-quadrant {
+    background: var(--quadrant-color);
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+  }
+  .quadrant-label {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+  }
+  .quadrant-items {
+    font-size: 0.9em;
+    margin: 0;
+    padding-left: 1.2em;
+  }
+  .matrix-x-axis,
+  .matrix-y-axis {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: #666;
+  }
+  .matrix-y-axis {
+    flex-direction: column;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }

@@ -1,0 +1,46 @@
+name: title
+description: "タイトルスライド"
+category: basic
+
+schema:
+  type: object
+  required:
+    - title
+  properties:
+    title:
+      type: string
+      description: "メインタイトル"
+    subtitle:
+      type: string
+      description: "サブタイトル"
+    author:
+      type: string
+      description: "著者名"
+    date:
+      type: string
+      description: "日付"
+    affiliation:
+      type: string
+      description: "所属"
+
+example:
+  title: "プレゼンテーションタイトル"
+  subtitle: "サブタイトル"
+  author: "著者名"
+  date: "2024-01-15"
+  affiliation: "所属組織"
+
+output: |
+  <!-- _class: title -->
+
+  # {{ content.title }}
+
+  {% if content.subtitle %}## {{ content.subtitle }}{% endif %}
+
+  {% if content.author or content.affiliation or content.date %}
+  <div class="title-meta">
+    {% if content.author %}<span class="author">{{ content.author }}</span>{% endif %}
+    {% if content.affiliation %}<span class="affiliation">{{ content.affiliation }}</span>{% endif %}
+    {% if content.date %}<span class="date">{{ content.date }}</span>{% endif %}
+  </div>
+  {% endif %}

@@ -1,0 +1,39 @@
+name: numbered-list
+description: "番号付きリスト"
+category: basic
+
+schema:
+  type: object
+  required:
+    - title
+    - items
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    items:
+      type: array
+      description: "リスト項目（文字列またはネスト構造）"
+
+example:
+  title: "手順"
+  items:
+    - "最初のステップ"
+    - "次のステップ"
+    - "最後のステップ"
+
+output: |
+  # {{ content.title }}
+
+  {% macro indent(n) %}{% for i in range(n) %}   {% endfor %}{% endmacro %}
+  {% macro renderItems(items, depth) %}
+  {% for item in items %}
+  {% if item is string %}
+  {{ indent(depth) }}{{ loop.index }}. {{ refs.expand(item) }}
+  {% elif item.nested %}
+  {{ indent(depth) }}{{ loop.index }}. {{ item.nested.title }}
+  {{ renderItems(item.nested.items, depth + 1) }}
+  {% endif %}
+  {% endfor %}
+  {% endmacro %}
+  {{ renderItems(content.items, 0) }}

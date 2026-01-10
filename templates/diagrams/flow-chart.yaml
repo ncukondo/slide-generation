@@ -1,0 +1,141 @@
+name: flow-chart
+description: "フローチャート"
+category: diagrams
+
+schema:
+  type: object
+  required:
+    - title
+    - steps
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    steps:
+      type: array
+      minItems: 2
+      description: "フローチャートのステップ"
+      items:
+        type: object
+        required:
+          - label
+        properties:
+          label:
+            type: string
+            description: "ステップのラベル"
+          type:
+            type: string
+            enum:
+              - start
+              - process
+              - decision
+              - end
+            default: process
+            description: "ステップの種類"
+          icon:
+            type: string
+            description: "アイコン参照"
+          color:
+            type: string
+            pattern: "^#[0-9A-Fa-f]{6}$"
+            default: "#2196F3"
+            description: "ステップの色"
+          branches:
+            type: array
+            description: "分岐（decision タイプの場合）"
+            items:
+              type: object
+              required:
+                - condition
+                - target
+              properties:
+                condition:
+                  type: string
+                  description: "分岐条件"
+                target:
+                  type: string
+                  description: "分岐先のラベル"
+    direction:
+      type: string
+      enum:
+        - vertical
+        - horizontal
+      default: vertical
+      description: "フローの方向"
+
+example:
+  title: "承認フロー"
+  direction: vertical
+  steps:
+    - { label: "申請", type: "start", color: "#4CAF50" }
+    - { label: "上司確認", type: "process" }
+    - { label: "承認？", type: "decision", branches: [{ condition: "Yes", target: "完了" }, { condition: "No", target: "差し戻し" }] }
+    - { label: "差し戻し", type: "process", color: "#FF5722" }
+    - { label: "完了", type: "end", color: "#9C27B0" }
+
+output: |
+  <!-- _class: diagram-slide flow-slide -->
+
+  # {{ content.title }}
+
+  <div class="flow-container flow-{{ content.direction | default('vertical') }}">
+    {%- for step in content.steps %}
+    <div class="flow-step flow-{{ step.type | default('process') }}" style="--step-color: {{ step.color | default('#2196F3') }};">
+      {%- if step.icon %}
+      <span class="step-icon">{{ icons.render(step.icon) }}</span>
+      {%- endif %}
+      <span class="step-label">{{ step.label }}</span>
+      {%- if step.branches %}
+      <div class="step-branches">
+        {%- for branch in step.branches %}
+        <span class="branch-label">{{ branch.condition }}: {{ branch.target }}</span>
+        {%- endfor %}
+      </div>
+      {%- endif %}
+    </div>
+    {%- if not loop.last %}
+    <div class="flow-arrow">→</div>
+    {%- endif %}
+    {%- endfor %}
+  </div>
+
+css: |
+  .flow-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+  .flow-container.flow-vertical {
+    flex-direction: column;
+  }
+  .flow-container.flow-horizontal {
+    flex-direction: row;
+  }
+  .flow-step {
+    background: var(--step-color);
+    color: white;
+    padding: 1em 1.5em;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .flow-step.flow-start,
+  .flow-step.flow-end {
+    border-radius: 24px;
+  }
+  .flow-step.flow-decision {
+    transform: rotate(45deg);
+    padding: 1.5em;
+  }
+  .flow-step.flow-decision .step-label {
+    transform: rotate(-45deg);
+    display: block;
+  }
+  .flow-arrow {
+    font-size: 1.5em;
+    color: #666;
+  }
+  .flow-vertical .flow-arrow {
+    transform: rotate(90deg);
+  }

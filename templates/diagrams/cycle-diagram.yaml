@@ -1,0 +1,71 @@
+name: cycle-diagram
+description: "循環図（3〜6要素対応）"
+category: diagrams
+
+schema:
+  type: object
+  required:
+    - title
+    - nodes
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    nodes:
+      type: array
+      minItems: 3
+      maxItems: 6
+      description: "循環図のノード"
+      items:
+        type: object
+        required:
+          - label
+        properties:
+          label:
+            type: string
+            description: "ノードのラベル"
+          icon:
+            type: string
+            description: "アイコン参照"
+          color:
+            type: string
+            pattern: "^#[0-9A-Fa-f]{6}$"
+            default: "#666666"
+            description: "ノードの色"
+
+example:
+  title: "PDCAサイクル"
+  nodes:
+    - { label: "Plan", icon: "planning", color: "#4CAF50" }
+    - { label: "Do", icon: "action", color: "#2196F3" }
+    - { label: "Check", icon: "analysis", color: "#FF9800" }
+    - { label: "Act", icon: "improvement", color: "#9C27B0" }
+
+output: |
+  <!-- _class: diagram-slide cycle-slide -->
+
+  # {{ content.title }}
+
+  <div class="cycle-container cycle-{{ content.nodes | length }}">
+    {%- for node in content.nodes %}
+    <div class="cycle-node" style="--node-color: {{ node.color | default('#666666') }}; --node-index: {{ loop.index0 }};">
+      {%- if node.icon %}
+      <span class="node-icon">{{ icons.render(node.icon) }}</span>
+      {%- endif %}
+      <span class="node-label">{{ node.label }}</span>
+    </div>
+    {%- endfor %}
+  </div>
+
+css: |
+  .cycle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  .cycle-node {
+    background: var(--node-color);
+    border-radius: 50%;
+    padding: 1em;
+  }

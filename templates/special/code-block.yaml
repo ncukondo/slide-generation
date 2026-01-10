@@ -1,0 +1,79 @@
+name: code-block
+description: "コードブロックスライド"
+category: special
+
+schema:
+  type: object
+  required:
+    - code
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    code:
+      type: string
+      description: "コード内容"
+    language:
+      type: string
+      description: "プログラミング言語（シンタックスハイライト用）"
+    filename:
+      type: string
+      description: "ファイル名（表示用）"
+    showLineNumbers:
+      type: boolean
+      default: false
+      description: "行番号を表示するかどうか"
+
+example:
+  title: "Hello World in Python"
+  code: |
+    def hello():
+        print("Hello, World!")
+
+    if __name__ == "__main__":
+        hello()
+  language: python
+  filename: hello.py
+  showLineNumbers: true
+
+output: |
+  <!-- _class: code-slide{% if content.showLineNumbers %} line-numbers{% endif %} -->
+  {%- if content.title %}
+
+  # {{ content.title }}
+  {%- endif %}
+
+  {%- if content.filename %}
+  <div class="code-filename">{{ content.filename }}</div>
+  {%- endif %}
+
+  ```{{ content.language | default('') }}
+  {{ content.code }}
+  ```
+
+css: |
+  .code-slide pre {
+    font-size: 0.9em;
+    padding: 1em;
+    border-radius: 8px;
+    background: #282c34;
+    overflow-x: auto;
+  }
+  .code-slide code {
+    font-family: 'Fira Code', 'Consolas', monospace;
+  }
+  .code-slide .code-filename {
+    font-family: monospace;
+    font-size: 0.85em;
+    color: #888;
+    background: #1e2127;
+    padding: 0.5em 1em;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: -0.5em;
+  }
+  .code-slide.line-numbers pre {
+    counter-reset: line;
+  }
+  .code-slide.line-numbers code {
+    display: block;
+  }

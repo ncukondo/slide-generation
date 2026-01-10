@@ -1,0 +1,39 @@
+name: bullet-list
+description: "箇条書きリスト"
+category: basic
+
+schema:
+  type: object
+  required:
+    - title
+    - items
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    items:
+      type: array
+      description: "リスト項目（文字列またはネスト構造）"
+
+example:
+  title: "主なポイント"
+  items:
+    - "項目1"
+    - "項目2"
+    - "項目3"
+
+output: |
+  # {{ content.title }}
+
+  {% macro indent(n) %}{% for i in range(n) %}  {% endfor %}{% endmacro %}
+  {% macro renderItems(items, depth) %}
+  {% for item in items %}
+  {% if item is string %}
+  {{ indent(depth) }}- {{ refs.expand(item) }}
+  {% elif item.nested %}
+  {{ indent(depth) }}- {{ item.nested.title }}
+  {{ renderItems(item.nested.items, depth + 1) }}
+  {% endif %}
+  {% endfor %}
+  {% endmacro %}
+  {{ renderItems(content.items, 0) }}

@@ -1,0 +1,85 @@
+name: two-column
+description: "2カラムレイアウト"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - title
+    - left
+    - right
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    left:
+      oneOf:
+        - type: string
+        - type: array
+          items:
+            type: string
+      description: "左カラムのコンテンツ（文字列または配列）"
+    right:
+      oneOf:
+        - type: string
+        - type: array
+          items:
+            type: string
+      description: "右カラムのコンテンツ（文字列または配列）"
+    ratio:
+      type: string
+      pattern: "^\\d+:\\d+$"
+      default: "50:50"
+      description: "左右の幅比率（例: 60:40）"
+
+example:
+  title: "2カラム比較"
+  left:
+    - "左側のポイント1"
+    - "左側のポイント2"
+  right:
+    - "右側のポイント1"
+    - "右側のポイント2"
+  ratio: "50:50"
+
+output: |
+  <!-- _class: two-column-slide -->
+
+  # {{ content.title }}
+
+  {% set leftRatio = content.ratio.split(':')[0] if content.ratio else '50' %}
+  {% set rightRatio = content.ratio.split(':')[1] if content.ratio else '50' %}
+  <div class="two-column-container" style="--left-ratio: {{ leftRatio }}; --right-ratio: {{ rightRatio }};">
+    <div class="column-left">
+      {%- if content.left is iterable and content.left is not string %}
+      {%- for item in content.left %}
+      - {{ item }}
+      {%- endfor %}
+      {%- else %}
+      {{ content.left }}
+      {%- endif %}
+    </div>
+    <div class="column-right">
+      {%- if content.right is iterable and content.right is not string %}
+      {%- for item in content.right %}
+      - {{ item }}
+      {%- endfor %}
+      {%- else %}
+      {{ content.right }}
+      {%- endif %}
+    </div>
+  </div>
+
+css: |
+  .two-column-slide .two-column-container {
+    display: flex;
+    gap: 2em;
+    width: 100%;
+    height: 80%;
+  }
+  .two-column-slide .column-left {
+    flex: var(--left-ratio, 50);
+  }
+  .two-column-slide .column-right {
+    flex: var(--right-ratio, 50);
+  }

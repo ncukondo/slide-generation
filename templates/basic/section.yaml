@@ -1,0 +1,26 @@
+name: section
+description: "セクション区切り"
+category: basic
+
+schema:
+  type: object
+  required:
+    - title
+  properties:
+    title:
+      type: string
+      description: "セクションタイトル"
+    subtitle:
+      type: string
+      description: "サブタイトル（オプション）"
+
+example:
+  title: "第1章"
+  subtitle: "はじめに"
+
+output: |
+  <!-- _class: section -->
+
+  # {{ content.title }}
+
+  {% if content.subtitle %}{{ content.subtitle }}{% endif %}
