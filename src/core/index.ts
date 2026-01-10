@@ -7,3 +7,14 @@ export {
   type ParsedSlide,
   type PresentationMeta,
 } from './parser';
+
+export {
+  Transformer,
+  TransformError,
+  type TransformContext,
+} from './transformer';
+
+export {
+  Renderer,
+  type RenderOptions,
+} from './renderer';
