@@ -50,7 +50,7 @@
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
 | 17 | [Diagram Templates](./completed/17-diagram-templates.md) | 06 | Done |
-| 18 | [Data Templates](./18-data-templates.md) | 06 | Pending |
+| 18 | [Data Templates](./completed/18-data-templates.md) | 06 | Done |
 | 19 | [Layout Templates](./19-layout-templates.md) | 06 | Pending |
 | 20 | [Special Templates](./20-special-templates.md) | 06, 08 | Pending |
 
@@ -63,9 +63,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 17
+- **Completed**: 18
 - **In Progress**: 0
-- **Pending**: 4
+- **Pending**: 3
 
 ## Architecture Overview
 
@@ -96,3 +96,9 @@
 - テストファイルは `*.test.ts` としてソースファイルと同じディレクトリに配置
 - 各タスクはE2Eテストで完了を確認
 - Phase 1-3 を優先的に完了させ、最小限の動作するシステムを構築
+
+## Known Issues
+
+- **Lint警告（未修正）**:
+  - `tests/e2e/cli-watch.test.ts:5` - 未使用のインポート `Command`
+  - `tests/cli/convert.test.ts:166` - 未使用のcatchパラメータ `error`
