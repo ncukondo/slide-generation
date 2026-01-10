@@ -147,6 +147,81 @@ describe("jsonSchemaToZod", () => {
       expect(result.data).toEqual({ name: "John", extra: "field" });
     }
   });
+
+  it("should convert oneOf with string or array", () => {
+    const schema: JsonSchema = {
+      oneOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } },
+      ],
+    };
+    const zodSchema = jsonSchemaToZod(schema);
+
+    expect(zodSchema.safeParse("hello").success).toBe(true);
+    expect(zodSchema.safeParse(["a", "b", "c"]).success).toBe(true);
+    expect(zodSchema.safeParse(123).success).toBe(false);
+    expect(zodSchema.safeParse([1, 2, 3]).success).toBe(false);
+  });
+
+  it("should convert oneOf with multiple object types", () => {
+    const schema: JsonSchema = {
+      oneOf: [
+        {
+          type: "object",
+          required: ["type", "url"],
+          properties: {
+            type: { type: "string", enum: ["image"] },
+            url: { type: "string" },
+          },
+        },
+        {
+          type: "object",
+          required: ["type", "code"],
+          properties: {
+            type: { type: "string", enum: ["code"] },
+            code: { type: "string" },
+          },
+        },
+      ],
+    };
+    const zodSchema = jsonSchemaToZod(schema);
+
+    expect(zodSchema.safeParse({ type: "image", url: "https://example.com/img.png" }).success).toBe(true);
+    expect(zodSchema.safeParse({ type: "code", code: "console.log('hello')" }).success).toBe(true);
+    expect(zodSchema.safeParse({ type: "image" }).success).toBe(false);
+    expect(zodSchema.safeParse({ type: "code" }).success).toBe(false);
+  });
+
+  it("should handle oneOf with single option", () => {
+    const schema: JsonSchema = {
+      oneOf: [{ type: "string" }],
+    };
+    const zodSchema = jsonSchemaToZod(schema);
+
+    expect(zodSchema.safeParse("hello").success).toBe(true);
+    expect(zodSchema.safeParse(123).success).toBe(false);
+  });
+
+  it("should handle object with oneOf property", () => {
+    const schema: JsonSchema = {
+      type: "object",
+      required: ["content"],
+      properties: {
+        content: {
+          oneOf: [
+            { type: "string" },
+            { type: "array", items: { type: "string" } },
+          ],
+        },
+      },
+    };
+    const zodSchema = jsonSchemaToZod(schema);
+
+    expect(zodSchema.safeParse({ content: "hello" }).success).toBe(true);
+    expect(zodSchema.safeParse({ content: ["a", "b"] }).success).toBe(true);
+    expect(zodSchema.safeParse({ content: 123 }).success).toBe(false);
+    expect(zodSchema.safeParse({}).success).toBe(false);
+  });
 });
 
 describe("validateWithJsonSchema", () => {

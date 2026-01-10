@@ -14,6 +14,7 @@ export interface JsonSchema {
   enum?: (string | number | boolean)[];
   default?: unknown;
   description?: string;
+  oneOf?: JsonSchema[];
 }
 
 /**
@@ -35,6 +36,16 @@ export interface ValidationResult {
  * - minItems/maxItems for arrays
  */
 export function jsonSchemaToZod(schema: JsonSchema): ZodTypeAny {
+  // Handle oneOf first (union type)
+  if (schema.oneOf && schema.oneOf.length > 0) {
+    const schemas = schema.oneOf.map((s) => jsonSchemaToZod(s));
+    if (schemas.length === 1) {
+      return schemas[0]!;
+    }
+    // z.union requires at least 2 schemas
+    return z.union(schemas as [ZodTypeAny, ZodTypeAny, ...ZodTypeAny[]]);
+  }
+
   const type = schema.type ?? "object";
 
   switch (type) {
