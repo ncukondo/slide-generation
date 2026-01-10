@@ -9,9 +9,13 @@ describe("Icon System E2E", () => {
   let iconsDir: string;
   let cacheDir: string;
 
+  // Normalized path for use in YAML strings (Windows compatibility)
+  let iconsDirNormalized: string;
+
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "icons-e2e-"));
     iconsDir = path.join(tempDir, "icons", "custom");
+    iconsDirNormalized = iconsDir.replace(/\\/g, "/");
     cacheDir = path.join(tempDir, ".cache", "icons");
     await fs.mkdir(iconsDir, { recursive: true });
   });
@@ -37,7 +41,7 @@ sources:
   - name: custom
     type: local-svg
     prefix: custom
-    path: "${iconsDir}"
+    path: "${iconsDirNormalized}"
 
 aliases:
   success: "mi:check_circle"
@@ -130,7 +134,7 @@ sources:
   - name: custom
     type: local-svg
     prefix: custom
-    path: "${iconsDir}"
+    path: "${iconsDirNormalized}"
 `
       );
 
@@ -180,7 +184,7 @@ sources:
   - name: custom
     type: local-svg
     prefix: custom
-    path: "${iconsDir}"
+    path: "${iconsDirNormalized}"
 `
       );
 

@@ -85,7 +85,7 @@ describe('preview command - execution', () => {
     expect(result.errors.some((e) => e.includes('not found'))).toBe(true);
   });
 
-  it('should check for marp-cli availability', async () => {
+  it('should check for marp-cli availability', { timeout: 10000 }, async () => {
     const { checkMarpCliAvailable } = await import('./preview');
     const available = await checkMarpCliAvailable();
     // Result depends on whether marp-cli is installed

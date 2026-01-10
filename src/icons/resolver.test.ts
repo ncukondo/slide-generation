@@ -89,6 +89,7 @@ defaults:
     beforeEach(async () => {
       // Create custom icons directory
       const iconsDir = path.join(tempDir, "icons", "custom");
+      const iconsDirNormalized = iconsDir.replace(/\\/g, "/");
       await fs.mkdir(iconsDir, { recursive: true });
 
       // Create a sample SVG file
@@ -107,7 +108,7 @@ sources:
   - name: custom
     type: local-svg
     prefix: custom
-    path: "${iconsDir}"
+    path: "${iconsDirNormalized}"
 
 aliases:
   logo: "custom:test-icon"
@@ -189,6 +190,8 @@ sources:
 
   describe("local SVG file not found", () => {
     beforeEach(async () => {
+      const iconsDir = path.join(tempDir, "icons", "custom");
+      const iconsDirNormalized = iconsDir.replace(/\\/g, "/");
       const registryPath = path.join(tempDir, "registry.yaml");
       await fs.writeFile(
         registryPath,
@@ -197,10 +200,10 @@ sources:
   - name: custom
     type: local-svg
     prefix: custom
-    path: "${path.join(tempDir, "icons", "custom")}"
+    path: "${iconsDirNormalized}"
 `
       );
-      await fs.mkdir(path.join(tempDir, "icons", "custom"), { recursive: true });
+      await fs.mkdir(iconsDir, { recursive: true });
       await loader.load(registryPath);
       resolver = new IconResolver(loader);
     });

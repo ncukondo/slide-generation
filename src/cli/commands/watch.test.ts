@@ -130,7 +130,9 @@ describe('watch command - file watching', () => {
     const inputPath = '/path/to/presentation.yaml';
     const outputPath = getDefaultOutputPath(inputPath);
 
-    expect(outputPath).toBe('/path/to/presentation.md');
+    // Normalize path separators for cross-platform comparison
+    const normalizedOutput = outputPath.replace(/\\/g, '/');
+    expect(normalizedOutput).toBe('/path/to/presentation.md');
   });
 
   it('should respect custom debounce value', () => {
