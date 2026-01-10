@@ -6,8 +6,8 @@ import { Command } from 'commander';
 
 describe('CLI: Validate Command', () => {
   const testDir = './test-cli-validate';
-  const templatesDir = join(testDir, 'templates');
-  const iconsDir = join(testDir, 'icons');
+  const templatesDir = join(testDir, 'templates').replace(/\\/g, '/');
+  const iconsDir = join(testDir, 'icons').replace(/\\/g, '/');
 
   beforeEach(() => {
     mkdirSync(testDir, { recursive: true });
