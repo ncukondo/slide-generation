@@ -1,0 +1,219 @@
+# Corporate Quarterly Report Example
+# This example demonstrates slides for business presentations
+
+meta:
+  title: Q4 2024 Business Review
+  author: Business Operations Team
+  date: "2024-01-15"
+  theme: corporate
+
+slides:
+  # Title slide
+  - template: title
+    content:
+      title: Q4 2024 Business Review
+      subtitle: Annual Performance Summary
+      author: Business Operations Team
+      date: January 2024
+      affiliation: ACME Corporation
+
+  # Executive summary
+  - template: section
+    content:
+      title: Executive Summary
+      subtitle: Key Highlights
+
+  # Key metrics
+  - template: three-column
+    content:
+      title: Key Performance Indicators
+      columns:
+        - title: Revenue
+          content: |
+            **$12.5M**
+            +15% YoY
+        - title: Customers
+          content: |
+            **2,450**
+            +320 new
+        - title: NPS Score
+          content: |
+            **72**
+            +8 points
+
+  # Quarterly highlights
+  - template: bullet-list
+    content:
+      title: Q4 Highlights
+      items:
+        - Record revenue of $12.5M, exceeding target by 8%
+        - Successfully launched 3 new product lines
+        - Expanded to 5 new international markets
+        - Employee satisfaction score increased to 4.2/5
+
+  # Financial overview section
+  - template: section
+    content:
+      title: Financial Overview
+      subtitle: Revenue and Growth
+
+  # Revenue breakdown
+  - template: table
+    content:
+      title: Revenue by Segment
+      headers: ["Segment", "Q4 Revenue", "Growth", "% of Total"]
+      align: ["left", "right", "right", "right"]
+      rows:
+        - ["Enterprise", "$5.2M", "+22%", "42%"]
+        - ["SMB", "$4.1M", "+12%", "33%"]
+        - ["Consumer", "$2.4M", "+8%", "19%"]
+        - ["Services", "$0.8M", "+5%", "6%"]
+
+  # Comparison
+  - template: comparison-table
+    content:
+      title: Year-over-Year Comparison
+      items: ["Q4 2023", "Q4 2024", "Change"]
+      criteria:
+        - label: "Revenue"
+          values: ["$10.9M", "$12.5M", "+15%"]
+        - label: "Gross Margin"
+          values: ["62%", "68%", "+6pp"]
+        - label: "Operating Costs"
+          values: ["$4.2M", "$4.0M", "-5%"]
+        - label: "Net Income"
+          values: ["$2.5M", "$4.5M", "+80%"]
+      highlightColumn: 2
+
+  # Operations section
+  - template: section
+    content:
+      title: Operations
+      subtitle: Process and Efficiency
+
+  # Process flow
+  - template: flow-chart
+    content:
+      title: New Customer Onboarding Process
+      direction: horizontal
+      steps:
+        - label: "Lead"
+          type: start
+          color: "#2196F3"
+        - label: "Qualification"
+          type: process
+        - label: "Demo"
+          type: process
+        - label: "Contract"
+          type: process
+        - label: "Onboarding"
+          type: process
+        - label: "Success"
+          type: end
+          color: "#4CAF50"
+
+  # Efficiency matrix
+  - template: matrix
+    content:
+      title: Strategic Priority Matrix
+      xAxis:
+        label: Effort
+        low: Low
+        high: High
+      yAxis:
+        label: Impact
+        low: Low
+        high: High
+      quadrants:
+        - label: "Strategic"
+          color: "#C8E6C9"
+          items: ["Market Expansion", "Product Innovation"]
+        - label: "Quick Wins"
+          color: "#BBDEFB"
+          items: ["Process Automation", "Training"]
+        - label: "Low Priority"
+          color: "#F5F5F5"
+          items: ["Legacy Updates"]
+        - label: "Major Projects"
+          color: "#FFF9C4"
+          items: ["Platform Migration"]
+
+  # Team section
+  - template: section
+    content:
+      title: Team & Culture
+      subtitle: People First
+
+  # Organization
+  - template: hierarchy
+    content:
+      title: Leadership Team
+      root:
+        label: CEO
+        children:
+          - label: CTO
+            children:
+              - label: Engineering
+              - label: Product
+          - label: CFO
+            children:
+              - label: Finance
+              - label: Operations
+          - label: CMO
+            children:
+              - label: Marketing
+              - label: Sales
+
+  # Plans section
+  - template: section
+    content:
+      title: 2025 Outlook
+      subtitle: Strategic Priorities
+
+  # Timeline
+  - template: timeline
+    content:
+      title: 2025 Roadmap
+      direction: horizontal
+      events:
+        - date: "Q1"
+          label: "Foundation"
+          description: "Infrastructure upgrades"
+          color: "#4CAF50"
+        - date: "Q2"
+          label: "Launch"
+          description: "New product release"
+          color: "#2196F3"
+        - date: "Q3"
+          label: "Scale"
+          description: "Market expansion"
+          color: "#FF9800"
+        - date: "Q4"
+          label: "Optimize"
+          description: "Efficiency focus"
+          color: "#9C27B0"
+
+  # Goals
+  - template: numbered-list
+    content:
+      title: 2025 Strategic Goals
+      items:
+        - Achieve $60M annual revenue (20% growth)
+        - Expand to 10 new markets
+        - Launch AI-powered product suite
+        - Improve customer retention to 95%
+        - Reduce operational costs by 15%
+
+  # Quote
+  - template: quote
+    content:
+      title: Looking Ahead
+      text: "Our mission is to deliver exceptional value to our customers while building a sustainable, high-growth business."
+      author: "CEO, ACME Corporation"
+
+  # Thank you
+  - template: title
+    content:
+      title: Thank You
+      subtitle: Questions & Discussion
+      author: business@acme.com

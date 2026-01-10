@@ -1,0 +1,172 @@
+# Academic Research Presentation Example
+# This example demonstrates slides for academic/research presentations
+
+meta:
+  title: Research Findings Presentation
+  author: Dr. Jane Smith
+  date: "2024-03-15"
+  theme: academic
+
+slides:
+  # Title slide
+  - template: title
+    content:
+      title: Novel Approaches to Machine Learning
+      subtitle: A Comprehensive Study
+      author: Dr. Jane Smith
+      date: "March 2024"
+      affiliation: University Research Lab
+
+  # Section: Background
+  - template: section
+    content:
+      title: Background
+      subtitle: Research Context
+
+  # Research motivation
+  - template: bullet-list
+    content:
+      title: Research Motivation
+      items:
+        - Current methods have limitations in scalability
+        - Need for more efficient algorithms
+        - Growing demand for real-time processing
+        - Gap in existing literature
+
+  # Timeline of related work
+  - template: timeline
+    content:
+      title: Evolution of the Field
+      direction: horizontal
+      events:
+        - date: "2018"
+          label: "Initial Framework"
+          description: "First proposed architecture"
+        - date: "2020"
+          label: "Major Breakthrough"
+          description: "Performance improvements"
+        - date: "2022"
+          label: "Scaling Solutions"
+          description: "Enterprise adoption"
+        - date: "2024"
+          label: "Our Contribution"
+          description: "Novel approach"
+
+  # Section: Methodology
+  - template: section
+    content:
+      title: Methodology
+      subtitle: Our Approach
+
+  # Flow chart of methodology
+  - template: flow-chart
+    content:
+      title: Research Process
+      direction: horizontal
+      steps:
+        - label: "Data Collection"
+          type: start
+          color: "#4CAF50"
+        - label: "Preprocessing"
+          type: process
+        - label: "Model Training"
+          type: process
+        - label: "Evaluation"
+          type: process
+        - label: "Results"
+          type: end
+          color: "#9C27B0"
+
+  # Code example
+  - template: code-block
+    content:
+      title: Algorithm Implementation
+      language: python
+      filename: model.py
+      code: |
+        def train_model(data, epochs=100):
+            model = NeuralNetwork(layers=[64, 32, 16])
+            optimizer = Adam(lr=0.001)
+
+            for epoch in range(epochs):
+                loss = model.train_step(data)
+                if epoch % 10 == 0:
+                    print(f"Epoch {epoch}: Loss = {loss:.4f}")
+
+            return model
+
+  # Section: Results
+  - template: section
+    content:
+      title: Results
+      subtitle: Key Findings
+
+  # Results table
+  - template: table
+    content:
+      title: Performance Comparison
+      headers: ["Method", "Accuracy", "Speed (ms)", "Memory (MB)"]
+      align: ["left", "right", "right", "right"]
+      rows:
+        - ["Baseline", "78.5%", "245", "512"]
+        - ["Previous SOTA", "84.2%", "180", "768"]
+        - ["Our Method", "91.3%", "95", "384"]
+
+  # Comparison matrix
+  - template: matrix
+    content:
+      title: Trade-off Analysis
+      xAxis:
+        label: Computational Cost
+        low: Low
+        high: High
+      yAxis:
+        label: Accuracy
+        low: Low
+        high: High
+      quadrants:
+        - label: "Ideal Zone"
+          color: "#C8E6C9"
+          items: ["Our Method"]
+        - label: "High Performance"
+          color: "#BBDEFB"
+          items: ["Deep Learning", "Ensemble"]
+        - label: "Efficient"
+          color: "#FFF9C4"
+          items: ["Linear Models"]
+        - label: "Avoid"
+          color: "#FFCDD2"
+          items: ["Brute Force"]
+
+  # Section: Conclusion
+  - template: section
+    content:
+      title: Conclusion
+      subtitle: Summary and Future Work
+
+  # Key findings
+  - template: numbered-list
+    content:
+      title: Key Contributions
+      items:
+        - Proposed a novel algorithm with 91.3% accuracy
+        - Reduced computational cost by 47%
+        - Released open-source implementation
+        - Established new benchmark for the field
+
+  # Future work
+  - template: bullet-list
+    content:
+      title: Future Directions
+      items:
+        - Scale to larger datasets
+        - Explore transfer learning approaches
+        - Real-world deployment studies
+        - Cross-domain applications
+
+  # Thank you slide
+  - template: title
+    content:
+      title: Thank You
+      subtitle: Questions?
+      author: jane.smith@university.edu

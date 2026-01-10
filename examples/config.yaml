@@ -1,0 +1,14 @@
+# Configuration for examples
+# Run examples from the examples/ directory
+
+templates:
+  builtin: "../tests/fixtures/templates"
+
+icons:
+  registry: "../icons/registry.yaml"
+
+references:
+  enabled: false
+
+output:
+  theme: default

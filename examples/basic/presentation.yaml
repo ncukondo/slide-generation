@@ -1,0 +1,90 @@
+# Basic Presentation Example
+# This example demonstrates fundamental slide types
+
+meta:
+  title: Basic Presentation
+  author: Your Name
+  date: "2024-03-15"
+  theme: default
+
+slides:
+  # Title slide
+  - template: title
+    content:
+      title: Welcome to Our Presentation
+      subtitle: A Simple Introduction
+      author: Your Name
+      date: "2024-03-15"
+
+  # Section divider
+  - template: section
+    content:
+      title: Introduction
+      subtitle: Getting started
+
+  # Bullet points
+  - template: bullet-list
+    content:
+      title: Key Points
+      items:
+        - First important point
+        - Second important point
+        - Third important point
+        - Fourth important point
+
+  # Numbered list
+  - template: numbered-list
+    content:
+      title: Step by Step Guide
+      items:
+        - Gather requirements
+        - Design the solution
+        - Implement the code
+        - Test thoroughly
+        - Deploy to production
+
+  # Two-column layout
+  - template: two-column
+    content:
+      title: Comparison
+      left:
+        - Advantage 1
+        - Advantage 2
+        - Advantage 3
+      right:
+        - Consideration 1
+        - Consideration 2
+        - Consideration 3
+      ratio: "50:50"
+
+  # Table
+  - template: table
+    content:
+      title: Data Overview
+      headers: ["Feature", "Status", "Priority"]
+      align: ["left", "center", "center"]
+      rows:
+        - ["Feature A", "Complete", "High"]
+        - ["Feature B", "In Progress", "Medium"]
+        - ["Feature C", "Planned", "Low"]
+
+  # Quote
+  - template: quote
+    content:
+      title: Inspiration
+      text: "The only way to do great work is to love what you do."
+      author: "Steve Jobs"
+
+  # Section divider
+  - template: section
+    content:
+      title: Summary
+      subtitle: Wrapping up
+
+  # Final slide
+  - template: bullet-list
+    content:
+      title: Thank You
+      items:
+        - Questions?
+        - Contact us at example@example.com

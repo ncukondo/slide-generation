@@ -58,14 +58,14 @@
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 21 | [E2E Tests & Documentation](./21-e2e-tests-polish.md) | All | Pending |
+| 21 | [E2E Tests & Documentation](./completed/21-e2e-tests-polish.md) | All | Done |
 
 ## Progress Summary
 
 - **Total Tasks**: 21
-- **Completed**: 20
+- **Completed**: 21
 - **In Progress**: 0
-- **Pending**: 1
+- **Pending**: 0
 
 ## Architecture Overview
 
@@ -99,6 +99,4 @@
 
 ## Known Issues
 
-- **Lint警告（未修正）**:
-  - `tests/e2e/cli-watch.test.ts:5` - 未使用のインポート `Command`
-  - `tests/cli/convert.test.ts:166` - 未使用のcatchパラメータ `error`
+- なし（全てのLint警告は修正済み）
