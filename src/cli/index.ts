@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { VERSION } from '../index.js';
 import { createConvertCommand } from './commands/convert.js';
 import { createValidateCommand } from './commands/validate.js';
+import { createTemplatesCommand } from './commands/templates.js';
 
 const program = new Command();
 
@@ -18,6 +19,9 @@ program.addCommand(createConvertCommand());
 // Add validate command
 program.addCommand(createValidateCommand());
 
+// Add templates command
+program.addCommand(createTemplatesCommand());
+
 // Placeholder commands - will be implemented in later tasks
 program
   .command('preview <input>')
@@ -25,14 +29,6 @@ program
   .action((input) => {
     console.log(`Previewing ${input}...`);
     console.log('Note: preview command not yet implemented');
-  });
-
-program
-  .command('templates')
-  .description('List available templates')
-  .action(() => {
-    console.log('Available templates:');
-    console.log('Note: templates command not yet implemented');
   });
 
 program
