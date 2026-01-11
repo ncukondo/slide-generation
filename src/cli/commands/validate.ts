@@ -3,7 +3,7 @@ import { access, readFile } from 'fs/promises';
 import { dirname } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, stringify as yamlStringify } from 'yaml';
 import { Parser, ParseError, ValidationError, type ParseResultWithLines } from '../../core/parser';
 import { TemplateLoader } from '../../templates/loader';
 import { IconRegistryLoader } from '../../icons/registry';
@@ -115,31 +115,13 @@ export function formatLlmValidationResult(
  * Format an example object as YAML string with indentation
  */
 function formatExampleAsYaml(example: Record<string, unknown>, indent: number): string {
-  const lines: string[] = [];
+  const yaml = yamlStringify(example, { indent: 2 });
   const spaces = ' '.repeat(indent);
-
-  for (const [key, value] of Object.entries(example)) {
-    if (Array.isArray(value)) {
-      lines.push(`${spaces}${key}:`);
-      for (const item of value) {
-        if (typeof item === 'object' && item !== null) {
-          const objStr = JSON.stringify(item).replace(/"/g, "'");
-          lines.push(`${spaces}  - ${objStr}`);
-        } else {
-          lines.push(`${spaces}  - "${item}"`);
-        }
-      }
-    } else if (typeof value === 'object' && value !== null) {
-      lines.push(`${spaces}${key}:`);
-      lines.push(formatExampleAsYaml(value as Record<string, unknown>, indent + 2));
-    } else if (typeof value === 'string') {
-      lines.push(`${spaces}${key}: "${value}"`);
-    } else {
-      lines.push(`${spaces}${key}: ${value}`);
-    }
-  }
-
-  return lines.join('\n');
+  return yaml
+    .split('\n')
+    .filter(line => line.trim() !== '')
+    .map(line => spaces + line)
+    .join('\n');
 }
 
 /**
@@ -357,8 +339,7 @@ async function executeValidate(
       const slideNumber = i + 1;
       const slideLine = result.slideLines[i];
       const contentStr = JSON.stringify(slide.content);
-      let match;
-      while ((match = iconPattern.exec(contentStr)) !== null) {
+      for (const match of contentStr.matchAll(iconPattern)) {
         const iconRef = match[1]!;
         // Try to resolve the icon
         const resolved = iconRegistry.resolveAlias(iconRef);
@@ -401,8 +382,7 @@ async function executeValidate(
     const references: Set<string> = new Set();
     for (const slide of presentation.slides) {
       const contentStr = JSON.stringify(slide.content);
-      let match;
-      while ((match = citationPattern.exec(contentStr)) !== null) {
+      for (const match of contentStr.matchAll(citationPattern)) {
         references.add(match[1]!);
       }
     }
