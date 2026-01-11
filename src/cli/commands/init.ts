@@ -4,10 +4,25 @@ import { join, resolve } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import { ExitCode } from './convert';
+import {
+  generateSkillMd,
+  generateClaudeMd,
+  generateAgentsMd,
+  generateOpenCodeAgent,
+  generateTemplatesRef,
+  generateWorkflowsRef,
+  generateSlideCreateCommand,
+  generateSlideValidateCommand,
+  generateSlidePreviewCommand,
+  generateSlideScreenshotCommand,
+  generateSlideThemeCommand,
+} from '../templates/ai';
 
 export interface InitOptions {
   template?: string;
   examples?: boolean;
+  aiConfig?: boolean;
+  skipMarpInstall?: boolean;
 }
 
 /**
@@ -19,6 +34,8 @@ export function createInitCommand(): Command {
     .argument('[directory]', 'Target directory', '.')
     .option('--template <name>', 'Initial template')
     .option('--no-examples', 'Do not create sample files')
+    .option('--no-ai-config', 'Do not create AI assistant config files')
+    .option('--skip-marp-install', 'Skip Marp CLI installation prompt')
     .action(async (directory: string, options: InitOptions) => {
       await executeInit(directory, options);
     });
@@ -34,6 +51,7 @@ export async function executeInit(
   const spinner = ora();
   const targetDir = resolve(directory);
   const includeExamples = options.examples !== false;
+  const includeAiConfig = options.aiConfig !== false;
 
   try {
     spinner.start(`Initializing project in ${targetDir}...`);
@@ -68,6 +86,11 @@ export async function executeInit(
       await writeFileIfNotExists(join(targetDir, 'presentation.yaml'), presentationContent);
     }
 
+    // Create AI config files
+    if (includeAiConfig) {
+      await generateAiConfig(targetDir);
+    }
+
     spinner.succeed(`Project initialized in ${targetDir}`);
 
     // Print summary
@@ -78,6 +101,14 @@ export async function executeInit(
     console.log(`  ${chalk.cyan('icons/custom/')} - Custom icons directory`);
     if (includeExamples) {
       console.log(`  ${chalk.cyan('presentation.yaml')} - Sample presentation`);
+    }
+    if (includeAiConfig) {
+      console.log(`  ${chalk.cyan('.skills/')} - AgentSkills configuration`);
+      console.log(`  ${chalk.cyan('CLAUDE.md')} - Claude Code configuration`);
+      console.log(`  ${chalk.cyan('AGENTS.md')} - OpenCode configuration`);
+      console.log(`  ${chalk.cyan('.cursorrules')} - Cursor configuration`);
+      console.log(`  ${chalk.cyan('.claude/commands/')} - Claude Code slash commands`);
+      console.log(`  ${chalk.cyan('.opencode/agent/')} - OpenCode agent configuration`);
     }
     console.log('');
     console.log(chalk.blue('Next steps:'));
@@ -103,6 +134,59 @@ async function writeFileIfNotExists(filePath: string, content: string): Promise<
     // File doesn't exist, create it
     await writeFile(filePath, content, 'utf-8');
   }
+}
+
+/**
+ * Generate AI configuration files
+ */
+async function generateAiConfig(targetDir: string): Promise<void> {
+  // Create directories
+  await mkdir(join(targetDir, '.skills', 'slide-assistant', 'references'), { recursive: true });
+  await mkdir(join(targetDir, '.skills', 'slide-assistant', 'scripts'), { recursive: true });
+  await mkdir(join(targetDir, '.claude', 'commands'), { recursive: true });
+  await mkdir(join(targetDir, '.opencode', 'agent'), { recursive: true });
+
+  // Generate AgentSkills (common)
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'SKILL.md'),
+    generateSkillMd()
+  );
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'references', 'templates.md'),
+    generateTemplatesRef()
+  );
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'references', 'workflows.md'),
+    generateWorkflowsRef()
+  );
+
+  // Generate Claude Code files
+  await writeFileIfNotExists(join(targetDir, 'CLAUDE.md'), generateClaudeMd());
+
+  // Generate commands
+  const commandGenerators: Record<string, () => string> = {
+    'slide-create': generateSlideCreateCommand,
+    'slide-validate': generateSlideValidateCommand,
+    'slide-preview': generateSlidePreviewCommand,
+    'slide-screenshot': generateSlideScreenshotCommand,
+    'slide-theme': generateSlideThemeCommand,
+  };
+  for (const [name, generator] of Object.entries(commandGenerators)) {
+    await writeFileIfNotExists(
+      join(targetDir, '.claude', 'commands', `${name}.md`),
+      generator()
+    );
+  }
+
+  // Generate OpenCode files
+  await writeFileIfNotExists(join(targetDir, 'AGENTS.md'), generateAgentsMd());
+  await writeFileIfNotExists(
+    join(targetDir, '.opencode', 'agent', 'slide.md'),
+    generateOpenCodeAgent()
+  );
+
+  // Generate Cursor files (same as AGENTS.md)
+  await writeFileIfNotExists(join(targetDir, '.cursorrules'), generateAgentsMd());
 }
 
 /**
