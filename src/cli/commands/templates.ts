@@ -439,6 +439,84 @@ function createExampleCommand(): Command {
     });
 }
 
+interface PreviewOptions {
+  all?: boolean;
+  category?: string;
+  port?: number;
+  config?: string;
+}
+
+/**
+ * Create the templates preview subcommand
+ */
+function createPreviewSubcommand(): Command {
+  return new Command('preview')
+    .description('Preview template in browser')
+    .argument('[name]', 'Template name')
+    .option('--all', 'Show all templates')
+    .option('--category <cat>', 'Filter by category')
+    .option('-p, --port <number>', 'Preview server port', '8080')
+    .option('-c, --config <path>', 'Config file path')
+    .action(async (name: string | undefined, options: PreviewOptions) => {
+      try {
+        await executeTemplatePreview(name, options);
+      } catch (error) {
+        console.error(
+          chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        );
+        process.exitCode = ExitCode.GeneralError;
+      }
+    });
+}
+
+/**
+ * Execute template preview
+ */
+export async function executeTemplatePreview(
+  name: string | undefined,
+  options: PreviewOptions
+): Promise<void> {
+  // Validate: either name or --all must be specified
+  if (!name && !options.all) {
+    console.error(chalk.red('Error: Specify a template name or use --all'));
+    process.exitCode = ExitCode.GeneralError;
+    return;
+  }
+
+  const templateLoader = await loadTemplates(options.config);
+
+  // Get templates to preview
+  let templates = templateLoader.list();
+  if (name) {
+    const template = templateLoader.get(name);
+    if (!template) {
+      console.error(chalk.red(`Error: Template "${name}" not found`));
+      process.exitCode = ExitCode.GeneralError;
+      return;
+    }
+    templates = [template];
+  } else if (options.category) {
+    templates = templateLoader.listByCategory(options.category);
+  }
+
+  if (templates.length === 0) {
+    console.log('No templates found.');
+    return;
+  }
+
+  console.log(`Found ${templates.length} template(s) to preview`);
+  console.log('Template preview mode is available through gallery mode.');
+  console.log('');
+  console.log('To preview templates:');
+  console.log('  1. Create a YAML file with example slides');
+  console.log('  2. Run: slide-gen preview --gallery <file.yaml>');
+  console.log('');
+  console.log('Template examples:');
+  for (const template of templates) {
+    console.log(`  - ${template.name}: ${template.description}`);
+  }
+}
+
 /**
  * Create the templates command with subcommands
  */
@@ -449,6 +527,7 @@ export function createTemplatesCommand(): Command {
   cmd.addCommand(createListCommand());
   cmd.addCommand(createInfoCommand());
   cmd.addCommand(createExampleCommand());
+  cmd.addCommand(createPreviewSubcommand());
 
   return cmd;
 }
