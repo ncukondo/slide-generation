@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { access, mkdir, readdir, unlink } from 'fs/promises';
 import { basename, dirname, join } from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import { Pipeline, PipelineError } from '../../core/pipeline';
@@ -85,26 +85,27 @@ export function checkMarpCliAvailable(): boolean {
 }
 
 /**
- * Build marp-cli command for taking screenshots
+ * Build marp-cli command arguments for taking screenshots
+ * Returns an array of arguments to be used with execFileSync
  */
-export function buildMarpCommand(
+export function buildMarpCommandArgs(
   markdownPath: string,
   outputDir: string,
   options: ScreenshotOptions
-): string {
+): string[] {
   const format = options.format || 'png';
-  const parts = ['npx', 'marp', `--images`, format];
+  const args = ['marp', '--images', format];
 
   // Calculate image scale if width is different from default
   if (options.width && options.width !== 1280) {
     const scale = options.width / 1280;
-    parts.push('--image-scale', String(scale));
+    args.push('--image-scale', String(scale));
   }
 
-  parts.push('-o', outputDir);
-  parts.push(markdownPath);
+  args.push('-o', outputDir);
+  args.push(markdownPath);
 
-  return parts.join(' ');
+  return args;
 }
 
 /**
@@ -141,6 +142,15 @@ export async function executeScreenshot(
     await access(inputPath);
   } catch {
     const message = `File not found: ${inputPath}`;
+    console.error(chalk.red(`Error: ${message}`));
+    errors.push(message);
+    process.exitCode = ExitCode.FileReadError;
+    return { success: false, errors };
+  }
+
+  // Validate input file extension
+  if (!/\.ya?ml$/i.test(inputPath)) {
+    const message = `Invalid file extension: ${inputPath} (expected .yaml or .yml)`;
     console.error(chalk.red(`Error: ${message}`));
     errors.push(message);
     process.exitCode = ExitCode.FileReadError;
@@ -200,9 +210,18 @@ export async function executeScreenshot(
     return { success: false, errors };
   }
 
-  // Generate markdown
+  // Generate markdown (supports .yaml, .yml, case-insensitive)
   spinner?.start(`Converting ${inputPath}...`);
-  const tempMdPath = inputPath.replace(/\.yaml$/, '.md');
+  const tempMdPath = inputPath.replace(/\.ya?ml$/i, '.md');
+
+  // Helper function to cleanup temporary markdown file
+  const cleanupTempFile = async () => {
+    try {
+      await unlink(tempMdPath);
+    } catch {
+      // Ignore cleanup errors
+    }
+  };
 
   try {
     await pipeline.runWithResult(inputPath, { outputPath: tempMdPath });
@@ -218,19 +237,20 @@ export async function executeScreenshot(
     console.error(chalk.red(`Error: ${message}`));
     errors.push(message);
     process.exitCode = ExitCode.ConversionError;
+    await cleanupTempFile();
     return { success: false, errors };
   }
 
   // Take screenshots with Marp CLI
   spinner?.start('Taking screenshots...');
-  const marpCommand = buildMarpCommand(tempMdPath, outputDir, options);
+  const marpArgs = buildMarpCommandArgs(tempMdPath, outputDir, options);
 
   if (options.verbose) {
-    console.log(`Running: ${marpCommand}`);
+    console.log(`Running: npx ${marpArgs.join(' ')}`);
   }
 
   try {
-    execSync(marpCommand, { stdio: options.verbose ? 'inherit' : 'pipe' });
+    execFileSync('npx', marpArgs, { stdio: options.verbose ? 'inherit' : 'pipe' });
     spinner?.succeed(`Screenshots saved to ${outputDir}`);
   } catch (error) {
     spinner?.fail('Failed to take screenshots');
@@ -239,6 +259,7 @@ export async function executeScreenshot(
     console.error(chalk.red(`Error: ${message}`));
     errors.push(message);
     process.exitCode = ExitCode.GeneralError;
+    await cleanupTempFile();
     return { success: false, errors };
   }
 
@@ -260,11 +281,15 @@ export async function executeScreenshot(
       console.error(chalk.red(`Error: ${filterResult.error}`));
       errors.push(filterResult.error || 'Filter failed');
       process.exitCode = ExitCode.GeneralError;
+      await cleanupTempFile();
       return { success: false, errors };
     }
 
     spinner?.succeed(`Kept slide ${options.slide}: ${filterResult.keptFile}`);
   }
+
+  // Cleanup temporary markdown file
+  await cleanupTempFile();
 
   console.log('');
   console.log(`Output: ${chalk.cyan(outputDir)}`);

@@ -39,42 +39,67 @@ describe('screenshot command', () => {
 });
 
 describe('screenshot command - marp integration', () => {
-  it('should build correct marp command for images', async () => {
-    const { buildMarpCommand } = await import('./screenshot');
+  it('should build correct marp command args for images', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
     const options: ScreenshotOptions = {
       format: 'png',
     };
 
-    const cmd = buildMarpCommand('/path/to/slides.md', '/output', options);
+    const args = buildMarpCommandArgs('/path/to/slides.md', '/output', options);
 
-    expect(cmd).toContain('marp');
-    expect(cmd).toContain('--images');
-    expect(cmd).toContain('png');
+    expect(args).toContain('marp');
+    expect(args).toContain('--images');
+    expect(args).toContain('png');
   });
 
   it('should support jpeg format', async () => {
-    const { buildMarpCommand } = await import('./screenshot');
+    const { buildMarpCommandArgs } = await import('./screenshot');
     const options: ScreenshotOptions = {
       format: 'jpeg',
     };
 
-    const cmd = buildMarpCommand('/path/to/slides.md', '/output', options);
+    const args = buildMarpCommandArgs('/path/to/slides.md', '/output', options);
 
-    expect(cmd).toContain('--images');
-    expect(cmd).toContain('jpeg');
+    expect(args).toContain('--images');
+    expect(args).toContain('jpeg');
   });
 
   it('should apply image scale based on width', async () => {
-    const { buildMarpCommand } = await import('./screenshot');
+    const { buildMarpCommandArgs } = await import('./screenshot');
     const options: ScreenshotOptions = {
       width: 1920,
       format: 'png',
     };
 
-    const cmd = buildMarpCommand('/path/to/slides.md', '/output', options);
+    const args = buildMarpCommandArgs('/path/to/slides.md', '/output', options);
 
-    expect(cmd).toContain('--image-scale');
-    expect(cmd).toContain('1.5'); // 1920/1280 = 1.5
+    expect(args).toContain('--image-scale');
+    expect(args).toContain('1.5'); // 1920/1280 = 1.5
+  });
+
+  it('should not apply image scale for default width', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = {
+      width: 1280,
+      format: 'png',
+    };
+
+    const args = buildMarpCommandArgs('/path/to/slides.md', '/output', options);
+
+    expect(args).not.toContain('--image-scale');
+  });
+
+  it('should handle paths with spaces correctly', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = {
+      format: 'png',
+    };
+
+    const args = buildMarpCommandArgs('/path/with spaces/slides.md', '/output dir', options);
+
+    // Args should contain exact paths without escaping (execFileSync handles this)
+    expect(args).toContain('/path/with spaces/slides.md');
+    expect(args).toContain('/output dir');
   });
 });
 
@@ -96,6 +121,29 @@ describe('screenshot command - execution', () => {
 
     const result = await executeScreenshot(nonExistentPath, {});
 
+    expect(result.success).toBe(false);
+    expect(result.errors.some((e) => e.includes('not found'))).toBe(true);
+  });
+
+  it('should reject non-YAML files', async () => {
+    const { executeScreenshot } = await import('./screenshot');
+    const txtPath = join(testDir, 'test.txt');
+    await writeFile(txtPath, 'hello');
+
+    const result = await executeScreenshot(txtPath, {});
+
+    expect(result.success).toBe(false);
+    expect(result.errors.some((e) => e.includes('Invalid file extension'))).toBe(true);
+  });
+
+  it('should accept .yml extension', async () => {
+    const { executeScreenshot } = await import('./screenshot');
+    const ymlPath = join(testDir, 'nonexistent.yml');
+
+    // File doesn't exist, but extension check should pass
+    const result = await executeScreenshot(ymlPath, {});
+
+    // Should fail with "not found" (passes extension check)
     expect(result.success).toBe(false);
     expect(result.errors.some((e) => e.includes('not found'))).toBe(true);
   });

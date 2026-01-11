@@ -5,7 +5,7 @@ import { execSync } from 'child_process';
 import {
   createScreenshotCommand,
   checkMarpCliAvailable,
-  buildMarpCommand,
+  buildMarpCommandArgs,
   filterToSpecificSlide,
 } from '../../src/cli/commands/screenshot';
 
@@ -86,41 +86,49 @@ references:
     });
   });
 
-  describe('buildMarpCommand', () => {
-    it('should build correct marp command for png', () => {
-      const cmd = buildMarpCommand('/path/to/slides.md', '/output', {
+  describe('buildMarpCommandArgs', () => {
+    it('should build correct marp command args for png', () => {
+      const args = buildMarpCommandArgs('/path/to/slides.md', '/output', {
         format: 'png',
       });
-      expect(cmd).toContain('marp');
-      expect(cmd).toContain('--images');
-      expect(cmd).toContain('png');
-      expect(cmd).toContain('-o');
-      expect(cmd).toContain('/output');
+      expect(args).toContain('marp');
+      expect(args).toContain('--images');
+      expect(args).toContain('png');
+      expect(args).toContain('-o');
+      expect(args).toContain('/output');
     });
 
-    it('should build correct marp command for jpeg', () => {
-      const cmd = buildMarpCommand('/path/to/slides.md', '/output', {
+    it('should build correct marp command args for jpeg', () => {
+      const args = buildMarpCommandArgs('/path/to/slides.md', '/output', {
         format: 'jpeg',
       });
-      expect(cmd).toContain('--images');
-      expect(cmd).toContain('jpeg');
+      expect(args).toContain('--images');
+      expect(args).toContain('jpeg');
     });
 
     it('should apply image scale for custom width', () => {
-      const cmd = buildMarpCommand('/path/to/slides.md', '/output', {
+      const args = buildMarpCommandArgs('/path/to/slides.md', '/output', {
         width: 1920,
         format: 'png',
       });
-      expect(cmd).toContain('--image-scale');
-      expect(cmd).toContain('1.5');
+      expect(args).toContain('--image-scale');
+      expect(args).toContain('1.5');
     });
 
     it('should not apply image scale for default width', () => {
-      const cmd = buildMarpCommand('/path/to/slides.md', '/output', {
+      const args = buildMarpCommandArgs('/path/to/slides.md', '/output', {
         width: 1280,
         format: 'png',
       });
-      expect(cmd).not.toContain('--image-scale');
+      expect(args).not.toContain('--image-scale');
+    });
+
+    it('should handle paths with spaces correctly', () => {
+      const args = buildMarpCommandArgs('/path/with spaces/slides.md', '/output dir', {
+        format: 'png',
+      });
+      expect(args).toContain('/path/with spaces/slides.md');
+      expect(args).toContain('/output dir');
     });
   });
 
