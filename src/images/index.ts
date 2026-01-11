@@ -23,3 +23,11 @@ export {
 
 // Loader exports
 export { ImageMetadataLoader } from "./metadata-loader";
+
+// Validator exports
+export {
+  ImageValidator,
+  type ImageValidationResult,
+  type ValidatePresentationOptions,
+  type ImageStats,
+} from "./validator";
