@@ -80,5 +80,8 @@
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
     "vitest": "^3.0.4"
+  },
+  "optionalDependencies": {
+    "@marp-team/marp-cli": "^4.1.0"
   }
 }
