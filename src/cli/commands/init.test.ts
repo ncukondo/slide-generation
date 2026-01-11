@@ -4,7 +4,7 @@ import { mkdir, rm, readFile, readdir, stat, access, writeFile } from 'fs/promis
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { Command } from 'commander';
-import { createInitCommand, executeInit } from './init';
+import { createInitCommand, executeInit, isMarpCliInstalled, detectPackageManager } from './init';
 
 describe('init command', () => {
   let testDir: string;
@@ -256,6 +256,56 @@ describe('init command', () => {
         'utf-8'
       );
       expect(content).toContain('Workflow Reference');
+    });
+  });
+
+  describe('Marp CLI installation helpers', () => {
+    it('should detect if Marp CLI is installed', () => {
+      const result = isMarpCliInstalled();
+      expect(typeof result).toBe('boolean');
+    });
+
+    it('should detect package manager', () => {
+      const pm = detectPackageManager();
+      expect(['npm', 'pnpm', 'yarn']).toContain(pm);
+    });
+
+    it('should detect pnpm when pnpm-lock.yaml exists', async () => {
+      const targetDir = join(testDir, 'pnpm-project');
+      await mkdir(targetDir, { recursive: true });
+      await writeFile(join(targetDir, 'pnpm-lock.yaml'), '');
+
+      const pm = detectPackageManager(targetDir);
+      expect(pm).toBe('pnpm');
+    });
+
+    it('should detect yarn when yarn.lock exists', async () => {
+      const targetDir = join(testDir, 'yarn-project');
+      await mkdir(targetDir, { recursive: true });
+      await writeFile(join(targetDir, 'yarn.lock'), '');
+
+      const pm = detectPackageManager(targetDir);
+      expect(pm).toBe('yarn');
+    });
+
+    it('should default to npm when no lock file exists', async () => {
+      const targetDir = join(testDir, 'npm-project');
+      await mkdir(targetDir, { recursive: true });
+
+      const pm = detectPackageManager(targetDir);
+      expect(pm).toBe('npm');
+    });
+
+    it('should skip Marp CLI info with --skip-marp-install', async () => {
+      const targetDir = join(testDir, 'skip-marp-test');
+      const consoleSpy = vi.spyOn(console, 'log');
+
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      // Should not show Marp CLI info
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).not.toContain('Marp CLI is recommended');
+      consoleSpy.mockRestore();
     });
   });
 });
