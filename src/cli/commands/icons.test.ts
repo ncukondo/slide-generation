@@ -279,4 +279,67 @@ aliases:
       expect(subcommands).toContain('sync');
     });
   });
+
+  describe('extractIconReferences', () => {
+    it('should extract icon references from presentation', async () => {
+      const { extractIconReferences } = await import('./icons.js');
+      const presentation = {
+        meta: { title: 'Test' },
+        slides: [
+          { template: 'bullet-list', title: 'Test', items: ['item1'], icon: 'planning' },
+          { template: 'cycle-diagram', nodes: [{ label: 'A', icon: 'success' }, { label: 'B', icon: 'warning' }] },
+        ],
+      };
+
+      const icons = extractIconReferences(presentation);
+      expect(icons).toContain('planning');
+      expect(icons).toContain('success');
+      expect(icons).toContain('warning');
+    });
+
+    it('should return unique icons only', async () => {
+      const { extractIconReferences } = await import('./icons.js');
+      const presentation = {
+        meta: { title: 'Test' },
+        slides: [
+          { template: 'bullet-list', icon: 'planning' },
+          { template: 'bullet-list', icon: 'planning' },
+        ],
+      };
+
+      const icons = extractIconReferences(presentation);
+      expect(icons).toEqual(['planning']);
+    });
+
+    it('should handle presentation without icons', async () => {
+      const { extractIconReferences } = await import('./icons.js');
+      const presentation = {
+        meta: { title: 'Test' },
+        slides: [
+          { template: 'title', title: 'Hello' },
+        ],
+      };
+
+      const icons = extractIconReferences(presentation);
+      expect(icons).toEqual([]);
+    });
+  });
+
+  describe('isExternalSource', () => {
+    it('should identify external sources', async () => {
+      const { isExternalSource } = await import('./icons.js');
+
+      expect(isExternalSource('health')).toBe(true);
+      expect(isExternalSource('ms')).toBe(true);
+      expect(isExternalSource('hero')).toBe(true);
+    });
+
+    it('should identify local sources', async () => {
+      const { isExternalSource } = await import('./icons.js');
+
+      expect(isExternalSource('fetched')).toBe(false);
+      expect(isExternalSource('custom')).toBe(false);
+      expect(isExternalSource('mi')).toBe(false);
+    });
+  });
 });

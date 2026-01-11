@@ -50,6 +50,52 @@ interface SyncOptions {
 }
 
 /**
+ * External sources that require fetching
+ */
+const EXTERNAL_SOURCES = ['health', 'ms', 'hero', 'iconify'];
+
+/**
+ * Check if a source prefix is external (requires fetching)
+ */
+export function isExternalSource(prefix: string): boolean {
+  return EXTERNAL_SOURCES.includes(prefix);
+}
+
+/**
+ * Extract all icon references from a presentation
+ */
+export function extractIconReferences(presentation: unknown): string[] {
+  const icons = new Set<string>();
+
+  function extractFromValue(value: unknown): void {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          extractFromValue(item);
+        }
+      } else {
+        const obj = value as Record<string, unknown>;
+        // Check for icon property
+        if (typeof obj['icon'] === 'string') {
+          icons.add(obj['icon']);
+        }
+        // Recursively check all properties
+        for (const key of Object.keys(obj)) {
+          extractFromValue(obj[key]);
+        }
+      }
+    }
+  }
+
+  extractFromValue(presentation);
+  return Array.from(icons);
+}
+
+/**
  * Format icon sources for table output
  */
 function formatTableSourceList(sources: IconSource[]): string {
@@ -528,6 +574,12 @@ function createAddCommand(): Command {
     });
 }
 
+interface IconStatus {
+  alias: string;
+  resolved: string;
+  status: 'local' | 'external' | 'missing';
+}
+
 /**
  * Create the icons sync subcommand
  */
@@ -539,14 +591,119 @@ function createSyncCommand(): Command {
     .option('-c, --config <path>', 'Config file path')
     .action(async (input: string, options: SyncOptions) => {
       try {
-        // TODO: Full implementation in Step 4
-        console.log(chalk.blue('Icon sync analysis for:'), input);
-
-        if (options.localize) {
-          console.log(chalk.blue('Localizing external icons...'));
+        // Load presentation
+        let presentationContent: string;
+        try {
+          presentationContent = await fs.readFile(input, 'utf-8');
+        } catch {
+          console.error(chalk.red(`Error: File not found: ${input}`));
+          process.exitCode = ExitCode.GeneralError;
+          return;
         }
 
-        console.log(chalk.dim('Full sync implementation coming in next step.'));
+        const presentation = parseYaml(presentationContent);
+
+        // Load registry
+        const registryPath = await getRegistryPath(options.config);
+        const registry = new IconRegistryLoader();
+        try {
+          await registry.load(registryPath);
+        } catch {
+          console.error(chalk.red('Error: No icon registry found'));
+          process.exitCode = ExitCode.GeneralError;
+          return;
+        }
+
+        // Extract icons from presentation
+        const usedIcons = extractIconReferences(presentation);
+
+        if (usedIcons.length === 0) {
+          console.log(chalk.dim('No icons found in presentation.'));
+          return;
+        }
+
+        // Analyze each icon
+        const report = {
+          local: [] as IconStatus[],
+          external: [] as IconStatus[],
+          missing: [] as string[],
+        };
+
+        for (const icon of usedIcons) {
+          const resolved = registry.resolveAlias(icon);
+          const parsed = registry.parseIconReference(resolved);
+
+          if (!parsed) {
+            // Not a valid icon reference
+            report.missing.push(icon);
+            continue;
+          }
+
+          const source = registry.getSource(parsed.prefix);
+          if (!source) {
+            report.missing.push(icon);
+            continue;
+          }
+
+          if (isExternalSource(parsed.prefix)) {
+            report.external.push({ alias: icon, resolved, status: 'external' });
+          } else {
+            report.local.push({ alias: icon, resolved, status: 'local' });
+          }
+        }
+
+        // Output report
+        console.log(chalk.bold('\nIcon Sync Report'));
+        console.log('─'.repeat(40));
+
+        if (report.local.length > 0) {
+          console.log(chalk.green(`\n✓ Local icons (${report.local.length}):`));
+          for (const icon of report.local) {
+            console.log(`  ${icon.alias} -> ${icon.resolved}`);
+          }
+        }
+
+        if (report.external.length > 0) {
+          console.log(chalk.yellow(`\n⚠ External icons (${report.external.length}):`));
+          for (const icon of report.external) {
+            console.log(`  ${icon.alias} -> ${icon.resolved}`);
+          }
+        }
+
+        if (report.missing.length > 0) {
+          console.log(chalk.red(`\n✗ Missing icons (${report.missing.length}):`));
+          for (const icon of report.missing) {
+            console.log(`  ${icon}`);
+          }
+        }
+
+        // Localize external icons if requested
+        if (options.localize && report.external.length > 0) {
+          console.log(chalk.blue('\nLocalizing external icons...'));
+
+          const registryDir = path.dirname(registryPath);
+          const fetchedDir = path.join(registryDir, 'fetched');
+          const fetcher = new IconFetcher({ fetchedDir });
+
+          for (const icon of report.external) {
+            try {
+              await fetcher.fetchAndSave(icon.resolved);
+              const parsed = registry.parseIconReference(icon.resolved);
+              if (parsed) {
+                const setDir = fetcher.getIconifySet(parsed.prefix);
+                const localRef = `fetched:${setDir}/${parsed.name}`;
+                await updateAliasInRegistry(registryPath, icon.alias, localRef);
+                console.log(chalk.green(`  ✓ ${icon.alias} -> ${localRef}`));
+              }
+            } catch (error) {
+              console.log(chalk.red(`  ✗ ${icon.alias}: ${error instanceof Error ? error.message : 'Unknown error'}`));
+            }
+          }
+
+          console.log(chalk.green('\nDone! External icons have been saved locally.'));
+        } else if (report.external.length > 0) {
+          console.log(chalk.dim('\nRun with --localize to save external icons locally.'));
+        }
       } catch (error) {
         console.error(
           chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
