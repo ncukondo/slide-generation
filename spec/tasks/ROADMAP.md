@@ -128,3 +128,7 @@
 - `src/icons/cache.test.ts` の "fetches again if cache expired" テストが不安定（タイミング依存）
   - 原因: 1秒TTL + 1100ms待機がテスト環境で不安定
   - 修正案: 待機時間を増やすか `vi.useFakeTimers()` を使用
+
+- `tests/e2e/cli-watch.test.ts` がWindowsでタイムアウト
+  - 原因: Windowsでのファイル監視の初期化が遅い
+  - 修正案: タイムアウトを増やすか、Windowsでスキップする
