@@ -30,7 +30,7 @@ references:
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  it('should convert file initially when watch starts', { timeout: 10000 }, async () => {
+  it('should convert file initially when watch starts', { timeout: 30000 }, async () => {
     const inputPath = join(fixturesDir, 'presentations/simple.yaml');
     const outputPath = join(testDir, 'output.md');
     const configPath = join(testDir, 'config.yaml');
@@ -38,15 +38,16 @@ references:
     // Use abort controller to stop watch immediately after initial conversion
     const controller = new AbortController();
 
-    // Start watch with immediate abort after 100ms to allow initial conversion
+    // Start watch with immediate abort after initial conversion
+    // Windows file watching initialization can be slow
     const watchPromise = executeWatch(inputPath, {
       output: outputPath,
       config: configPath,
       signal: controller.signal,
     });
 
-    // Wait a bit for initial conversion
-    await new Promise((r) => setTimeout(r, 500));
+    // Wait for initial conversion (longer for Windows)
+    await new Promise((r) => setTimeout(r, 2000));
     controller.abort();
 
     const result = await watchPromise;
@@ -71,7 +72,7 @@ references:
     expect(result.errors.some((e) => e.includes('not found'))).toBe(true);
   });
 
-  it('should use default output path', async () => {
+  it('should use default output path', { timeout: 30000 }, async () => {
     // Create a simple presentation
     const presentation = `
 meta:
@@ -92,7 +93,8 @@ slides:
       signal: controller.signal,
     });
 
-    await new Promise((r) => setTimeout(r, 500));
+    // Wait for initial conversion (longer for Windows)
+    await new Promise((r) => setTimeout(r, 2000));
     controller.abort();
 
     await watchPromise;
