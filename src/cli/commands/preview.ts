@@ -24,6 +24,99 @@ export interface PreviewResult {
   errors: string[];
 }
 
+export interface SlideInfo {
+  path: string;
+  title: string;
+  index: number;
+}
+
+/**
+ * Generate HTML for gallery view with slide thumbnails
+ */
+export function generateGalleryHtml(slides: SlideInfo[]): string {
+  const slideItems =
+    slides.length > 0
+      ? slides
+          .map(
+            (s) => `
+      <div class="slide" onclick="showSlide(${s.index}, '${s.path}')">
+        <img src="${s.path}" alt="Slide ${s.index}">
+        <div class="slide-title">${s.title}</div>
+      </div>
+    `
+          )
+          .join('')
+      : '<p class="no-slides">No slides available</p>';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Slide Gallery</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    h1 { text-align: center; padding: 24px; color: #333; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+    .slide { cursor: pointer; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; transition: transform 0.2s, box-shadow 0.2s; }
+    .slide:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .slide img { width: 100%; height: auto; display: block; }
+    .slide-title { padding: 12px; text-align: center; font-size: 14px; color: #666; border-top: 1px solid #eee; }
+    .no-slides { text-align: center; padding: 40px; color: #999; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+    .modal-nav { position: absolute; top: 50%; color: white; font-size: 60px; cursor: pointer; user-select: none; }
+    .modal-nav.prev { left: 20px; }
+    .modal-nav.next { right: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Slide Gallery</h1>
+  <div class="gallery">
+    ${slideItems}
+  </div>
+  <div class="modal" id="modal" onclick="hideSlide(event)">
+    <span class="modal-close" onclick="hideSlide(event)">&times;</span>
+    <span class="modal-nav prev" onclick="navigateSlide(event, -1)">&lt;</span>
+    <img id="modal-img" src="">
+    <span class="modal-nav next" onclick="navigateSlide(event, 1)">&gt;</span>
+  </div>
+  <script>
+    const slides = ${JSON.stringify(slides)};
+    let currentIndex = 0;
+
+    function showSlide(index, path) {
+      currentIndex = slides.findIndex(s => s.index === index);
+      document.getElementById('modal-img').src = path;
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function hideSlide(event) {
+      if (event.target.classList.contains('modal') || event.target.classList.contains('modal-close')) {
+        document.getElementById('modal').classList.remove('active');
+      }
+    }
+
+    function navigateSlide(event, direction) {
+      event.stopPropagation();
+      currentIndex = (currentIndex + direction + slides.length) % slides.length;
+      const slide = slides[currentIndex];
+      document.getElementById('modal-img').src = slide.path;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('modal');
+      if (!modal.classList.contains('active')) return;
+      if (e.key === 'Escape') modal.classList.remove('active');
+      if (e.key === 'ArrowLeft') navigateSlide(e, -1);
+      if (e.key === 'ArrowRight') navigateSlide(e, 1);
+    });
+  </script>
+</body>
+</html>`;
+}
+
 /**
  * Check if marp-cli is available in the system
  * Uses 'marp --version' directly instead of 'npx marp --version'

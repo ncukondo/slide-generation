@@ -4,7 +4,12 @@ import { mkdir, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { Command } from 'commander';
-import { createPreviewCommand, PreviewOptions } from './preview';
+import {
+  createPreviewCommand,
+  PreviewOptions,
+  generateGalleryHtml,
+  SlideInfo,
+} from './preview';
 
 describe('preview command', () => {
   let testDir: string;
@@ -111,6 +116,44 @@ describe('preview command - execution', () => {
 
     expect(tempPath).toContain('presentation');
     expect(tempPath).toContain('.md');
+  });
+});
+
+describe('generateGalleryHtml', () => {
+  it('should generate HTML with thumbnails', () => {
+    const slides: SlideInfo[] = [
+      { path: 'slide-001.png', title: 'Title', index: 1 },
+      { path: 'slide-002.png', title: 'Content', index: 2 },
+    ];
+    const html = generateGalleryHtml(slides);
+    expect(html).toContain('slide-001.png');
+    expect(html).toContain('slide-002.png');
+    expect(html).toContain('gallery');
+  });
+
+  it('should include slide titles', () => {
+    const slides: SlideInfo[] = [
+      { path: 'slide-001.png', title: 'Introduction', index: 1 },
+    ];
+    const html = generateGalleryHtml(slides);
+    expect(html).toContain('Introduction');
+  });
+
+  it('should generate valid HTML structure', () => {
+    const slides: SlideInfo[] = [
+      { path: 'slide-001.png', title: 'Test', index: 1 },
+    ];
+    const html = generateGalleryHtml(slides);
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain('<html>');
+    expect(html).toContain('</html>');
+    expect(html).toContain('Slide Gallery');
+  });
+
+  it('should handle empty slides array', () => {
+    const html = generateGalleryHtml([]);
+    expect(html).toContain('gallery');
+    expect(html).toContain('No slides');
   });
 });
 
