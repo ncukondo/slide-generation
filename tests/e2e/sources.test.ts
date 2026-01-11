@@ -77,7 +77,8 @@ describe('E2E: Source Management', () => {
     const data = await manager.load();
 
     expect(data.project.setup_pattern).toBe('A');
-    expect(data.project.original_source).toBe(testMaterialsDir);
+    // Use path.resolve for cross-platform path comparison
+    expect(data.project.original_source).toBe(path.resolve(testMaterialsDir));
     expect(data.sources?.length).toBeGreaterThan(0);
 
     // Verify files were imported

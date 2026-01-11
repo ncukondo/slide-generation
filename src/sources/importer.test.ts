@@ -58,8 +58,10 @@ describe('SourceImporter', () => {
       await importer.importFile(sourcePath);
 
       const data = await manager.load();
+      // Use path.join for cross-platform compatibility
+      const expectedPath = path.join('materials', 'doc.pdf');
       expect(data.sources).toContainEqual(
-        expect.objectContaining({ path: 'materials/doc.pdf' })
+        expect.objectContaining({ path: expectedPath })
       );
     });
 
@@ -72,7 +74,8 @@ describe('SourceImporter', () => {
       await importer.importFile(sourcePath);
 
       const data = await manager.load();
-      const entry = data.sources?.find((s) => s.path === 'materials/doc.pdf');
+      const expectedPath = path.join('materials', 'doc.pdf');
+      const entry = data.sources?.find((s) => s.path === expectedPath);
       expect(entry?.origin).toBe(sourcePath);
     });
 
