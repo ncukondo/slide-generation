@@ -5,7 +5,9 @@ import { execSync } from 'child_process';
 import { join, resolve } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
-import { ExitCode } from './convert';
+import { ExitCode } from './convert.js';
+import { SourcesManager } from '../../sources/manager.js';
+import { SourceImporter } from '../../sources/importer.js';
 import {
   generateSkillMd,
   generateClaudeMd,
@@ -24,6 +26,8 @@ export interface InitOptions {
   template?: string;
   examples?: boolean;
   aiConfig?: boolean;
+  sources?: boolean;
+  fromDirectory?: string;
   skipMarpInstall?: boolean;
 }
 
@@ -37,6 +41,8 @@ export function createInitCommand(): Command {
     .option('--template <name>', 'Initial template')
     .option('--no-examples', 'Do not create sample files')
     .option('--no-ai-config', 'Do not create AI assistant config files')
+    .option('--no-sources', 'Do not create sources directory')
+    .option('--from-directory <path>', 'Import materials from directory')
     .option('--skip-marp-install', 'Skip Marp CLI installation prompt')
     .action(async (directory: string, options: InitOptions) => {
       await executeInit(directory, options);
@@ -54,6 +60,7 @@ export async function executeInit(
   const targetDir = resolve(directory);
   const includeExamples = options.examples !== false;
   const includeAiConfig = options.aiConfig !== false;
+  const includeSources = options.sources !== false;
 
   try {
     spinner.start(`Initializing project in ${targetDir}...`);
@@ -93,6 +100,28 @@ export async function executeInit(
       await generateAiConfig(targetDir);
     }
 
+    // Create sources directory
+    let sourcesImported = 0;
+    if (includeSources) {
+      const sourcesManager = new SourcesManager(targetDir);
+      if (!(await sourcesManager.exists())) {
+        await sourcesManager.init({
+          name: 'Untitled Project',
+          setup_pattern: options.fromDirectory ? 'A' : undefined,
+          original_source: options.fromDirectory ? resolve(options.fromDirectory) : undefined,
+        });
+
+        // Import from directory if specified
+        if (options.fromDirectory) {
+          const importer = new SourceImporter(targetDir, sourcesManager);
+          const result = await importer.importDirectory(resolve(options.fromDirectory), {
+            recursive: true,
+          });
+          sourcesImported = result.imported;
+        }
+      }
+    }
+
     spinner.succeed(`Project initialized in ${targetDir}`);
 
     // Print summary
@@ -111,6 +140,13 @@ export async function executeInit(
       console.log(`  ${chalk.cyan('.cursorrules')} - Cursor configuration`);
       console.log(`  ${chalk.cyan('.claude/commands/')} - Claude Code slash commands`);
       console.log(`  ${chalk.cyan('.opencode/agent/')} - OpenCode agent configuration`);
+    }
+    if (includeSources) {
+      let sourcesMsg = `  ${chalk.cyan('sources/')} - Source materials directory`;
+      if (sourcesImported > 0) {
+        sourcesMsg += ` (${sourcesImported} files imported)`;
+      }
+      console.log(sourcesMsg);
     }
     console.log('');
     console.log(chalk.blue('Next steps:'));

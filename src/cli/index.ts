@@ -11,6 +11,7 @@ import { createWatchCommand } from './commands/watch.js';
 import { createPreviewCommand } from './commands/preview.js';
 import { createImagesCommand } from './commands/images.js';
 import { createScreenshotCommand } from './commands/screenshot.js';
+import { createSourcesCommand } from './commands/sources.js';
 
 const program = new Command();
 
@@ -45,5 +46,8 @@ program.addCommand(createImagesCommand());
 
 // Add screenshot command
 program.addCommand(createScreenshotCommand());
+
+// Add sources command
+program.addCommand(createSourcesCommand());
 
 program.parse();
