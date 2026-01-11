@@ -3,8 +3,8 @@ import { access, readFile } from 'fs/promises';
 import { dirname } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
-import { parse as parseYaml } from 'yaml';
-import { Parser, ParseError, ValidationError } from '../../core/parser';
+import { parse as parseYaml, stringify as yamlStringify } from 'yaml';
+import { Parser, ParseError, ValidationError, type ParseResultWithLines } from '../../core/parser';
 import { TemplateLoader } from '../../templates/loader';
 import { IconRegistryLoader } from '../../icons/registry';
 import { ConfigLoader } from '../../config/loader';
@@ -17,6 +17,8 @@ interface ValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  structuredErrors: StructuredValidationError[];
+  slideLines: number[];
   stats: {
     yamlSyntax: boolean;
     metaValid: boolean;
@@ -30,7 +32,96 @@ interface ValidationResult {
 interface ValidateOptions {
   config?: string;
   strict?: boolean;
-  format?: 'text' | 'json';
+  format?: 'text' | 'json' | 'llm';
+}
+
+/**
+ * Structured validation error for LLM-friendly output
+ */
+export interface StructuredValidationError {
+  slide: number;
+  line?: number;
+  template: string;
+  field?: string;
+  message: string;
+  errorType: 'missing_field' | 'invalid_type' | 'unknown_template' | 'unknown_icon' | 'schema_error';
+  fixExample?: string;
+}
+
+/**
+ * Get contextual hint based on error type
+ */
+export function getHintForErrorType(errorType: string): string | null {
+  switch (errorType) {
+    case 'unknown_template':
+      return 'Run `slide-gen templates list --format llm` to see available templates.';
+    case 'unknown_icon':
+      return 'Run `slide-gen icons search <query>` to find icons.';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Format validation result for LLM consumption
+ */
+export function formatLlmValidationResult(
+  errors: StructuredValidationError[],
+  slideCount: number
+): string {
+  if (errors.length === 0) {
+    return `Validation passed. ${slideCount} slides validated.`;
+  }
+
+  const lines: string[] = ['Validation failed.', ''];
+
+  for (let i = 0; i < errors.length; i++) {
+    const error = errors[i]!;
+
+    // Error header with line number (if available) and template
+    const lineInfo = error.line ? `line ${error.line}, ` : '';
+    lines.push(`Error at ${lineInfo}Slide ${error.slide} (${error.template}):`);
+    lines.push(`  ${error.message}`);
+
+    // Fix example (if available)
+    if (error.fixExample) {
+      lines.push('');
+      lines.push('Fix:');
+      const exampleLines = error.fixExample.split('\n');
+      for (const line of exampleLines) {
+        lines.push(`  ${line}`);
+      }
+    }
+
+    // Hint based on error type
+    const hint = getHintForErrorType(error.errorType);
+    if (hint) {
+      lines.push('');
+      lines.push(`Hint: ${hint}`);
+    }
+
+    // Separator between errors
+    if (i < errors.length - 1) {
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format an example object as YAML string with indentation
+ */
+function formatExampleAsYaml(example: Record<string, unknown>, indent: number): string {
+  const yaml = yamlStringify(example, { indent: 2 });
+  const spaces = ' '.repeat(indent);
+  return yaml
+    .split('\n')
+    .filter(line => line.trim() !== '')
+    .map(line => spaces + line)
+    .join('\n');
 }
 
 /**
@@ -42,7 +133,7 @@ export function createValidateCommand(): Command {
     .argument('<input>', 'Input YAML file')
     .option('-c, --config <path>', 'Config file path')
     .option('--strict', 'Treat warnings as errors')
-    .option('--format <fmt>', 'Output format (text/json)', 'text')
+    .option('--format <fmt>', 'Output format (text/json/llm)', 'text')
     .action(async (input: string, options: ValidateOptions) => {
       await executeValidate(input, options);
     });
@@ -56,12 +147,15 @@ async function executeValidate(
   options: ValidateOptions
 ): Promise<void> {
   const isJsonFormat = options.format === 'json';
-  const spinner = isJsonFormat ? null : ora();
+  const isLlmFormat = options.format === 'llm';
+  const spinner = (isJsonFormat || isLlmFormat) ? null : ora();
 
   const result: ValidationResult = {
     valid: true,
     errors: [],
     warnings: [],
+    structuredErrors: [],
+    slideLines: [],
     stats: {
       yamlSyntax: false,
       metaValid: false,
@@ -103,13 +197,14 @@ async function executeValidate(
       return;
     }
 
-    // Step 2: Schema validation
+    // Step 2: Schema validation with line info
     const parser = new Parser();
-    let presentation;
+    let presentation: ParseResultWithLines;
     try {
-      presentation = parser.parse(content);
+      presentation = parser.parseWithLineInfo(content);
       result.stats.metaValid = true;
       result.stats.slideCount = presentation.slides.length;
+      result.slideLines = presentation.slideLines;
     } catch (error) {
       if (error instanceof ParseError) {
         result.errors.push(`Parse error: ${error.message}`);
@@ -157,9 +252,22 @@ async function executeValidate(
     const missingTemplates: string[] = [];
     for (let i = 0; i < presentation.slides.length; i++) {
       const slide = presentation.slides[i]!;
+      const slideNumber = i + 1;
+      const slideLine = result.slideLines[i];
       const template = templateLoader.get(slide.template);
+
       if (!template) {
-        missingTemplates.push(`Slide ${i + 1}: Template "${slide.template}" not found`);
+        missingTemplates.push(`Slide ${slideNumber}: Template "${slide.template}" not found`);
+        const structuredError: StructuredValidationError = {
+          slide: slideNumber,
+          template: slide.template,
+          message: `Template "${slide.template}" not found`,
+          errorType: 'unknown_template',
+        };
+        if (slideLine !== undefined) {
+          structuredError.line = slideLine;
+        }
+        result.structuredErrors.push(structuredError);
       } else {
         // Validate slide content against template schema
         const validationResult = templateLoader.validateContent(
@@ -168,7 +276,37 @@ async function executeValidate(
         );
         if (!validationResult.valid) {
           for (const err of validationResult.errors) {
-            result.errors.push(`Slide ${i + 1} (${slide.template}): ${err}`);
+            result.errors.push(`Slide ${slideNumber} (${slide.template}): ${err}`);
+
+            // Determine error type and extract field from error message
+            const isMissingField = err.toLowerCase().includes('required') || err.toLowerCase().includes('missing');
+            const isInvalidType = err.toLowerCase().includes('type') || err.toLowerCase().includes('invalid');
+
+            // Try to extract field name from error message
+            const fieldMatch = err.match(/(?:field|property)\s+['"]?(\w+)['"]?/i) ||
+                               err.match(/^(\w+)\s+is\s+required/i);
+            const field = fieldMatch?.[1];
+
+            // Get fix example from template
+            const fixExample = template.example ?
+              `content:\n${formatExampleAsYaml(template.example, 2)}` : undefined;
+
+            const structuredError: StructuredValidationError = {
+              slide: slideNumber,
+              template: slide.template,
+              message: err,
+              errorType: isMissingField ? 'missing_field' : isInvalidType ? 'invalid_type' : 'schema_error',
+            };
+            if (slideLine !== undefined) {
+              structuredError.line = slideLine;
+            }
+            if (field !== undefined) {
+              structuredError.field = field;
+            }
+            if (fixExample !== undefined) {
+              structuredError.fixExample = fixExample;
+            }
+            result.structuredErrors.push(structuredError);
           }
         }
       }
@@ -198,9 +336,10 @@ async function executeValidate(
     const iconPattern = /icon\(['"]([^'"]+)['"]\)/g;
     for (let i = 0; i < presentation.slides.length; i++) {
       const slide = presentation.slides[i]!;
+      const slideNumber = i + 1;
+      const slideLine = result.slideLines[i];
       const contentStr = JSON.stringify(slide.content);
-      let match;
-      while ((match = iconPattern.exec(contentStr)) !== null) {
+      for (const match of contentStr.matchAll(iconPattern)) {
         const iconRef = match[1]!;
         // Try to resolve the icon
         const resolved = iconRegistry.resolveAlias(iconRef);
@@ -209,11 +348,31 @@ async function executeValidate(
           const source = iconRegistry.getSource(parsed.prefix);
           if (!source) {
             result.warnings.push(
-              `Slide ${i + 1}: Unknown icon source "${parsed.prefix}" in "${iconRef}"`
+              `Slide ${slideNumber}: Unknown icon source "${parsed.prefix}" in "${iconRef}"`
             );
+            const structuredError: StructuredValidationError = {
+              slide: slideNumber,
+              template: slide.template,
+              message: `Unknown icon source "${parsed.prefix}" in "${iconRef}"`,
+              errorType: 'unknown_icon',
+            };
+            if (slideLine !== undefined) {
+              structuredError.line = slideLine;
+            }
+            result.structuredErrors.push(structuredError);
           }
         } else if (!iconRegistry.resolveAlias(iconRef)) {
-          result.warnings.push(`Slide ${i + 1}: Unknown icon "${iconRef}"`);
+          result.warnings.push(`Slide ${slideNumber}: Unknown icon "${iconRef}"`);
+          const structuredError: StructuredValidationError = {
+            slide: slideNumber,
+            template: slide.template,
+            message: `Unknown icon "${iconRef}"`,
+            errorType: 'unknown_icon',
+          };
+          if (slideLine !== undefined) {
+            structuredError.line = slideLine;
+          }
+          result.structuredErrors.push(structuredError);
         }
       }
     }
@@ -223,8 +382,7 @@ async function executeValidate(
     const references: Set<string> = new Set();
     for (const slide of presentation.slides) {
       const contentStr = JSON.stringify(slide.content);
-      let match;
-      while ((match = citationPattern.exec(contentStr)) !== null) {
+      for (const match of contentStr.matchAll(citationPattern)) {
         references.add(match[1]!);
       }
     }
@@ -282,6 +440,16 @@ function outputResult(result: ValidationResult, options: ValidateOptions): void 
         2
       )
     );
+    return;
+  }
+
+  if (options.format === 'llm') {
+    // LLM-friendly output format
+    const llmOutput = formatLlmValidationResult(
+      result.structuredErrors,
+      result.stats.slideCount
+    );
+    console.log(llmOutput);
     return;
   }
 
