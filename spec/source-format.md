@@ -1,143 +1,143 @@
-# ソースファイル形式仕様
+# Source File Format Specification
 
-## 概要
+## Overview
 
-ソースファイルはYAML形式を採用します。YAMLは以下の理由から選択されました：
+Source files use YAML format. YAML was chosen for the following reasons:
 
-- **階層構造の自然な表現**: インデントによるネストがスライド構造に適合
-- **配列内オブジェクト**: `- { key: value }` 形式で図表ノードを簡潔に記述可能
-- **AIとの親和性**: LLMはYAML生成の訓練データが豊富
-- **Marpとの一貫性**: Marpのフロントマターと同じ形式
+- **Natural hierarchical structure**: Indentation-based nesting is well-suited for slide structures
+- **Objects within arrays**: `- { key: value }` format allows concise diagram node definitions
+- **AI compatibility**: LLMs have abundant training data for YAML generation
+- **Consistency with Marp**: Same format as Marp's front matter
 
-## ファイル構造
+## File Structure
 
 ```yaml
 # presentation.yaml
 
 meta:
-  title: "プレゼンテーションタイトル"
-  author: "作成者名"
+  title: "Presentation Title"
+  author: "Author Name"
   date: "2026-01-09"
-  theme: "corporate-blue"        # テーマ名（themes/配下）
+  theme: "corporate-blue"        # Theme name (under themes/)
 
-  # 文献引用設定（オプション）
+  # Reference citation settings (optional)
   references:
     enabled: true
-    style: author-year-pmid      # 引用フォーマット
+    style: author-year-pmid      # Citation format
 
 slides:
-  - template: <テンプレート名>
+  - template: <template-name>
     content:
-      <テンプレート固有のコンテンツ>
+      <template-specific content>
 
-  - template: <テンプレート名>
+  - template: <template-name>
     content:
-      <テンプレート固有のコンテンツ>
+      <template-specific content>
 ```
 
-## メタデータ (`meta`)
+## Metadata (`meta`)
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| `title` | string | Yes | プレゼンテーションタイトル |
-| `author` | string | No | 作成者名 |
-| `date` | string | No | 作成日・発表日 |
-| `theme` | string | No | 使用するテーマ名（デフォルト: default） |
-| `references` | object | No | 文献引用設定 |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Presentation title |
+| `author` | string | No | Author name |
+| `date` | string | No | Creation date / Presentation date |
+| `theme` | string | No | Theme name to use (default: default) |
+| `references` | object | No | Reference citation settings |
 
-### 文献引用設定 (`meta.references`)
+### Reference Citation Settings (`meta.references`)
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| `enabled` | boolean | No | 引用機能の有効化（デフォルト: true） |
-| `style` | string | No | 引用スタイル（デフォルト: author-year-pmid） |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `enabled` | boolean | No | Enable citation feature (default: true) |
+| `style` | string | No | Citation style (default: author-year-pmid) |
 
-## スライド定義 (`slides`)
+## Slide Definition (`slides`)
 
-各スライドは以下の形式で定義します：
+Each slide is defined in the following format:
 
 ```yaml
-- template: <テンプレート名>
+- template: <template-name>
   content:
-    <コンテンツ>
-  class: <追加CSSクラス>        # オプション
-  notes: <発表者ノート>         # オプション
+    <content>
+  class: <additional-css-class>        # optional
+  notes: <speaker-notes>               # optional
 ```
 
-| フィールド | 型 | 必須 | 説明 |
-|-----------|-----|------|------|
-| `template` | string | Yes | 使用するテンプレート名 |
-| `content` | object | Yes | テンプレート固有のコンテンツ |
-| `class` | string | No | 追加のCSSクラス |
-| `notes` | string | No | 発表者ノート（Marpの `<!-- -->` として出力） |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `template` | string | Yes | Template name to use |
+| `content` | object | Yes | Template-specific content |
+| `class` | string | No | Additional CSS classes |
+| `notes` | string | No | Speaker notes (output as Marp `<!-- -->`) |
 
-## 基本テンプレートの例
+## Basic Template Examples
 
-### タイトルスライド
+### Title Slide
 
 ```yaml
 - template: title
   content:
-    title: "メインタイトル"
-    subtitle: "サブタイトル"
-    author: "発表者名"
-    date: "2026年1月"
-    affiliation: "所属組織"
+    title: "Main Title"
+    subtitle: "Subtitle"
+    author: "Presenter Name"
+    date: "January 2026"
+    affiliation: "Organization"
 ```
 
-### 箇条書きスライド
+### Bullet List Slide
 
 ```yaml
 - template: bullet-list
   content:
-    title: "スライドタイトル"
+    title: "Slide Title"
     items:
-      - "項目1"
-      - "項目2 [@smith2024]"           # 引用付き
+      - "Item 1"
+      - "Item 2 [@smith2024]"           # With citation
       - nested:
-          title: "ネストされた項目"
+          title: "Nested Item"
           items:
-            - "サブ項目A"
-            - "サブ項目B"
-      - "項目4"
+            - "Sub-item A"
+            - "Sub-item B"
+      - "Item 4"
 ```
 
-### 番号付きリスト
+### Numbered List
 
 ```yaml
 - template: numbered-list
   content:
-    title: "手順"
+    title: "Steps"
     items:
-      - "ステップ1"
-      - "ステップ2"
-      - "ステップ3"
+      - "Step 1"
+      - "Step 2"
+      - "Step 3"
 ```
 
-### 2カラムレイアウト
+### Two-Column Layout
 
 ```yaml
 - template: two-column
   content:
-    title: "比較"
+    title: "Comparison"
     left:
-      title: "オプションA"
+      title: "Option A"
       items:
-        - "特徴1"
-        - "特徴2"
+        - "Feature 1"
+        - "Feature 2"
     right:
-      title: "オプションB"
+      title: "Option B"
       items:
-        - "特徴1"
-        - "特徴2"
+        - "Feature 1"
+        - "Feature 2"
 ```
 
-### 循環図
+### Cycle Diagram
 
 ```yaml
 - template: cycle-diagram
   content:
-    title: "PDCAサイクル"
+    title: "PDCA Cycle"
     nodes:
       - { label: "Plan", icon: "planning", color: "#4CAF50" }
       - { label: "Do", icon: "action", color: "#2196F3" }
@@ -145,96 +145,96 @@ slides:
       - { label: "Act", icon: "improvement", color: "#9C27B0" }
 ```
 
-### テーブル
+### Table
 
 ```yaml
 - template: table
   content:
-    title: "比較表"
-    headers: ["項目", "オプションA", "オプションB"]
+    title: "Comparison Table"
+    headers: ["Item", "Option A", "Option B"]
     rows:
-      - ["価格", "¥1,000", "¥2,000"]
-      - ["機能", { colspan: 2, text: "両方同等" }]    # セル結合
-      - ["サポート", "メール", "電話 + メール"]
-    caption: "表1: オプション比較"    # オプション
+      - ["Price", "$10", "$20"]
+      - ["Features", { colspan: 2, text: "Both equivalent" }]    # Cell merge
+      - ["Support", "Email", "Phone + Email"]
+    caption: "Table 1: Option Comparison"    # Optional
 ```
 
-### 引用スライド
+### Quote Slide
 
 ```yaml
 - template: quote
   content:
-    text: "引用する文章をここに記載します。"
+    text: "Write the quoted text here."
     source: "@smith2024"
     page: "p.42"
 ```
 
-### 参考文献スライド
+### Bibliography Slide
 
 ```yaml
 - template: bibliography
   content:
-    title: "参考文献"
-    # 本プレゼン中で引用された文献が自動展開される
+    title: "References"
+    # Cited references in this presentation are automatically expanded
 ```
 
-### カスタム（直接記述）
+### Custom (Direct Writing)
 
 ```yaml
 - template: custom
   raw: |
-    # カスタムスライド
+    # Custom Slide
 
-    自由なMarkdown記述が可能です。
+    Free-form Markdown writing is possible.
 
-    - 箇条書き
-    - HTMLも使用可能
+    - Bullet points
+    - HTML can also be used
 
     <div class="custom-element">
-      カスタムHTML
+      Custom HTML
     </div>
 ```
 
-## 引用記法
+## Citation Syntax
 
-文中での引用はPandoc互換の `[@id]` 形式を使用します：
+In-text citations use the Pandoc-compatible `[@id]` format:
 
 ```yaml
 items:
-  - "単一引用 [@smith2024]"
-  - "複数引用 [@smith2024; @tanaka2023]"
-  - "文中に [@johnson2022] 引用を挿入"
+  - "Single citation [@smith2024]"
+  - "Multiple citations [@smith2024; @tanaka2023]"
+  - "Insert a citation [@johnson2022] within the text"
 ```
 
-### 引用の展開結果
+### Citation Expansion Result
 
 ```
-入力: "この手法は有効である [@smith2024]"
-出力: "この手法は有効である (Smith et al., 2024; PMID: 12345678)"
+Input: "This method is effective [@smith2024]"
+Output: "This method is effective (Smith et al., 2024; PMID: 12345678)"
 ```
 
-詳細は [references.md](./references.md) を参照してください。
+For details, see [references.md](./references.md).
 
-## アイコン参照
+## Icon References
 
-アイコンは `icon` フィールドで参照します：
+Icons are referenced using the `icon` field:
 
 ```yaml
 nodes:
-  - { label: "計画", icon: "planning" }      # エイリアス
-  - { label: "実行", icon: "mi:play_arrow" } # 直接指定
-  - { label: "確認", icon: "custom:check" }  # カスタムSVG
+  - { label: "Plan", icon: "planning" }        # Alias
+  - { label: "Execute", icon: "mi:play_arrow" } # Direct specification
+  - { label: "Verify", icon: "custom:check" }   # Custom SVG
 ```
 
-詳細は [icons.md](./icons.md) を参照してください。
+For details, see [icons.md](./icons.md).
 
-## 完全な例
+## Complete Example
 
 ```yaml
 meta:
-  title: "研究発表"
-  author: "山田太郎"
-  date: "2026年1月"
+  title: "Research Presentation"
+  author: "Taro Yamada"
+  date: "January 2026"
   theme: "academic"
   references:
     enabled: true
@@ -242,44 +242,44 @@ meta:
 slides:
   - template: title
     content:
-      title: "新しい手法の提案"
-      subtitle: "従来手法の課題を解決するアプローチ"
-      author: "山田太郎"
-      affiliation: "○○大学"
+      title: "Proposing a New Method"
+      subtitle: "An Approach to Solve Issues with Conventional Methods"
+      author: "Taro Yamada"
+      affiliation: "XX University"
 
   - template: bullet-list
     content:
-      title: "背景"
+      title: "Background"
       items:
-        - "従来手法には課題がある [@smith2024]"
-        - "近年の研究 [@tanaka2023; @johnson2022] で改善が試みられている"
-        - "しかし根本的な解決には至っていない"
+        - "Conventional methods have issues [@smith2024]"
+        - "Recent research [@tanaka2023; @johnson2022] has attempted improvements"
+        - "However, fundamental solutions have not been achieved"
 
   - template: cycle-diagram
     content:
-      title: "提案手法の概要"
+      title: "Overview of Proposed Method"
       nodes:
-        - { label: "データ収集", icon: "database", color: "#4CAF50" }
-        - { label: "分析", icon: "analysis", color: "#2196F3" }
-        - { label: "モデル構築", icon: "model", color: "#FF9800" }
-        - { label: "評価", icon: "evaluation", color: "#9C27B0" }
+        - { label: "Data Collection", icon: "database", color: "#4CAF50" }
+        - { label: "Analysis", icon: "analysis", color: "#2196F3" }
+        - { label: "Model Building", icon: "model", color: "#FF9800" }
+        - { label: "Evaluation", icon: "evaluation", color: "#9C27B0" }
 
   - template: table
     content:
-      title: "評価結果"
-      headers: ["手法", "精度", "処理時間"]
+      title: "Evaluation Results"
+      headers: ["Method", "Accuracy", "Processing Time"]
       rows:
-        - ["従来手法", "85%", "10秒"]
-        - ["提案手法", "92%", "3秒"]
+        - ["Conventional Method", "85%", "10s"]
+        - ["Proposed Method", "92%", "3s"]
 
   - template: bullet-list
     content:
-      title: "結論"
+      title: "Conclusion"
       items:
-        - "提案手法は従来手法より優れた性能を示した"
-        - "今後は大規模データでの検証を行う"
+        - "The proposed method demonstrated superior performance over conventional methods"
+        - "Future work includes validation with large-scale data"
 
   - template: bibliography
     content:
-      title: "参考文献"
+      title: "References"
 ```

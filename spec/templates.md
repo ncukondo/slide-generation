@@ -1,16 +1,16 @@
-# テンプレートシステム仕様
+# Template System Specification
 
-## 概要
+## Overview
 
-テンプレートは、スライドの構造とレイアウトを定義する再利用可能なコンポーネントです。各テンプレートは以下を含みます：
+Templates are reusable components that define the structure and layout of slides. Each template includes:
 
-- スキーマ定義（入力データの構造）
-- 出力テンプレート（Nunjucksベース）
-- 関連するCSS（オプション）
+- Schema definition (input data structure)
+- Output template (Nunjucks-based)
+- Associated CSS (optional)
 
-## テンプレート定義ファイル
+## Template Definition Files
 
-テンプレートは `templates/` ディレクトリに配置します。
+Templates are placed in the `templates/` directory.
 
 ```
 templates/
@@ -31,7 +31,11 @@ templates/
 ├── layouts/
 │   ├── two-column.yaml
 │   ├── three-column.yaml
+│   ├── image-full.yaml
 │   ├── image-text.yaml
+│   ├── image-caption.yaml
+│   ├── image-grid.yaml
+│   ├── before-after.yaml
 │   └── gallery.yaml
 └── special/
     ├── quote.yaml
@@ -40,16 +44,16 @@ templates/
     └── custom.yaml
 ```
 
-## テンプレート定義形式
+## Template Definition Format
 
 ```yaml
 # templates/diagrams/cycle-diagram.yaml
 
 name: cycle-diagram
-description: "循環図（3〜6要素対応）"
+description: "Cycle diagram (supports 3-6 elements)"
 category: diagrams
 
-# 入力スキーマ定義
+# Input schema definition
 schema:
   type: object
   required:
@@ -58,12 +62,12 @@ schema:
   properties:
     title:
       type: string
-      description: "スライドタイトル"
+      description: "Slide title"
     nodes:
       type: array
       minItems: 3
       maxItems: 6
-      description: "循環図のノード"
+      description: "Nodes in the cycle diagram"
       items:
         type: object
         required:
@@ -71,29 +75,29 @@ schema:
         properties:
           label:
             type: string
-            description: "ノードのラベル"
+            description: "Node label"
           icon:
             type: string
-            description: "アイコン参照（エイリアスまたは直接指定）"
+            description: "Icon reference (alias or direct specification)"
           color:
             type: string
             pattern: "^#[0-9A-Fa-f]{6}$"
             default: "#666666"
-            description: "ノードの色"
+            description: "Node color"
           description:
             type: string
-            description: "ノードの説明文（オプション）"
+            description: "Node description (optional)"
 
-# サンプルデータ（AI生成支援用）
+# Sample data (for AI generation assistance)
 example:
-  title: "PDCAサイクル"
+  title: "PDCA Cycle"
   nodes:
     - { label: "Plan", icon: "planning", color: "#4CAF50" }
     - { label: "Do", icon: "action", color: "#2196F3" }
     - { label: "Check", icon: "analysis", color: "#FF9800" }
     - { label: "Act", icon: "improvement", color: "#9C27B0" }
 
-# 出力テンプレート（Nunjucks）
+# Output template (Nunjucks)
 output: |
   ---
   <!-- _class: diagram-slide cycle-slide -->
@@ -113,11 +117,11 @@ output: |
     </div>
     {%- endfor %}
     <svg class="cycle-arrows" viewBox="0 0 100 100">
-      <!-- 矢印はCSSで描画、またはJSで動的生成 -->
+      <!-- Arrows are rendered via CSS or generated dynamically with JS -->
     </svg>
   </div>
 
-# 関連CSS（テーマに含める）
+# Associated CSS (included in theme)
 css: |
   .cycle-container {
     display: flex;
@@ -142,103 +146,109 @@ css: |
     justify-content: center;
   }
 
-  /* ノード配置（要素数に応じた角度計算） */
-  .cycle-3 .cycle-node { /* 3要素の配置 */ }
-  .cycle-4 .cycle-node { /* 4要素の配置 */ }
-  .cycle-5 .cycle-node { /* 5要素の配置 */ }
-  .cycle-6 .cycle-node { /* 6要素の配置 */ }
+  /* Node positioning (angle calculation based on element count) */
+  .cycle-3 .cycle-node { /* 3-element positioning */ }
+  .cycle-4 .cycle-node { /* 4-element positioning */ }
+  .cycle-5 .cycle-node { /* 5-element positioning */ }
+  .cycle-6 .cycle-node { /* 6-element positioning */ }
 ```
 
-## ビルトインテンプレート一覧
+## Built-in Template List
 
-### 基本 (basic/)
+### Basic (basic/)
 
-| テンプレート | 説明 | 必須フィールド |
-|-------------|------|---------------|
-| `title` | タイトルスライド | title |
-| `section` | セクション区切り | title |
-| `bullet-list` | 箇条書き | title, items |
-| `numbered-list` | 番号付きリスト | title, items |
+| Template | Description | Required Fields |
+|----------|-------------|-----------------|
+| `title` | Title slide | title |
+| `section` | Section divider | title |
+| `bullet-list` | Bulleted list | title, items |
+| `numbered-list` | Numbered list | title, items |
 
-### 図表 (diagrams/)
+### Diagrams (diagrams/)
 
-| テンプレート | 説明 | 必須フィールド |
-|-------------|------|---------------|
-| `cycle-diagram` | 循環図（3-6要素） | title, nodes |
-| `flow-chart` | フローチャート | title, steps |
-| `hierarchy` | 階層図・組織図 | title, root |
-| `matrix` | 2x2マトリクス | title, quadrants |
-| `timeline` | タイムライン | title, events |
+| Template | Description | Required Fields |
+|----------|-------------|-----------------|
+| `cycle-diagram` | Cycle diagram (3-6 elements) | title, nodes |
+| `flow-chart` | Flowchart | title, steps |
+| `hierarchy` | Hierarchy/organization chart | title, root |
+| `matrix` | 2x2 matrix | title, quadrants |
+| `timeline` | Timeline | title, events |
 
-### データ (data/)
+### Data (data/)
 
-| テンプレート | 説明 | 必須フィールド |
-|-------------|------|---------------|
-| `table` | 基本テーブル | title, headers, rows |
-| `comparison-table` | 比較表（強調付き） | title, items, criteria |
+| Template | Description | Required Fields |
+|----------|-------------|-----------------|
+| `table` | Basic table | title, headers, rows |
+| `comparison-table` | Comparison table (with highlighting) | title, items, criteria |
 
-### レイアウト (layouts/)
+### Layouts (layouts/)
 
-| テンプレート | 説明 | 必須フィールド |
-|-------------|------|---------------|
-| `two-column` | 2カラム | title, left, right |
-| `three-column` | 3カラム | title, columns |
-| `image-text` | 画像＋テキスト | title, image, text |
-| `gallery` | 画像ギャラリー | title, images |
+| Template | Description | Required Fields |
+|----------|-------------|-----------------|
+| `two-column` | 2-column layout | title, left, right |
+| `three-column` | 3-column layout | title, columns |
+| `image-full` | Full-screen image | image |
+| `image-text` | Image + text | title, image |
+| `image-caption` | Image + caption | image, caption |
+| `image-grid` | Multiple image grid (2-6 images) | title, images |
+| `before-after` | Before/after comparison | title, before, after |
+| `gallery` | Image gallery | title, images |
 
-### 特殊 (special/)
+For detailed specifications on image templates and AI collaboration workflow, see [images.md](./images.md).
 
-| テンプレート | 説明 | 必須フィールド |
-|-------------|------|---------------|
-| `quote` | 引用 | text |
-| `code-block` | コードブロック | code, language |
-| `bibliography` | 参考文献 | title |
-| `custom` | カスタム（直接記述） | raw |
+### Special (special/)
 
-## テンプレートエンジン
+| Template | Description | Required Fields |
+|----------|-------------|-----------------|
+| `quote` | Quotation | text |
+| `code-block` | Code block | code, language |
+| `bibliography` | Bibliography/references | title |
+| `custom` | Custom (direct input) | raw |
 
-### Nunjucks 拡張
+## Template Engine
 
-テンプレート内で使用可能なカスタム関数：
+### Nunjucks Extensions
+
+Custom functions available within templates:
 
 ```nunjucks
-{# アイコンレンダリング #}
+{# Icon rendering #}
 {{ icons.render("planning") }}
 {{ icons.render("mi:home", { size: "24px", color: "#333" }) }}
 
-{# 引用展開 #}
+{# Citation expansion #}
 {{ refs.cite("@smith2024") }}
-{{ refs.expand("テキスト [@id] を含む") }}
+{{ refs.expand("Text containing [@id]") }}
 
-{# 条件付きクラス #}
+{# Conditional classes #}
 <div class="{{ 'highlight' if highlighted else '' }}">
 
-{# ループとインデックス #}
+{# Loops and indexing #}
 {% for item in items %}
   {{ loop.index }}: {{ item }}
 {% endfor %}
 ```
 
-### コンテキスト変数
+### Context Variables
 
-テンプレートには以下の変数が渡されます：
+The following variables are passed to templates:
 
-| 変数 | 説明 |
-|------|------|
-| `content` | ソースファイルで定義されたコンテンツ |
-| `meta` | プレゼンテーションのメタデータ |
-| `icons` | アイコンヘルパー |
-| `refs` | 引用ヘルパー |
-| `slide` | 現在のスライド情報（インデックス等） |
+| Variable | Description |
+|----------|-------------|
+| `content` | Content defined in the source file |
+| `meta` | Presentation metadata |
+| `icons` | Icon helper |
+| `refs` | Citation helper |
+| `slide` | Current slide information (index, etc.) |
 
-## カスタムテンプレートの作成
+## Creating Custom Templates
 
-### 1. テンプレートファイル作成
+### 1. Create Template File
 
 ```yaml
 # templates/custom/my-template.yaml
 name: my-template
-description: "カスタムテンプレートの説明"
+description: "Description of custom template"
 category: custom
 
 schema:
@@ -253,8 +263,8 @@ schema:
       type: string
 
 example:
-  title: "サンプルタイトル"
-  content: "サンプルコンテンツ"
+  title: "Sample Title"
+  content: "Sample Content"
 
 output: |
   ---
@@ -268,30 +278,30 @@ output: |
 
 css: |
   .my-template .my-content {
-    /* スタイル定義 */
+    /* Style definitions */
   }
 ```
 
-### 2. テーマにCSSを追加
+### 2. Add CSS to Theme
 
-カスタムテンプレートのCSSは、テーマファイルに自動的にマージされるか、別途インポートします。
+CSS for custom templates is either automatically merged into the theme file or imported separately.
 
-### 3. 使用
+### 3. Usage
 
 ```yaml
 slides:
   - template: my-template
     content:
-      title: "タイトル"
-      content: "コンテンツ"
+      title: "Title"
+      content: "Content"
 ```
 
-## スキーマ検証
+## Schema Validation
 
-入力データはZodスキーマで検証されます：
+Input data is validated using Zod schemas:
 
 ```typescript
-// 自動生成されるZodスキーマの例
+// Example of auto-generated Zod schema
 const cycleDigramSchema = z.object({
   title: z.string(),
   nodes: z.array(z.object({
@@ -303,7 +313,7 @@ const cycleDigramSchema = z.object({
 });
 ```
 
-検証エラーは具体的なメッセージとともに報告されます：
+Validation errors are reported with specific messages:
 
 ```
 Error in slide 3 (cycle-diagram):
@@ -311,36 +321,36 @@ Error in slide 3 (cycle-diagram):
   - nodes[0].color: Invalid color format. Expected #RRGGBB
 ```
 
-## AI向けテンプレート情報出力
+## Template Information Output for AI
 
-CLIでテンプレート情報をAI向けに出力できます：
+Template information can be output for AI via CLI:
 
 ```bash
-# テンプレート一覧（LLM向け簡潔形式）
+# Template list (concise format for LLM)
 slide-gen templates list --format llm
 
-# 特定テンプレートの詳細とサンプル
+# Specific template details and examples
 slide-gen templates info cycle-diagram --format llm
 ```
 
-出力例：
+Output example:
 
 ```
 Template: cycle-diagram
-Description: 循環図（3〜6要素対応）
+Description: Cycle diagram (supports 3-6 elements)
 
 Required fields:
-  - title (string): スライドタイトル
-  - nodes (array[3-6]): 循環図のノード
-    - label (string, required): ノードのラベル
-    - icon (string, optional): アイコン参照
-    - color (string, optional): ノードの色 (#RRGGBB形式)
+  - title (string): Slide title
+  - nodes (array[3-6]): Nodes in the cycle diagram
+    - label (string, required): Node label
+    - icon (string, optional): Icon reference
+    - color (string, optional): Node color (#RRGGBB format)
 
 Example:
 ```yaml
 - template: cycle-diagram
   content:
-    title: "PDCAサイクル"
+    title: "PDCA Cycle"
     nodes:
       - { label: "Plan", icon: "planning", color: "#4CAF50" }
       - { label: "Do", icon: "action", color: "#2196F3" }

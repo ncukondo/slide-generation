@@ -1,79 +1,80 @@
-# CLIインターフェース仕様
+# CLI Interface Specification
 
-## 概要
+## Overview
 
-`slide-gen` コマンドは、YAMLソースファイルからMarp対応Markdownへの変換を行うCLIツールです。
+The `slide-gen` command is a CLI tool that converts YAML source files to Marp-compatible Markdown.
 
-## インストール
+## Installation
 
 ```bash
-# グローバルインストール
+# Global installation
 npm install -g slide-generation
 
-# または npx で直接実行
+# Or run directly with npx
 npx slide-generation convert presentation.yaml
 ```
 
-## 基本構文
+## Basic Syntax
 
 ```bash
 slide-gen <command> [options]
 ```
 
-## コマンド一覧
+## Command List
 
-| コマンド | 説明 |
-|---------|------|
-| `convert` | ソースファイルをMarp Markdownに変換 |
-| `preview` | プレビュー（Marp連携） |
-| `watch` | ファイル監視して自動変換 |
-| `templates` | テンプレート管理 |
-| `icons` | アイコン管理 |
-| `init` | プロジェクト初期化 |
-| `validate` | ソースファイル検証 |
+| Command | Description |
+|---------|-------------|
+| `convert` | Convert source file to Marp Markdown |
+| `preview` | Preview (Marp integration) |
+| `watch` | Watch files and auto-convert on changes |
+| `templates` | Template management |
+| `icons` | Icon management |
+| `init` | Initialize project |
+| `validate` | Validate source file |
+| `screenshot` | Take slide screenshots |
 
 ---
 
 ## convert
 
-ソースファイルをMarp Markdownに変換します。
+Converts a source file to Marp Markdown.
 
-### 構文
+### Syntax
 
 ```bash
 slide-gen convert <input> [options]
 ```
 
-### オプション
+### Options
 
-| オプション | 短縮形 | 説明 | デフォルト |
-|-----------|--------|------|-----------|
-| `--output <path>` | `-o` | 出力ファイルパス | `<input>.md` |
-| `--config <path>` | `-c` | 設定ファイルパス | `config.yaml` |
-| `--theme <name>` | `-t` | テーマ名 | `default` |
-| `--no-references` | | 引用処理を無効化 | |
-| `--format <fmt>` | `-f` | 出力形式 (md/pdf/html/pptx) | `md` |
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--output <path>` | `-o` | Output file path | `<input>.md` |
+| `--config <path>` | `-c` | Configuration file path | `config.yaml` |
+| `--theme <name>` | `-t` | Theme name | `default` |
+| `--no-references` | | Disable reference processing | |
+| `--format <fmt>` | `-f` | Output format (md/pdf/html/pptx) | `md` |
 
-### 例
+### Examples
 
 ```bash
-# 基本変換
+# Basic conversion
 slide-gen convert presentation.yaml
 
-# 出力先指定
+# Specify output destination
 slide-gen convert presentation.yaml -o output/slides.md
 
-# PDF出力（Marp CLI連携）
+# PDF output (Marp CLI integration)
 slide-gen convert presentation.yaml -f pdf -o slides.pdf
 
-# テーマ指定
+# Specify theme
 slide-gen convert presentation.yaml -t academic
 
-# 引用無効化
+# Disable references
 slide-gen convert presentation.yaml --no-references
 ```
 
-### 出力
+### Output
 
 ```
 Converting presentation.yaml...
@@ -90,57 +91,69 @@ Output: presentation.md
 
 ## preview
 
-ブラウザでプレビューを表示します（Marp CLI連携）。
+Displays a preview in the browser (Marp CLI integration).
 
-### 構文
+### Syntax
 
 ```bash
 slide-gen preview <input> [options]
 ```
 
-### オプション
+### Options
 
-| オプション | 短縮形 | 説明 | デフォルト |
-|-----------|--------|------|-----------|
-| `--port <number>` | `-p` | プレビューサーバーのポート | `8080` |
-| `--watch` | `-w` | ファイル変更を監視 | `false` |
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--port <number>` | `-p` | Preview server port | `8080` |
+| `--watch` | `-w` | Watch for file changes | `false` |
+| `--gallery` | `-g` | Display in thumbnail gallery mode | `false` |
+| `--slide <number>` | `-s` | Display only specific slide | All slides |
 
-### 例
+### Examples
 
 ```bash
-# プレビュー
+# Preview
 slide-gen preview presentation.yaml
 
-# ポート指定 + 監視モード
+# Specify port + watch mode
 slide-gen preview presentation.yaml -p 3000 -w
+
+# Gallery mode (thumbnail list)
+slide-gen preview presentation.yaml --gallery
+
+# Specific slide only
+slide-gen preview presentation.yaml --slide 3
 ```
+
+### Gallery Mode
+
+When the `--gallery` option is specified, a thumbnail list of all slides is displayed in the browser. Click on any thumbnail to view that slide enlarged.
 
 ---
 
 ## watch
 
-ファイルを監視して変更時に自動変換します。
+Watches files and automatically converts on changes.
 
-### 構文
+### Syntax
 
 ```bash
 slide-gen watch <input> [options]
 ```
 
-### オプション
+### Options
 
-| オプション | 短縮形 | 説明 | デフォルト |
-|-----------|--------|------|-----------|
-| `--output <path>` | `-o` | 出力ファイルパス | `<input>.md` |
-| `--debounce <ms>` | | 変更検出の遅延 | `300` |
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--output <path>` | `-o` | Output file path | `<input>.md` |
+| `--debounce <ms>` | | Change detection delay | `300` |
 
-### 例
+### Examples
 
 ```bash
 slide-gen watch presentation.yaml -o output/slides.md
 ```
 
-### 出力
+### Output
 
 ```
 Watching presentation.yaml...
@@ -153,9 +166,9 @@ Watching presentation.yaml...
 
 ## templates
 
-テンプレートの一覧表示・情報取得を行います。
+Lists and retrieves information about templates.
 
-### サブコマンド
+### Subcommands
 
 #### list
 
@@ -163,39 +176,39 @@ Watching presentation.yaml...
 slide-gen templates list [options]
 ```
 
-| オプション | 説明 |
-|-----------|------|
-| `--category <cat>` | カテゴリでフィルタ |
-| `--format <fmt>` | 出力形式 (table/json/llm) |
+| Option | Description |
+|--------|-------------|
+| `--category <cat>` | Filter by category |
+| `--format <fmt>` | Output format (table/json/llm) |
 
 ```bash
-# 全テンプレート一覧
+# List all templates
 slide-gen templates list
 
-# カテゴリ別
+# Filter by category
 slide-gen templates list --category diagrams
 
-# AI向け形式
+# AI-friendly format
 slide-gen templates list --format llm
 ```
 
-出力例：
+Output example:
 
 ```
 Templates:
 
 basic/
-  title           タイトルスライド
-  section         セクション区切り
-  bullet-list     箇条書き
-  numbered-list   番号付きリスト
+  title           Title slide
+  section         Section divider
+  bullet-list     Bullet list
+  numbered-list   Numbered list
 
 diagrams/
-  cycle-diagram   循環図（3-6要素）
-  flow-chart      フローチャート
-  hierarchy       階層図・組織図
-  matrix          2x2マトリクス
-  timeline        タイムライン
+  cycle-diagram   Cycle diagram (3-6 elements)
+  flow-chart      Flow chart
+  hierarchy       Hierarchy/organization chart
+  matrix          2x2 matrix
+  timeline        Timeline
   ...
 ```
 
@@ -205,40 +218,40 @@ diagrams/
 slide-gen templates info <name> [options]
 ```
 
-| オプション | 説明 |
-|-----------|------|
-| `--format <fmt>` | 出力形式 (text/json/llm) |
+| Option | Description |
+|--------|-------------|
+| `--format <fmt>` | Output format (text/json/llm) |
 
 ```bash
-# テンプレート詳細
+# Template details
 slide-gen templates info cycle-diagram
 
-# AI向け形式（プロンプトに使用可能）
+# AI-friendly format (usable in prompts)
 slide-gen templates info cycle-diagram --format llm
 ```
 
-出力例：
+Output example:
 
 ```
 Template: cycle-diagram
-Description: 循環図（3〜6要素対応）
+Description: Cycle diagram (supports 3-6 elements)
 Category: diagrams
 
 Schema:
   title (string, required)
-    スライドタイトル
+    Slide title
 
   nodes (array[3-6], required)
-    循環図のノード
-    - label (string, required): ノードのラベル
-    - icon (string, optional): アイコン参照
-    - color (string, optional): ノードの色 (#RRGGBB)
-    - description (string, optional): 説明文
+    Cycle diagram nodes
+    - label (string, required): Node label
+    - icon (string, optional): Icon reference
+    - color (string, optional): Node color (#RRGGBB)
+    - description (string, optional): Description text
 
 Example:
   - template: cycle-diagram
     content:
-      title: "PDCAサイクル"
+      title: "PDCA Cycle"
       nodes:
         - { label: "Plan", icon: "planning", color: "#4CAF50" }
         - { label: "Do", icon: "action", color: "#2196F3" }
@@ -252,19 +265,45 @@ Example:
 slide-gen templates example <name>
 ```
 
-テンプレートのサンプルYAMLを出力します。
+Outputs sample YAML for the template.
 
 ```bash
 slide-gen templates example cycle-diagram > sample-cycle.yaml
 ```
 
+#### preview
+
+Displays a visual preview of the template in the browser.
+
+```bash
+slide-gen templates preview <name> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--all` | Display all templates |
+| `--category <cat>` | Filter by category |
+
+```bash
+# Preview specific template
+slide-gen templates preview cycle-diagram
+
+# All templates list
+slide-gen templates preview --all
+
+# Filter by category
+slide-gen templates preview --category diagrams
+```
+
+Displays slide images generated with sample data along with template description and parameter information in the browser.
+
 ---
 
 ## icons
 
-アイコンの検索・プレビューを行います。
+Searches and previews icons.
 
-### サブコマンド
+### Subcommands
 
 #### list
 
@@ -272,19 +311,19 @@ slide-gen templates example cycle-diagram > sample-cycle.yaml
 slide-gen icons list [options]
 ```
 
-| オプション | 説明 |
-|-----------|------|
-| `--source <name>` | ソースでフィルタ |
-| `--aliases` | エイリアスのみ表示 |
+| Option | Description |
+|--------|-------------|
+| `--source <name>` | Filter by source |
+| `--aliases` | Show only aliases |
 
 ```bash
-# 全アイコンソース一覧
+# List all icon sources
 slide-gen icons list
 
-# エイリアス一覧
+# List aliases
 slide-gen icons list --aliases
 
-# 特定ソースのアイコン
+# Icons from specific source
 slide-gen icons list --source custom
 ```
 
@@ -298,7 +337,7 @@ slide-gen icons search <query>
 slide-gen icons search "arrow"
 ```
 
-出力例：
+Output example:
 
 ```
 Search results for "arrow":
@@ -326,20 +365,20 @@ Heroicons (hero:):
 slide-gen icons preview <name> [options]
 ```
 
-| オプション | 説明 |
-|-----------|------|
-| `--format <fmt>` | 出力形式 (svg/html) |
-| `--size <size>` | サイズ |
-| `--color <color>` | 色 |
+| Option | Description |
+|--------|-------------|
+| `--format <fmt>` | Output format (svg/html) |
+| `--size <size>` | Size |
+| `--color <color>` | Color |
 
 ```bash
-# SVG出力
+# SVG output
 slide-gen icons preview planning > icon.svg
 
-# HTML出力
+# HTML output
 slide-gen icons preview mi:home --format html
 
-# オプション付き
+# With options
 slide-gen icons preview planning --size 48px --color "#FF5722"
 ```
 
@@ -347,72 +386,102 @@ slide-gen icons preview planning --size 48px --color "#FF5722"
 
 ## init
 
-新規プロジェクトを初期化します。
+Initializes a new project.
 
-### 構文
+### Syntax
 
 ```bash
 slide-gen init [directory] [options]
 ```
 
-### オプション
+### Options
 
-| オプション | 説明 |
-|-----------|------|
-| `--template <name>` | 初期テンプレート |
-| `--no-examples` | サンプルファイルを作成しない |
+| Option | Description |
+|--------|-------------|
+| `--template <name>` | Initial template |
+| `--no-examples` | Do not create sample files |
+| `--no-ai-config` | Do not create AI configuration files |
+| `--skip-marp-install` | Skip Marp CLI installation prompt |
 
-### 例
+### Examples
 
 ```bash
-# カレントディレクトリに初期化
+# Initialize in current directory
 slide-gen init
 
-# 指定ディレクトリに初期化
+# Initialize in specified directory
 slide-gen init my-presentation
 
-# サンプルなしで初期化
+# Initialize without samples
 slide-gen init --no-examples
+
+# For CI environments (non-interactive)
+slide-gen init my-presentation --skip-marp-install
 ```
 
-### 生成されるファイル
+### Generated Files
 
 ```
 my-presentation/
-├── config.yaml          # 設定ファイル
-├── presentation.yaml    # サンプルソース
+├── config.yaml          # Configuration file
+├── presentation.yaml    # Sample source
+├── CLAUDE.md            # Claude Code guide
+├── AGENT.md             # Generic AI Agent guide
+├── .cursorrules         # Cursor settings
+├── .claude/
+│   ├── commands/        # Slash Commands
+│   └── skills/          # Auto-detection Skills
 ├── themes/
-│   └── custom.css       # カスタムテーマ
+│   └── custom.css       # Custom theme
 └── icons/
-    └── custom/          # カスタムアイコン用
+    └── custom/          # Custom icons directory
 ```
+
+### Marp CLI Installation Prompt
+
+After initialization, if Marp CLI is not installed, an installation prompt is shown:
+
+```
+─────────────────────────────────────────────
+Marp CLI is recommended for full features:
+  • Preview slides in browser
+  • Take screenshots for AI review
+  • Export to PDF/HTML/PPTX
+
+Marp CLI is not currently installed.
+─────────────────────────────────────────────
+
+? Install Marp CLI now? (Y/n)
+```
+
+Selecting `Y` will automatically install using the detected package manager (npm/pnpm/yarn).
 
 ---
 
 ## validate
 
-ソースファイルを検証します（変換は行わない）。
+Validates a source file (without converting).
 
-### 構文
+### Syntax
 
 ```bash
 slide-gen validate <input> [options]
 ```
 
-### オプション
+### Options
 
-| オプション | 説明 |
-|-----------|------|
-| `--strict` | 警告もエラーとして扱う |
-| `--format <fmt>` | 出力形式 (text/json) |
+| Option | Description |
+|--------|-------------|
+| `--strict` | Treat warnings as errors |
+| `--format <fmt>` | Output format (text/json) |
 
-### 例
+### Examples
 
 ```bash
 slide-gen validate presentation.yaml
 ```
 
-### 出力例（成功）
+### Output Example (Success)
 
 ```
 Validating presentation.yaml...
@@ -427,7 +496,7 @@ Validating presentation.yaml...
 Validation passed!
 ```
 
-### 出力例（エラー）
+### Output Example (Error)
 
 ```
 Validating presentation.yaml...
@@ -443,38 +512,90 @@ Validation failed with 1 error and 2 warnings
 
 ---
 
-## グローバルオプション
+## screenshot
 
-全コマンドで使用可能なオプション：
+Takes screenshots of slides (Marp CLI integration).
 
-| オプション | 短縮形 | 説明 |
-|-----------|--------|------|
-| `--help` | `-h` | ヘルプを表示 |
-| `--version` | `-V` | バージョンを表示 |
-| `--verbose` | `-v` | 詳細出力 |
-| `--quiet` | `-q` | 出力を抑制 |
-| `--no-color` | | カラー出力を無効化 |
+### Syntax
+
+```bash
+slide-gen screenshot <input> [options]
+```
+
+### Options
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--output <path>` | `-o` | Output directory | `./screenshots` |
+| `--slide <number>` | `-s` | Specific slide only (1-based) | All slides |
+| `--width <pixels>` | `-w` | Image width | `1280` |
+| `--format <fmt>` | `-f` | Image format (png/jpeg) | `png` |
+
+### Examples
+
+```bash
+# Screenshots of all slides
+slide-gen screenshot presentation.yaml
+
+# Specify output destination
+slide-gen screenshot presentation.yaml -o ./images
+
+# Specific slide only
+slide-gen screenshot presentation.yaml --slide 3
+
+# Thumbnail size
+slide-gen screenshot presentation.yaml --width 400
+```
+
+### Output
+
+```
+screenshots/
+├── slide-001.png
+├── slide-002.png
+├── slide-003.png
+└── ...
+```
+
+### Notes
+
+- Marp CLI is required (`npm install -g @marp-team/marp-cli`)
+- Internally uses `marp --images` option
 
 ---
 
-## 設定ファイル
+## Global Options
 
-### 検索順序
+Options available for all commands:
 
-1. `--config` オプションで指定されたパス
-2. カレントディレクトリの `config.yaml`
-3. カレントディレクトリの `slide-gen.yaml`
-4. ホームディレクトリの `~/.slide-gen/config.yaml`
-5. デフォルト設定
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--help` | `-h` | Display help |
+| `--version` | `-V` | Display version |
+| `--verbose` | `-v` | Verbose output |
+| `--quiet` | `-q` | Suppress output |
+| `--no-color` | | Disable color output |
 
-### 設定ファイル例
+---
+
+## Configuration File
+
+### Search Order
+
+1. Path specified with `--config` option
+2. `config.yaml` in current directory
+3. `slide-gen.yaml` in current directory
+4. `~/.slide-gen/config.yaml` in home directory
+5. Default settings
+
+### Configuration File Example
 
 ```yaml
 # config.yaml
 
 templates:
-  builtin: "./templates"      # ビルトインテンプレート
-  custom: "./my-templates"    # カスタムテンプレート
+  builtin: "./templates"      # Built-in templates
+  custom: "./my-templates"    # Custom templates
 
 icons:
   registry: "./icons/registry.yaml"
@@ -498,66 +619,66 @@ output:
 
 ---
 
-## 終了コード
+## Exit Codes
 
-| コード | 意味 |
-|--------|------|
-| 0 | 成功 |
-| 1 | 一般的なエラー |
-| 2 | 引数・オプションエラー |
-| 3 | ファイル読み込みエラー |
-| 4 | 検証エラー |
-| 5 | 変換エラー |
-| 6 | reference-manager連携エラー |
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Argument/option error |
+| 3 | File read error |
+| 4 | Validation error |
+| 5 | Conversion error |
+| 6 | reference-manager integration error |
 
 ---
 
-## 使用例シナリオ
+## Usage Scenarios
 
-### 基本的な変換ワークフロー
+### Basic Conversion Workflow
 
 ```bash
-# 1. プロジェクト初期化
+# 1. Initialize project
 slide-gen init my-presentation
 cd my-presentation
 
-# 2. ソースファイル編集
+# 2. Edit source file
 vim presentation.yaml
 
-# 3. 検証
+# 3. Validate
 slide-gen validate presentation.yaml
 
-# 4. 変換
+# 4. Convert
 slide-gen convert presentation.yaml -o slides.md
 
-# 5. プレビュー
+# 5. Preview
 slide-gen preview slides.md
 ```
 
-### 監視モードでの開発
+### Development with Watch Mode
 
 ```bash
-# ターミナル1: 監視モード
+# Terminal 1: Watch mode
 slide-gen watch presentation.yaml -o slides.md
 
-# ターミナル2: プレビュー
+# Terminal 2: Preview
 marp --preview slides.md
 ```
 
-### AI連携でのテンプレート情報取得
+### Getting Template Information for AI Integration
 
 ```bash
-# 使用可能なテンプレート一覧をAIに提供
+# Provide available templates list to AI
 slide-gen templates list --format llm
 
-# 特定テンプレートの詳細をAIに提供
+# Provide specific template details to AI
 slide-gen templates info cycle-diagram --format llm
 ```
 
-### 一括変換（CI/CD用）
+### Batch Conversion (for CI/CD)
 
 ```bash
-# 複数ファイルを変換
+# Convert multiple files
 for f in presentations/*.yaml; do
   slide-gen convert "$f" -f pdf -o "output/$(basename "$f" .yaml).pdf"
 done

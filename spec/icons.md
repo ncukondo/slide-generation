@@ -1,28 +1,39 @@
-# アイコン・ピクトグラム管理仕様
+# Icon and Pictogram Management Specification
 
-## 概要
+## Overview
 
-本システムは、複数のアイコンソースを統一的に管理し、スライド内で簡単に参照・使用できる仕組みを提供します。
+This system provides a unified mechanism for managing multiple icon sources, making it easy to reference and use icons within slides.
 
-## アイコンソースの種類
+## Types of Icon Sources
 
-| ソースタイプ | 説明 | 例 |
-|-------------|------|-----|
-| `web-font` | Webフォントベースのアイコン | Material Icons, Font Awesome |
-| `svg-sprite` | SVGスプライトシート | Heroicons, Feather Icons |
-| `svg-inline` | インラインSVG（CDN） | Iconify |
-| `local-svg` | ローカルSVGファイル | カスタムアイコン |
+| Source Type | Description | Example |
+|-------------|-------------|---------|
+| `web-font` | Web font-based icons | Material Icons, Font Awesome |
+| `svg-sprite` | SVG sprite sheets | Heroicons, Feather Icons |
+| `svg-inline` | Inline SVG (CDN) | Iconify, Health Icons |
+| `local-svg` | Local SVG files | Custom icons |
 
-## アイコンレジストリ
+### Available Icon Sources
 
-アイコンの設定は `icons/registry.yaml` で管理します：
+| Source | Prefix | Features | Use Cases |
+|--------|--------|----------|-----------|
+| Material Icons | `mi:` | Google official, versatile | General UI/Business |
+| Material Symbols | `ms:` | Google's new version, multiple variations | Modern design |
+| Health Icons | `health:` | Healthcare-focused, open source | Medical/Health-related |
+| Heroicons | `hero:` | Hand-drawn style, beautiful | Web design |
+| Iconify | `iconify:` | 100+ sets integrated | Any purpose |
+| Custom | `custom:` | Local SVG | Organization-specific icons |
+
+## Icon Registry
+
+Icon configuration is managed in `icons/registry.yaml`:
 
 ```yaml
 # icons/registry.yaml
 
-# アイコンソース定義
+# Icon source definitions
 sources:
-  # Material Icons（Webフォント）
+  # Material Icons (Web font)
   - name: material-icons
     type: web-font
     url: "https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -30,48 +41,48 @@ sources:
     render: |
       <span class="material-icons" style="{{ style }}">{{ name }}</span>
 
-  # Heroicons（SVG CDN）
+  # Heroicons (SVG CDN)
   - name: heroicons
     type: svg-inline
     url: "https://unpkg.com/heroicons@2.0.0/24/outline/{name}.svg"
     prefix: "hero"
 
-  # Iconify（汎用SVG CDN）
+  # Iconify (Universal SVG CDN)
   - name: iconify
     type: svg-inline
     url: "https://api.iconify.design/{set}/{name}.svg"
     prefix: "iconify"
 
-  # カスタムアイコン（ローカル）
+  # Custom icons (Local)
   - name: custom
     type: local-svg
     path: "./icons/custom/"
     prefix: "custom"
 
-# エイリアス定義（意味的な名前 → 実際のアイコン）
+# Alias definitions (semantic names -> actual icons)
 aliases:
-  # アクション系
+  # Actions
   planning: "mi:event_note"
   action: "mi:play_arrow"
   analysis: "mi:analytics"
   improvement: "mi:trending_up"
 
-  # ステータス系
+  # Status
   success: "mi:check_circle"
   warning: "mi:warning"
   error: "mi:error"
   info: "mi:info"
 
-  # オブジェクト系
+  # Objects
   document: "mi:description"
   folder: "mi:folder"
   database: "mi:storage"
   settings: "mi:settings"
 
-  # カスタム
+  # Custom
   logo: "custom:company-logo"
 
-# カラーパレット
+# Color palette
 colors:
   primary: "#1976D2"
   secondary: "#424242"
@@ -81,71 +92,71 @@ colors:
   danger: "#F44336"
   info: "#2196F3"
 
-# デフォルト設定
+# Default settings
 defaults:
   size: "24px"
   color: "currentColor"
 ```
 
-## アイコン参照方法
+## Icon Reference Methods
 
-### ソースファイル内での参照
+### Referencing in Source Files
 
 ```yaml
-# エイリアス経由（推奨）
+# Via alias (recommended)
 icon: planning
 
-# 直接指定（プレフィックス:アイコン名）
+# Direct specification (prefix:icon-name)
 icon: mi:home
 icon: hero:arrow-right
 icon: iconify:mdi:account
 icon: custom:my-icon
 
-# オプション付き
+# With options
 icon:
   name: planning
   size: 32px
   color: "#FF5722"
 ```
 
-### テンプレート内での参照
+### Referencing in Templates
 
 ```nunjucks
-{# 基本使用 #}
+{# Basic usage #}
 {{ icons.render("planning") }}
 
-{# オプション付き #}
+{# With options #}
 {{ icons.render("mi:home", { size: "32px", color: "#333" }) }}
 
-{# 条件付き #}
+{# Conditional #}
 {% if node.icon %}
   {{ icons.render(node.icon, { color: node.color }) }}
 {% endif %}
 ```
 
-## アイコン解決フロー
+## Icon Resolution Flow
 
 ```
-1. アイコン参照を解析
-   "planning" → エイリアス検索 → "mi:event_note"
-   "mi:home" → 直接解決
+1. Parse icon reference
+   "planning" -> Search aliases -> "mi:event_note"
+   "mi:home" -> Direct resolution
 
-2. プレフィックスからソースを特定
-   "mi:" → material-icons ソース
+2. Identify source from prefix
+   "mi:" -> material-icons source
 
-3. ソースタイプに応じてレンダリング
+3. Render according to source type
    - web-font: <span class="...">name</span>
-   - svg-inline: SVGをフェッチしてインライン化
-   - local-svg: ファイルを読み込んでインライン化
+   - svg-inline: Fetch SVG and inline it
+   - local-svg: Read file and inline it
 
-4. オプション適用（サイズ、色など）
+4. Apply options (size, color, etc.)
 
-5. HTML出力
+5. Output HTML
 ```
 
-## 出力形式
+## Output Formats
 
-### Webフォント出力
+### Web Font Output
 
 ```html
 <span class="material-icons" style="font-size: 24px; color: #4CAF50;">
@@ -153,7 +164,7 @@ icon:
 </span>
 ```
 
-### SVGインライン出力
+### SVG Inline Output
 
 ```html
 <svg class="icon icon-planning" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -161,9 +172,9 @@ icon:
 </svg>
 ```
 
-## カスタムアイコンの追加
+## Adding Custom Icons
 
-### 1. SVGファイルを配置
+### 1. Place SVG Files
 
 ```
 icons/
@@ -173,11 +184,11 @@ icons/
     └── special-icon.svg
 ```
 
-### 2. SVGの要件
+### 2. SVG Requirements
 
-- viewBox属性を持つこと
-- 固定のwidth/heightを持たないこと（またはレンダリング時に上書き）
-- fill="currentColor" でカラー制御可能にすること（推奨）
+- Must have a viewBox attribute
+- Should not have fixed width/height (or they will be overwritten during rendering)
+- Recommended to use fill="currentColor" for color control
 
 ```svg
 <!-- icons/custom/company-logo.svg -->
@@ -187,7 +198,7 @@ icons/
 </svg>
 ```
 
-### 3. エイリアスの登録（オプション）
+### 3. Register Alias (Optional)
 
 ```yaml
 # icons/registry.yaml
@@ -195,18 +206,18 @@ aliases:
   logo: "custom:company-logo"
 ```
 
-### 4. 使用
+### 4. Usage
 
 ```yaml
 - template: title
   content:
-    title: "プレゼンテーション"
-    icon: logo  # または custom:company-logo
+    title: "Presentation"
+    icon: logo  # or custom:company-logo
 ```
 
-## アイコンのキャッシュ
+## Icon Caching
 
-外部SVGはビルド時にフェッチしてキャッシュします：
+External SVGs are fetched and cached at build time:
 
 ```yaml
 # config.yaml
@@ -214,37 +225,37 @@ icons:
   cache:
     enabled: true
     directory: ".cache/icons"
-    ttl: 86400  # 24時間（秒）
+    ttl: 86400  # 24 hours (in seconds)
 ```
 
-## アイコン検索・プレビュー
+## Icon Search and Preview
 
-CLIでアイコンを検索・プレビューできます：
+Icons can be searched and previewed via CLI:
 
 ```bash
-# エイリアス一覧
+# List aliases
 slide-gen icons list
 
-# キーワード検索
+# Keyword search
 slide-gen icons search "arrow"
 
-# 特定ソースのアイコン一覧
+# List icons from a specific source
 slide-gen icons list --source mi
 
-# アイコンプレビュー（SVG出力）
+# Preview icon (SVG output)
 slide-gen icons preview planning
 
-# アイコンプレビュー（HTML出力）
+# Preview icon (HTML output)
 slide-gen icons preview mi:home --format html
 ```
 
-## 出力例
+## Output Example
 
 ```bash
 $ slide-gen icons search "check"
 
 Aliases:
-  success → mi:check_circle
+  success -> mi:check_circle
 
 Material Icons (mi:):
   mi:check
@@ -258,15 +269,15 @@ Heroicons (hero:):
   hero:check-badge
 ```
 
-## Marp出力への統合
+## Integration with Marp Output
 
-アイコンはMarp Markdown内にHTMLとして埋め込まれます：
+Icons are embedded as HTML within Marp Markdown:
 
 ```markdown
 ---
 <!-- _class: cycle-slide -->
 
-# PDCAサイクル
+# PDCA Cycle
 
 <div class="cycle-container">
   <div class="cycle-node" style="--node-color: #4CAF50;">
@@ -277,10 +288,10 @@ Heroicons (hero:):
 </div>
 ```
 
-必要なCSSとフォント読み込みは、テーマファイルに含めるか、Marpのフロントマターで指定します：
+Required CSS and font loading should be included in the theme file or specified in Marp's frontmatter:
 
 ```yaml
-# 自動生成されるフロントマター
+# Auto-generated frontmatter
 ---
 marp: true
 theme: custom-theme
@@ -288,3 +299,328 @@ style: |
   @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 ---
 ```
+
+---
+
+## AI Collaboration Workflow
+
+AI assistants analyze presentation scenarios and select/suggest appropriate icons.
+
+### Basic Principles
+
+1. **Scenario-driven**: Select icons based on content meaning
+2. **Prefer aliases**: Use semantic names (`planning`) rather than direct specification (`mi:event_note`)
+3. **Maintain consistency**: Use the same icon for the same concept within a presentation
+4. **Auto-supplement**: Automatically fetch missing icons from external sources
+
+### Phase 1: Scenario Analysis and Icon Requirements Derivation
+
+```
+[AI Thought Process]
+
+Slide content: "PDCA Cycle Explanation"
+  -> Required icons:
+     - Plan -> planning alias
+     - Do -> action alias
+     - Check -> analysis alias
+     - Act -> improvement alias
+
+Slide content: "Patient Care Flow"
+  -> Medical icons needed
+     - Reception -> clinic
+     - Examination -> stethoscope
+     - Testing -> lab
+     - Prescription -> prescription
+```
+
+### Phase 2: Icon Search and Selection
+
+AI searches for icons in the following order:
+
+```
+1. Alias search
+   slide-gen icons list --format llm
+   -> Select optimal from registered aliases
+
+2. Source search
+   slide-gen icons search "diagnosis" --format llm
+   -> Search each source by keyword
+
+3. External source search (when missing)
+   slide-gen icons search "electrocardiogram" --source health
+   -> Search specific sources like Health Icons
+```
+
+### Phase 3: Missing Icon Detection and Auto-supplement
+
+```
+[Auto-supplement Flow]
+
+1. AI identifies desired icon
+   Example: Need an "electrocardiogram" icon
+
+2. Search aliases -> Not found
+
+3. Search external sources
+   slide-gen icons search "ecg" --all-sources
+
+4. Candidates found
+   - health:electrocardiogram (Health Icons)
+   - ms:ecg (Material Symbols)
+   - iconify:mdi:heart-pulse (Iconify/MDI)
+
+5. Select optimal and propose alias
+   "I suggest registering 'ecg' alias as health:electrocardiogram."
+
+6. After user approval, add to registry.yaml
+```
+
+### Phase 4: Integration into Slides
+
+```yaml
+# presentation.yaml
+slides:
+  - template: cycle-diagram
+    content:
+      title: "Medical Care Process"
+      nodes:
+        - { label: "Reception", icon: "clinic", color: "#4CAF50" }
+        - { label: "Examination", icon: "stethoscope", color: "#2196F3" }
+        - { label: "Testing", icon: "lab", color: "#FF9800" }
+        - { label: "Prescription", icon: "prescription", color: "#9C27B0" }
+```
+
+---
+
+## Auto-supplement Feature
+
+### icons add Command
+
+Fetches missing icons from external sources and registers them in the registry.
+
+```bash
+# Register as alias
+slide-gen icons add ecg --from "health:electrocardiogram"
+
+# Search and select
+slide-gen icons add ecg --search
+
+# Save as custom SVG
+slide-gen icons add ecg --from "health:electrocardiogram" --save-local
+```
+
+### icons sync Command
+
+Analyzes icons used in presentation.yaml and detects missing ones.
+
+```bash
+slide-gen icons sync presentation.yaml
+```
+
+Output:
+```
+Analyzing presentation.yaml...
+
+Used icons:
+  ✓ planning (alias -> mi:event_note)
+  ✓ action (alias -> mi:play_arrow)
+  ✓ stethoscope (alias -> health:stethoscope)
+  ✗ mri-scan (not found)
+  ✗ rehabilitation (not found)
+
+Missing icons (2):
+  - mri-scan: Did you mean 'mri' (health:mri)?
+  - rehabilitation: Suggestions from Health Icons:
+      health:exercise
+      health:physical-therapy
+      health:crutches
+
+Run 'slide-gen icons add <alias> --from <icon>' to register.
+```
+
+### Auto-supplement Configuration
+
+```yaml
+# config.yaml
+icons:
+  auto_fetch:
+    enabled: true              # Enable auto-fetch
+    sources:                   # Search target sources (priority order)
+      - healthicons            # For medical presentations
+      - material-symbols
+      - iconify
+    cache: true                # Cache fetched SVGs
+    suggest_aliases: true      # Suggest alias registration
+```
+
+---
+
+## Theme Integration
+
+### Automatic Theme Color Application
+
+Icon colors can be automatically inherited from the theme.
+
+```yaml
+# themes/medical.yaml
+colors:
+  primary: "#0277BD"
+  secondary: "#00838F"
+  accent: "#00BCD4"
+
+icon_colors:
+  default: "var(--theme-primary)"
+  highlight: "var(--theme-accent)"
+```
+
+```yaml
+# icons/registry.yaml
+theme_integration:
+  inherit_colors: true
+  color_mapping:
+    "--theme-primary": "primary"
+    "--theme-secondary": "secondary"
+    "--theme-accent": "accent"
+```
+
+### Usage in Slides
+
+```yaml
+# Using theme colors (recommended)
+- template: cycle-diagram
+  content:
+    nodes:
+      - { label: "Plan", icon: "planning" }  # Uses theme's primary color
+
+# Explicitly specifying colors
+- template: cycle-diagram
+  content:
+    nodes:
+      - { label: "Plan", icon: "planning", color: "primary" }    # Palette reference
+      - { label: "Do", icon: "action", color: "#FF5722" }        # Direct specification
+      - { label: "Check", icon: "analysis", color: "accent" }    # Palette reference
+```
+
+### Color Resolution at Output
+
+```html
+<!-- When using theme colors -->
+<span class="material-icons" style="color: var(--theme-primary);">
+  event_note
+</span>
+
+<!-- When using palette reference -->
+<span class="material-icons" style="color: #4CAF50;">
+  play_arrow
+</span>
+```
+
+---
+
+## AI Workflow Integration
+
+### Scenario Example: Creating a Medical Presentation
+
+```
+User: "I want to create a slide explaining the patient care flow"
+
+AI Agent:
+1. Scenario Analysis
+   "This is medical content. I'll select icons primarily from Health Icons."
+
+2. Alias Search
+   slide-gen icons list --category medical --format llm
+   -> Get list of medical aliases
+
+3. Missing Icon Detection
+   "The 'rehabilitation' icon is not registered.
+    I'll search for candidates from Health Icons."
+
+   slide-gen icons search "rehabilitation" --source health
+   -> Found health:physical-therapy
+
+4. Alias Registration Proposal
+   "Would you like to register 'rehabilitation' as health:physical-therapy?"
+
+5. User Approval
+   -> Add to registry.yaml
+
+6. Slide Generation
+   Add the following to presentation.yaml:
+   ```yaml
+   - template: flow-chart
+     content:
+       title: "Care Flow"
+       steps:
+         - { label: "Reception", icon: "clinic" }
+         - { label: "Examination", icon: "stethoscope" }
+         - { label: "Testing", icon: "lab" }
+         - { label: "Treatment", icon: "medicine" }
+         - { label: "Rehabilitation", icon: "rehabilitation" }
+   ```
+
+7. Theme Color Application
+   "Applied the medical theme 'medical'.
+    Icons will be unified with blue-green colors."
+```
+
+---
+
+## Alias Categories
+
+Aliases are organized by category. AI selects from appropriate categories based on the scenario.
+
+| Category | Examples | Use Cases |
+|----------|----------|-----------|
+| Actions | planning, action, save, edit | Operations/Processes |
+| Status | success, warning, error, pending | State display |
+| Objects | document, folder, database | Things/Concepts |
+| Navigation | home, back, forward, menu | Movement/UI |
+| Communication | email, phone, chat, notification | Contact/Notifications |
+| People/Organizations | person, team, organization | People/Organizations |
+| Business | workflow, target, kpi, report | Operations/Metrics |
+| Education | education, learning, certificate | Learning/Training |
+| Medical | medical, doctor, diagnosis, medicine | Medical/Health |
+
+```bash
+# List by category
+slide-gen icons list --category medical
+slide-gen icons list --category business
+```
+
+---
+
+## Best Practices
+
+### For AI Assistants
+
+1. **Prefer using aliases**
+   - Use `planning` (recommended)
+   - Avoid `mi:event_note` (less preferred)
+
+2. **Select appropriate sources for the scenario**
+   - Medical -> Health Icons
+   - General business -> Material Icons/Symbols
+   - Web design -> Heroicons
+
+3. **Suggest supplements when missing**
+   - Present candidates via auto-search
+   - Register only after user approval
+
+4. **Consistency with theme**
+   - Utilize theme colors
+   - Maintain uniformity within the same presentation
+
+### For Users
+
+1. **Adding custom icons**
+   - Place SVGs in `icons/custom/`
+   - Use `fill="currentColor"` for color control
+
+2. **Utilizing aliases**
+   - Reference by semantic names
+   - Centrally manage in registry.yaml
+
+3. **Utilizing theme colors**
+   - Prefer `color: "primary"` over direct color specification
+   - Automatically follows theme changes
