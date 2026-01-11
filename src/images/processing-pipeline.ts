@@ -144,22 +144,24 @@ export class ImageProcessingPipeline {
     const outputFilename = path.basename(relativePath);
     const finalOutputPath = path.join(this.outputDir, outputFilename);
 
-    // Use temp file for intermediate processing
+    // Use two temp files alternately for intermediate processing
+    // This ensures input and output are always different files
+    const tempPaths = [
+      path.join(this.outputDir, `temp_${outputFilename}`),
+      path.join(this.outputDir, `temp2_${outputFilename}`),
+    ];
     let currentInputPath = inputPath;
-    let tempOutputPath = path.join(this.outputDir, `temp_${outputFilename}`);
 
     for (let i = 0; i < instructions.length; i++) {
       const instruction = instructions[i]!;
       const isLast = i === instructions.length - 1;
-      const outputPath = isLast ? finalOutputPath : tempOutputPath;
+      const outputPath = isLast ? finalOutputPath : tempPaths[i % 2]!;
 
       await this.applyInstruction(currentInputPath, outputPath, instruction);
 
       // For next iteration, use the output as input
       if (!isLast) {
-        currentInputPath = tempOutputPath;
-        // Alternate temp file name to avoid overwriting
-        tempOutputPath = path.join(this.outputDir, `temp2_${outputFilename}`);
+        currentInputPath = outputPath;
       }
     }
 
