@@ -81,16 +81,19 @@ export const directoryDefaultsSchema = z.object({
 export type DirectoryDefaults = z.infer<typeof directoryDefaultsSchema>;
 
 /**
+ * Directory metadata entry schema
+ * Can be either defaults or individual file metadata
+ */
+export const directoryMetadataEntrySchema = individualMetadataSchema;
+
+/**
  * Directory metadata schema (images.yaml)
  * Contains _defaults for directory-level settings and individual file entries
+ * Uses a more permissive record type to allow any entry
  */
 export const directoryMetadataSchema = z.record(
-  z.union([
-    // _defaults entry
-    directoryDefaultsSchema,
-    // Individual file metadata
-    individualMetadataSchema,
-  ])
+  z.string(),
+  individualMetadataSchema.passthrough()
 );
 
 export type DirectoryMetadata = z.infer<typeof directoryMetadataSchema>;
