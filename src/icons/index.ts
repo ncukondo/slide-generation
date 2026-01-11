@@ -18,6 +18,7 @@ export {
 export {
   IconResolver,
   type IconOptions,
+  type IconResolverOptions,
 } from "./resolver.js";
 
 export { IconCache } from "./cache.js";
