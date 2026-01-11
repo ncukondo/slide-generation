@@ -3,20 +3,33 @@
 
 # Icon source definitions
 sources:
-  # Material Icons (Web Font)
+  # Material Icons (Web Font) - Classic Google icons
   - name: material-icons
     type: web-font
     prefix: mi
     url: "https://fonts.googleapis.com/icon?family=Material+Icons"
     render: '<span class="material-icons" style="{{ style }}">{{ name }}</span>'
 
-  # Heroicons (SVG CDN)
+  # Material Symbols (SVG via Iconify) - New Google icons with more variants
+  - name: material-symbols
+    type: svg-inline
+    prefix: ms
+    url: "https://api.iconify.design/material-symbols/{name}.svg"
+
+  # Health Icons - Medical and health-focused icons
+  # Source: https://healthicons.org/
+  - name: healthicons
+    type: svg-inline
+    prefix: health
+    url: "https://api.iconify.design/healthicons/{name}.svg"
+
+  # Heroicons (SVG CDN) - Beautiful hand-crafted icons
   - name: heroicons
     type: svg-inline
     prefix: hero
     url: "https://unpkg.com/heroicons@2.0.0/24/outline/{name}.svg"
 
-  # Iconify (Universal SVG CDN)
+  # Iconify (Universal SVG CDN) - Access to 100+ icon sets
   - name: iconify
     type: svg-inline
     prefix: iconify
@@ -29,49 +42,284 @@ sources:
     path: "./icons/custom/"
 
 # Semantic aliases - map meaningful names to actual icons
+# AIはこれらのエイリアスを使用してアイコンを選択します
 aliases:
-  # Actions
+  # === アクション系 ===
   planning: "mi:event_note"
   action: "mi:play_arrow"
   analysis: "mi:analytics"
   improvement: "mi:trending_up"
+  start: "mi:play_circle"
+  stop: "mi:stop_circle"
+  pause: "mi:pause_circle"
+  restart: "mi:replay"
+  save: "mi:save"
+  edit: "mi:edit"
+  delete: "mi:delete"
+  add: "mi:add_circle"
+  remove: "mi:remove_circle"
+  search: "mi:search"
+  filter: "mi:filter_list"
+  sort: "mi:sort"
+  refresh: "mi:refresh"
+  sync: "mi:sync"
+  upload: "mi:upload"
+  download: "mi:download"
+  share: "mi:share"
+  copy: "mi:content_copy"
+  paste: "mi:content_paste"
+  print: "mi:print"
+  export: "mi:file_download"
+  import: "mi:file_upload"
 
-  # Status
+  # === ステータス系 ===
   success: "mi:check_circle"
   warning: "mi:warning"
   error: "mi:error"
   info: "mi:info"
+  question: "mi:help"
+  pending: "mi:hourglass_empty"
+  in-progress: "mi:autorenew"
+  completed: "mi:task_alt"
+  cancelled: "mi:cancel"
+  approved: "mi:verified"
+  rejected: "mi:block"
 
-  # Objects
+  # === オブジェクト系 ===
   document: "mi:description"
   folder: "mi:folder"
+  file: "mi:insert_drive_file"
   database: "mi:storage"
   settings: "mi:settings"
+  config: "mi:tune"
+  calendar: "mi:calendar_today"
+  clock: "mi:schedule"
+  timer: "mi:timer"
+  alarm: "mi:alarm"
+  bookmark: "mi:bookmark"
+  star: "mi:star"
+  heart: "mi:favorite"
+  flag: "mi:flag"
+  tag: "mi:label"
+  link: "mi:link"
+  attachment: "mi:attach_file"
+  image: "mi:image"
+  video: "mi:videocam"
+  audio: "mi:audiotrack"
+  code: "mi:code"
+  terminal: "mi:terminal"
+  cloud: "mi:cloud"
+  server: "mi:dns"
+  network: "mi:lan"
+  security: "mi:security"
+  lock: "mi:lock"
+  unlock: "mi:lock_open"
+  key: "mi:vpn_key"
 
-  # Navigation
+  # === ナビゲーション系 ===
   home: "mi:home"
   back: "mi:arrow_back"
   forward: "mi:arrow_forward"
   up: "mi:arrow_upward"
   down: "mi:arrow_downward"
+  left: "mi:chevron_left"
+  right: "mi:chevron_right"
+  expand: "mi:expand_more"
+  collapse: "mi:expand_less"
+  menu: "mi:menu"
+  close: "mi:close"
+  fullscreen: "mi:fullscreen"
+  minimize: "mi:minimize"
+  maximize: "mi:crop_square"
 
-  # Communication
+  # === コミュニケーション系 ===
   email: "mi:email"
   phone: "mi:phone"
   chat: "mi:chat"
+  message: "mi:message"
   notification: "mi:notifications"
+  announcement: "mi:campaign"
+  feedback: "mi:feedback"
+  comment: "mi:comment"
+  forum: "mi:forum"
+  support: "mi:support_agent"
+
+  # === 人物・組織系 ===
+  person: "mi:person"
+  people: "mi:people"
+  group: "mi:group"
+  team: "mi:groups"
+  organization: "mi:business"
+  company: "mi:domain"
+  department: "mi:account_tree"
+  leader: "mi:supervisor_account"
+  meeting: "mi:event"
+  presentation: "mi:slideshow"
+
+  # === ビジネス・プロセス系 ===
+  workflow: "mi:account_tree"
+  process: "mi:linear_scale"
+  cycle: "mi:autorenew"
+  flowchart: "mi:schema"
+  hierarchy: "mi:account_tree"
+  milestone: "mi:flag"
+  target: "mi:gps_fixed"
+  goal: "mi:emoji_events"
+  kpi: "mi:speed"
+  metric: "mi:bar_chart"
+  report: "mi:assessment"
+  dashboard: "mi:dashboard"
+  chart: "mi:insert_chart"
+  graph: "mi:show_chart"
+  table: "mi:table_chart"
+  list: "mi:list"
+  grid: "mi:grid_view"
+  kanban: "mi:view_kanban"
+  timeline: "mi:timeline"
+  roadmap: "mi:map"
+  strategy: "mi:lightbulb"
+  idea: "mi:lightbulb"
+  innovation: "mi:auto_awesome"
+  research: "mi:science"
+  experiment: "mi:biotech"
+  development: "mi:developer_mode"
+  launch: "mi:rocket_launch"
+  growth: "mi:trending_up"
+  profit: "mi:attach_money"
+  cost: "mi:money_off"
+  budget: "mi:account_balance_wallet"
+  investment: "mi:savings"
+  risk: "mi:warning"
+  opportunity: "mi:lightbulb"
+
+  # === 教育・学習系 ===
+  education: "mi:school"
+  learning: "mi:menu_book"
+  training: "mi:fitness_center"
+  course: "mi:class"
+  lesson: "mi:book"
+  quiz: "mi:quiz"
+  exam: "mi:assignment"
+  certificate: "mi:workspace_premium"
+  graduation: "mi:school"
+  knowledge: "mi:psychology"
+  skill: "mi:construction"
+
+  # === 医療・健康系（Health Icons） ===
+  # 一般医療
+  medical: "health:health"
+  hospital: "health:hospital"
+  clinic: "health:clinic"
+  ambulance: "health:ambulance"
+  emergency: "health:emergency"
+  first-aid: "health:first-aid-kit"
+
+  # 人体・臓器
+  body: "health:body"
+  heart-organ: "health:heart-organ"
+  lungs: "health:lungs"
+  brain: "health:brain"
+  liver: "health:liver"
+  kidney: "health:kidneys"
+  stomach: "health:stomach"
+  intestine: "health:intestine"
+  bones: "health:bone"
+  blood: "health:blood-drop"
+  dna: "health:dna"
+  cells: "health:cells"
+  virus: "health:virus"
+  bacteria: "health:bacteria"
+
+  # 医療行為
+  diagnosis: "health:stethoscope"
+  stethoscope: "health:stethoscope"
+  syringe: "health:syringe"
+  injection: "health:syringe"
+  vaccine: "health:vaccines"
+  pill: "health:medicines"
+  medicine: "health:medicines"
+  prescription: "health:pharmacy"
+  pharmacy: "health:pharmacy"
+  surgery: "health:surgery"
+  operation: "health:surgery"
+  bandage: "health:bandage"
+  wheelchair: "health:wheelchair"
+  crutches: "health:crutches"
+
+  # 医療機器
+  xray: "health:x-ray"
+  ct-scan: "health:ct-scan"
+  mri: "health:mri"
+  ultrasound: "health:ultrasound"
+  ecg: "health:electrocardiogram"
+  microscope: "health:microscope"
+  lab: "health:laboratory"
+  test-tube: "health:test-tube"
+
+  # 医療従事者
+  doctor: "health:doctor-male"
+  nurse: "health:nurse"
+  dentist: "health:tooth"
+  patient: "health:patient"
+
+  # 健康・ウェルネス
+  health: "health:health"
+  wellness: "health:exercise"
+  exercise: "health:exercise"
+  nutrition: "health:fruit"
+  sleep: "health:sleep"
+  mental-health: "health:mental-health"
+  meditation: "health:meditation"
+
+  # 公衆衛生
+  mask: "health:face-mask"
+  sanitizer: "health:hand-sanitizer"
+  social-distance: "health:social-distance"
+  quarantine: "health:quarantine"
+  testing: "health:covid-test"
+
+  # === Material Symbols（新しいスタイル） ===
+  # Material Symbolsは ms: プレフィックスで直接指定も可能
+  # 例: ms:home, ms:settings, ms:person
 
 # Color palette for icons
+# テーマから継承可能、またはここで定義
 colors:
+  # プライマリカラー
   primary: "#1976D2"
   secondary: "#424242"
   accent: "#FF4081"
+
+  # セマンティックカラー
   success: "#4CAF50"
   warning: "#FF9800"
   danger: "#F44336"
   info: "#2196F3"
 
+  # ニュートラル
+  light: "#FAFAFA"
+  dark: "#212121"
+  muted: "#9E9E9E"
+
+  # 医療系カラー
+  medical-primary: "#0277BD"
+  medical-secondary: "#00838F"
+  medical-accent: "#00BCD4"
+  medical-emergency: "#D32F2F"
+  medical-success: "#388E3C"
+
 # Default icon settings
 defaults:
   size: "24px"
   color: "currentColor"
+
+# テーマ連携設定
+theme_integration:
+  # テーマカラーを自動的に継承
+  inherit_colors: true
+
+  # カラーマッピング（テーマ変数 → アイコンカラー）
+  color_mapping:
+    "--theme-primary": "primary"
+    "--theme-secondary": "secondary"
+    "--theme-accent": "accent"
