@@ -60,12 +60,24 @@
 |---|--------|------|------|
 | 21 | [E2E Tests & Documentation](./completed/21-e2e-tests-polish.md) | All | Done |
 
+## Phase 7: AI Agent Integration（AI連携）
+
+| # | タスク | 依存 | 状態 |
+|---|--------|------|------|
+| 22 | [AI Agent Integration - 基盤](./22-ai-integration.md) | 15 | Pending |
+| 23 | [Screenshot Command](./23-screenshot-command.md) | 11, 22 | Pending |
+| 24 | [Preview Enhancements](./24-preview-enhancements.md) | 16, 13, 23 | Pending |
+| 25 | [Image Management](./25-image-management.md) | 19, 11 | Pending |
+| 26 | [Icon Enhancements](./26-icon-enhancements.md) | 07, 14 | Pending |
+| 27 | [Source Management](./27-source-management.md) | 22, 15 | Pending |
+| 28 | [Image Processing (Crop/Blur)](./28-image-processing.md) | 25 | Pending |
+
 ## Progress Summary
 
-- **Total Tasks**: 21
+- **Total Tasks**: 28
 - **Completed**: 21
 - **In Progress**: 0
-- **Pending**: 0
+- **Pending**: 7
 
 ## Architecture Overview
 
@@ -73,6 +85,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                         CLI Layer                            │
 │  convert | validate | templates | icons | init | watch       │
+│  sources | images | screenshot | preview                     │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
@@ -89,6 +102,19 @@
 │   Template    │     Icon      │   Reference   │
 │    System     │    System     │    System     │
 └───────────────┴───────────────┴───────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                   Content Management                         │
+│  ┌─────────────┐  ┌─────────────┐                           │
+│  │   Sources   │  │    Image    │  ← AI協働フロー対応        │
+│  │   System    │  │  Management │                           │
+│  └─────────────┘  └─────────────┘                           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                    AI Integration                            │
+│  CLAUDE.md | AGENT.md | Skills | Commands                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Notes
