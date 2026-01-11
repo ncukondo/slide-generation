@@ -1,0 +1,106 @@
+name: image-full
+description: "フルスクリーン画像（タイトルオーバーレイ付き）"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - image
+  properties:
+    image:
+      type: string
+      description: "画像ファイルパス"
+    title:
+      type: string
+      description: "オーバーレイタイトル（オプション）"
+    caption:
+      type: string
+      description: "キャプション（オプション）"
+    position:
+      type: string
+      enum:
+        - center
+        - top
+        - bottom
+        - left
+        - right
+      default: center
+      description: "画像の位置"
+    overlay:
+      type: string
+      enum:
+        - none
+        - dark
+        - light
+        - gradient
+      default: none
+      description: "オーバーレイ効果"
+
+example:
+  image: "images/photos/site-overview.jpg"
+  title: "Project Site"
+  overlay: dark
+
+output: |
+  <!-- _class: image-full-slide -->
+
+  <div class="image-full" style="background-image: url('{{ content.image }}'); background-position: {{ content.position | default('center') }};">
+    {%- if content.overlay and content.overlay != 'none' %}
+    <div class="overlay overlay-{{ content.overlay }}"></div>
+    {%- endif %}
+    {%- if content.title %}
+    <h1 class="image-title">{{ content.title }}</h1>
+    {%- endif %}
+    {%- if content.caption %}
+    <p class="image-caption">{{ content.caption }}</p>
+    {%- endif %}
+  </div>
+
+css: |
+  .image-full-slide {
+    padding: 0;
+  }
+  .image-full-slide .image-full {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  .image-full-slide .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  .image-full-slide .overlay-dark {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  .image-full-slide .overlay-light {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .image-full-slide .overlay-gradient {
+    background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.7));
+  }
+  .image-full-slide .image-title {
+    position: relative;
+    z-index: 2;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-size: 2.5em;
+    margin: 0;
+  }
+  .image-full-slide .image-caption {
+    position: relative;
+    z-index: 2;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-size: 1.2em;
+    margin-top: 0.5em;
+  }

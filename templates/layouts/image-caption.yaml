@@ -1,0 +1,78 @@
+name: image-caption
+description: "画像と詳細キャプションレイアウト"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - image
+    - caption
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル（オプション）"
+    image:
+      type: string
+      description: "画像ファイルパス"
+    caption:
+      type: string
+      description: "画像の説明（キャプション）"
+    source:
+      type: string
+      description: "出典・クレジット"
+
+example:
+  title: "実験結果"
+  image: "images/figures/experiment-result.png"
+  caption: "図1: 温度変化による材料特性の変化。青線が提案手法、赤線が従来手法。"
+  source: "社内実験データ (2024)"
+
+output: |
+  <!-- _class: image-caption-slide -->
+
+  {%- if content.title %}
+  # {{ content.title }}
+
+  {%- endif %}
+  <figure class="image-caption-container">
+    <img src="{{ content.image }}" alt="{{ content.caption }}">
+    <figcaption>
+      <p class="caption-text">{{ content.caption }}</p>
+      {%- if content.source %}
+      <p class="caption-source">{{ content.source }}</p>
+      {%- endif %}
+    </figcaption>
+  </figure>
+
+css: |
+  .image-caption-slide .image-caption-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    max-width: 90%;
+  }
+  .image-caption-slide .image-caption-container img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .image-caption-slide figcaption {
+    width: 100%;
+    margin-top: 1em;
+    text-align: left;
+  }
+  .image-caption-slide .caption-text {
+    font-size: 0.95em;
+    color: #333;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .image-caption-slide .caption-source {
+    font-size: 0.85em;
+    color: #666;
+    font-style: italic;
+    margin: 0.5em 0 0 0;
+  }

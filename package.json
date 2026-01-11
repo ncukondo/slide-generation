@@ -67,6 +67,7 @@
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
     "globby": "^14.0.2",
+    "image-size": "^2.0.2",
     "nunjucks": "^3.2.4",
     "ora": "^8.1.1",
     "yaml": "^2.7.0",

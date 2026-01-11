@@ -9,6 +9,7 @@ import { createIconsCommand } from './commands/icons.js';
 import { createInitCommand } from './commands/init.js';
 import { createWatchCommand } from './commands/watch.js';
 import { createPreviewCommand } from './commands/preview.js';
+import { createImagesCommand } from './commands/images.js';
 
 const program = new Command();
 
@@ -37,5 +38,8 @@ program.addCommand(createWatchCommand());
 
 // Add preview command
 program.addCommand(createPreviewCommand());
+
+// Add images command
+program.addCommand(createImagesCommand());
 
 program.parse();
