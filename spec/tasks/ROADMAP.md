@@ -64,7 +64,8 @@
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 22 | [AI Agent Integration - 基盤](./22-ai-integration.md) | 15 | Done |
+| 22 | [AI Agent Integration - 基盤](./completed/22-ai-integration.md) | 15 | Done |
+| 29 | [Validate LLM Format](./29-validate-llm-format.md) | 12, 22 | Pending |
 | 23 | [Screenshot Command](./23-screenshot-command.md) | 11, 22 | Pending |
 | 24 | [Preview Enhancements](./24-preview-enhancements.md) | 16, 13, 23 | Pending |
 | 25 | [Image Management](./25-image-management.md) | 19, 11 | Pending |
@@ -74,8 +75,8 @@
 
 ## Progress Summary
 
-- **Total Tasks**: 28
-- **Completed**: 21
+- **Total Tasks**: 29
+- **Completed**: 22
 - **In Progress**: 0
 - **Pending**: 7
 
