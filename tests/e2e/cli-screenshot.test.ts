@@ -203,12 +203,12 @@ references:
   });
 
   describe('full workflow (requires Marp CLI and browser)', () => {
-    it.skipIf(!checkMarpCliAvailable())(
-      'should generate screenshots from YAML',
-      async () => {
-        // Create test YAML file
-        const yamlPath = join(testDir, 'test.yaml');
-        const yamlContent = `meta:
+    // Skip this test in CI as it requires a browser
+    // In local environment with browser, run: pnpm test -- tests/e2e/cli-screenshot.test.ts
+    it.skip('should generate screenshots from YAML (manual test)', async () => {
+      // Create test YAML file
+      const yamlPath = join(testDir, 'test.yaml');
+      const yamlContent = `meta:
   title: Test Presentation
 
 slides:
@@ -219,29 +219,23 @@ slides:
     content:
       title: Section Title
 `;
-        writeFileSync(yamlPath, yamlContent);
+      writeFileSync(yamlPath, yamlContent);
 
-        const outputDir = join(testDir, 'screenshots');
+      const outputDir = join(testDir, 'screenshots');
 
-        try {
-          execSync(
-            `node dist/cli/index.js screenshot "${yamlPath}" -o "${outputDir}" -c "${join(testDir, 'config.yaml')}"`,
-            {
-              cwd: resolve(__dirname, '../..'),
-              encoding: 'utf-8',
-              timeout: 60000,
-            }
-          );
-
-          expect(existsSync(outputDir)).toBe(true);
-          const files = readdirSync(outputDir);
-          expect(files.length).toBeGreaterThan(0);
-          expect(files.some((f) => f.endsWith('.png'))).toBe(true);
-        } catch {
-          // May fail if no browser is installed
-          console.log('Screenshot test skipped: browser not available');
+      execSync(
+        `node dist/cli/index.js screenshot "${yamlPath}" -o "${outputDir}" -c "${join(testDir, 'config.yaml')}"`,
+        {
+          cwd: resolve(__dirname, '../..'),
+          encoding: 'utf-8',
+          timeout: 60000,
         }
-      }
-    );
+      );
+
+      expect(existsSync(outputDir)).toBe(true);
+      const files = readdirSync(outputDir);
+      expect(files.length).toBeGreaterThan(0);
+      expect(files.some((f) => f.endsWith('.png'))).toBe(true);
+    });
   });
 });
