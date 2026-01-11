@@ -64,18 +64,19 @@
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 22 | [AI Agent Integration - 基盤](./22-ai-integration.md) | 15 | Pending |
+| 22 | [AI Agent Integration - 基盤](./completed/22-ai-integration.md) | 15 | Done |
+| 29 | [Validate LLM Format](./29-validate-llm-format.md) | 12, 22 | Pending |
 | 23 | [Screenshot Command](./23-screenshot-command.md) | 11, 22 | Pending |
 | 24 | [Preview Enhancements](./24-preview-enhancements.md) | 16, 13, 23 | Pending |
 | 25 | [Image Management](./completed/25-image-management.md) | 19, 11 | Done |
-| 26 | [Icon Enhancements](./26-icon-enhancements.md) | 07, 14 | Pending |
+| 26 | [Icon Enhancements](./completed/26-icon-enhancements.md) | 07, 14 | Done |
 | 27 | [Source Management](./27-source-management.md) | 22, 15 | Pending |
 | 28 | [Image Processing (Crop/Blur)](./28-image-processing.md) | 25 | Pending |
 
 ## Progress Summary
 
-- **Total Tasks**: 28
-- **Completed**: 22
+- **Total Tasks**: 29
+- **Completed**: 23
 - **In Progress**: 0
 - **Pending**: 6
 
@@ -125,4 +126,10 @@
 
 ## Known Issues
 
-- なし（全てのLint警告は修正済み）
+- `src/icons/cache.test.ts` の "fetches again if cache expired" テストが不安定（タイミング依存）
+  - 原因: 1秒TTL + 1100ms待機がテスト環境で不安定
+  - 修正案: 待機時間を増やすか `vi.useFakeTimers()` を使用
+
+- `tests/e2e/cli-watch.test.ts` がWindowsでタイムアウト
+  - 原因: Windowsでのファイル監視の初期化が遅い
+  - 修正案: タイムアウトを増やすか、Windowsでスキップする

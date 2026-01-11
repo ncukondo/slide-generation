@@ -1,13 +1,30 @@
 import { Command } from 'commander';
 import { mkdir, writeFile, access, readdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import { execSync } from 'child_process';
 import { join, resolve } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import { ExitCode } from './convert';
+import {
+  generateSkillMd,
+  generateClaudeMd,
+  generateAgentsMd,
+  generateOpenCodeAgent,
+  generateTemplatesRef,
+  generateWorkflowsRef,
+  generateSlideCreateCommand,
+  generateSlideValidateCommand,
+  generateSlidePreviewCommand,
+  generateSlideScreenshotCommand,
+  generateSlideThemeCommand,
+} from '../templates/ai';
 
 export interface InitOptions {
   template?: string;
   examples?: boolean;
+  aiConfig?: boolean;
+  skipMarpInstall?: boolean;
 }
 
 /**
@@ -19,6 +36,8 @@ export function createInitCommand(): Command {
     .argument('[directory]', 'Target directory', '.')
     .option('--template <name>', 'Initial template')
     .option('--no-examples', 'Do not create sample files')
+    .option('--no-ai-config', 'Do not create AI assistant config files')
+    .option('--skip-marp-install', 'Skip Marp CLI installation prompt')
     .action(async (directory: string, options: InitOptions) => {
       await executeInit(directory, options);
     });
@@ -34,6 +53,7 @@ export async function executeInit(
   const spinner = ora();
   const targetDir = resolve(directory);
   const includeExamples = options.examples !== false;
+  const includeAiConfig = options.aiConfig !== false;
 
   try {
     spinner.start(`Initializing project in ${targetDir}...`);
@@ -68,6 +88,11 @@ export async function executeInit(
       await writeFileIfNotExists(join(targetDir, 'presentation.yaml'), presentationContent);
     }
 
+    // Create AI config files
+    if (includeAiConfig) {
+      await generateAiConfig(targetDir);
+    }
+
     spinner.succeed(`Project initialized in ${targetDir}`);
 
     // Print summary
@@ -79,10 +104,23 @@ export async function executeInit(
     if (includeExamples) {
       console.log(`  ${chalk.cyan('presentation.yaml')} - Sample presentation`);
     }
+    if (includeAiConfig) {
+      console.log(`  ${chalk.cyan('.skills/')} - AgentSkills configuration`);
+      console.log(`  ${chalk.cyan('CLAUDE.md')} - Claude Code configuration`);
+      console.log(`  ${chalk.cyan('AGENTS.md')} - OpenCode configuration`);
+      console.log(`  ${chalk.cyan('.cursorrules')} - Cursor configuration`);
+      console.log(`  ${chalk.cyan('.claude/commands/')} - Claude Code slash commands`);
+      console.log(`  ${chalk.cyan('.opencode/agent/')} - OpenCode agent configuration`);
+    }
     console.log('');
     console.log(chalk.blue('Next steps:'));
     console.log(`  1. Edit ${chalk.yellow('presentation.yaml')} to add your slides`);
     console.log(`  2. Run ${chalk.yellow('slide-gen convert presentation.yaml')} to generate markdown`);
+
+    // Show Marp CLI installation info if not skipped
+    if (options.skipMarpInstall !== true) {
+      showMarpCliInfo(targetDir);
+    }
   } catch (error) {
     spinner.fail('Failed to initialize project');
     console.error(
@@ -103,6 +141,109 @@ async function writeFileIfNotExists(filePath: string, content: string): Promise<
     // File doesn't exist, create it
     await writeFile(filePath, content, 'utf-8');
   }
+}
+
+/**
+ * Check if Marp CLI is installed
+ * Uses 'marp --version' directly instead of 'npx marp --version'
+ * because npx is slow (searches local, global, and npm registry)
+ */
+export function isMarpCliInstalled(): boolean {
+  try {
+    execSync('marp --version', { stdio: 'pipe', timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Detect package manager from lock files
+ */
+export function detectPackageManager(targetDir?: string): 'pnpm' | 'yarn' | 'npm' {
+  const dir = targetDir ?? process.cwd();
+  if (existsSync(join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
+  if (existsSync(join(dir, 'yarn.lock'))) return 'yarn';
+  return 'npm';
+}
+
+/**
+ * Show Marp CLI installation information
+ */
+function showMarpCliInfo(targetDir: string): void {
+  if (isMarpCliInstalled()) {
+    return;
+  }
+
+  const pm = detectPackageManager(targetDir);
+  const installCmd =
+    pm === 'pnpm'
+      ? 'pnpm add -D @marp-team/marp-cli'
+      : pm === 'yarn'
+        ? 'yarn add -D @marp-team/marp-cli'
+        : 'npm install -D @marp-team/marp-cli';
+
+  console.log('');
+  console.log(chalk.yellow('Marp CLI is recommended for full features:'));
+  console.log('  - Preview slides in browser');
+  console.log('  - Take screenshots for AI review');
+  console.log('  - Export to PDF/HTML/PPTX');
+  console.log('');
+  console.log(chalk.dim('Install with:'));
+  console.log(`  ${chalk.cyan(installCmd)}`);
+}
+
+/**
+ * Generate AI configuration files
+ */
+async function generateAiConfig(targetDir: string): Promise<void> {
+  // Create directories
+  await mkdir(join(targetDir, '.skills', 'slide-assistant', 'references'), { recursive: true });
+  await mkdir(join(targetDir, '.skills', 'slide-assistant', 'scripts'), { recursive: true });
+  await mkdir(join(targetDir, '.claude', 'commands'), { recursive: true });
+  await mkdir(join(targetDir, '.opencode', 'agent'), { recursive: true });
+
+  // Generate AgentSkills (common)
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'SKILL.md'),
+    generateSkillMd()
+  );
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'references', 'templates.md'),
+    generateTemplatesRef()
+  );
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'references', 'workflows.md'),
+    generateWorkflowsRef()
+  );
+
+  // Generate Claude Code files
+  await writeFileIfNotExists(join(targetDir, 'CLAUDE.md'), generateClaudeMd());
+
+  // Generate commands
+  const commandGenerators: Record<string, () => string> = {
+    'slide-create': generateSlideCreateCommand,
+    'slide-validate': generateSlideValidateCommand,
+    'slide-preview': generateSlidePreviewCommand,
+    'slide-screenshot': generateSlideScreenshotCommand,
+    'slide-theme': generateSlideThemeCommand,
+  };
+  for (const [name, generator] of Object.entries(commandGenerators)) {
+    await writeFileIfNotExists(
+      join(targetDir, '.claude', 'commands', `${name}.md`),
+      generator()
+    );
+  }
+
+  // Generate OpenCode files
+  await writeFileIfNotExists(join(targetDir, 'AGENTS.md'), generateAgentsMd());
+  await writeFileIfNotExists(
+    join(targetDir, '.opencode', 'agent', 'slide.md'),
+    generateOpenCodeAgent()
+  );
+
+  // Generate Cursor files (same as AGENTS.md)
+  await writeFileIfNotExists(join(targetDir, '.cursorrules'), generateAgentsMd());
 }
 
 /**

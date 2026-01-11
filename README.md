@@ -10,6 +10,7 @@ A CLI tool to generate Marp-compatible Markdown from YAML source files, designed
 - **Reference management** - Integration with reference-manager CLI for citations
 - **Watch mode** - Auto-convert on file changes
 - **Marp compatible** - Output works directly with Marp CLI
+- **AI assistant integration** - Built-in configuration for Claude Code, OpenCode, Cursor, and other AI assistants
 
 ## Installation
 
@@ -151,6 +152,12 @@ Initialize a new project.
 slide-gen init [directory]
 ```
 
+Options:
+- `--template <name>` - Initial template
+- `--no-examples` - Do not create sample files
+- `--no-ai-config` - Do not create AI assistant config files
+- `--skip-marp-install` - Skip Marp CLI installation prompt
+
 ### preview
 
 Preview with Marp CLI (requires @marp-team/marp-cli).
@@ -220,6 +227,57 @@ Config file search order:
 2. `./config.yaml`
 3. `./slide-gen.yaml`
 4. `~/.slide-gen/config.yaml`
+
+## AI Assistant Integration
+
+When you run `slide-gen init`, AI assistant configuration files are automatically generated:
+
+### Supported AI Assistants
+
+| Assistant | Configuration Files |
+|-----------|---------------------|
+| Claude Code | `CLAUDE.md`, `.claude/commands/*.md` |
+| OpenCode | `AGENTS.md`, `.opencode/agent/slide.md` |
+| Cursor | `.cursorrules` |
+| All (AgentSkills) | `.skills/slide-assistant/` |
+
+### Generated Files
+
+```
+my-presentation/
+├── .skills/
+│   └── slide-assistant/
+│       ├── SKILL.md              # AgentSkills format (common)
+│       └── references/
+│           ├── templates.md      # Template reference
+│           └── workflows.md      # Workflow reference
+├── .claude/
+│   └── commands/                 # Claude Code Slash Commands
+│       ├── slide-create.md
+│       ├── slide-validate.md
+│       └── ...
+├── .opencode/
+│   └── agent/
+│       └── slide.md              # OpenCode sub-agent
+├── AGENTS.md                     # OpenCode project guide
+├── CLAUDE.md                     # Claude Code project guide
+└── .cursorrules                  # Cursor rules
+```
+
+### AI-Optimized Output
+
+Use `--format llm` for token-efficient output:
+
+```bash
+slide-gen templates list --format llm
+slide-gen templates info <name> --format llm
+```
+
+To skip AI configuration files, use:
+
+```bash
+slide-gen init --no-ai-config
+```
 
 ## Development
 
