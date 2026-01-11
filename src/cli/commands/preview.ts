@@ -3,13 +3,13 @@ import { access, unlink, readdir, mkdir, writeFile, readFile, rm } from 'fs/prom
 import { basename, dirname, join, extname } from 'path';
 import * as path from 'path';
 import { tmpdir } from 'os';
-import { spawn, execSync, execFileSync } from 'child_process';
 import { createServer, Server } from 'http';
 import chalk from 'chalk';
 import { watch as chokidarWatch, FSWatcher } from 'chokidar';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ConfigLoader } from '../../config/loader';
 import { ExitCode } from './convert';
+import { runMarp, spawnMarp, isMarpAvailable } from '../utils/marp-runner';
 
 export interface PreviewOptions {
   port?: number;
@@ -190,17 +190,11 @@ export async function collectSlideInfo(
 }
 
 /**
- * Check if marp-cli is available in the system
- * Uses 'marp --version' directly instead of 'npx marp --version'
- * because npx is slow (searches local, global, and npm registry)
+ * Check if marp-cli is available in the system (globally or locally)
+ * Uses the centralized marp-runner utility
  */
-export async function checkMarpCliAvailable(): Promise<boolean> {
-  try {
-    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
-    return true;
-  } catch {
-    return false;
-  }
+export async function checkMarpCliAvailable(projectDir?: string): Promise<boolean> {
+  return isMarpAvailable(projectDir);
 }
 
 /**
@@ -212,13 +206,13 @@ export function getTempOutputPath(inputPath: string): string {
 }
 
 /**
- * Build marp-cli command for preview
+ * Build marp-cli command for preview (for display purposes)
  */
 export function buildMarpCommand(
   markdownPath: string,
   options: PreviewOptions
 ): string {
-  const parts = ['npx', 'marp', '--preview'];
+  const parts = ['marp', '--preview'];
 
   if (options.port) {
     parts.push('-p', String(options.port));
@@ -342,11 +336,12 @@ export async function executeGalleryPreview(
 
   // Check marp-cli availability
   console.log('Checking for Marp CLI...');
-  const marpAvailable = await checkMarpCliAvailable();
+  const projectDir = dirname(inputPath);
+  const marpAvailable = await checkMarpCliAvailable(projectDir);
   if (!marpAvailable) {
     console.error(
       chalk.red(
-        'Error: Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli'
+        'Error: Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli'
       )
     );
     errors.push('Marp CLI not available');
@@ -408,7 +403,8 @@ export async function executeGalleryPreview(
   // Take screenshots
   console.log('Taking screenshots...');
   try {
-    execFileSync('npx', ['marp', '--images', 'png', '-o', galleryDir, tempMdPath], {
+    runMarp(['--images', 'png', '-o', galleryDir, tempMdPath], {
+      projectDir,
       stdio: options.verbose ? 'inherit' : 'pipe',
     });
     console.log(chalk.green('✓') + ' Screenshots generated');
@@ -565,11 +561,11 @@ export async function executePreview(
 
   // Check marp-cli availability
   console.log('Checking for Marp CLI...');
-  const marpAvailable = await checkMarpCliAvailable();
+  const marpAvailable = await checkMarpCliAvailable(dirname(inputPath));
   if (!marpAvailable) {
     console.error(
       chalk.red(
-        'Error: Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli'
+        'Error: Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli'
       )
     );
     errors.push('Marp CLI not available');
@@ -636,9 +632,9 @@ export async function executePreview(
     console.log(`Running: ${marpCommand}`);
   }
 
-  const marpProcess = spawn('npx', ['marp', '--preview', '-p', String(port), tempMarkdownPath], {
+  const marpProcess = spawnMarp(['--preview', '-p', String(port), tempMarkdownPath], {
+    projectDir: dirname(inputPath),
     stdio: 'inherit',
-    shell: true,
   });
 
   let watcher: FSWatcher | null = null;

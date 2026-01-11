@@ -4,13 +4,13 @@ import * as yaml from 'yaml';
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { join, basename } from 'path';
 import { tmpdir } from 'os';
-import { execFileSync } from 'child_process';
 import type { Server } from 'http';
 import { TemplateLoader, type TemplateDefinition } from '../../templates';
 import { ConfigLoader } from '../../config/loader';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ExitCode } from './convert';
 import { collectSlideInfo, startStaticServer, checkMarpCliAvailable } from './preview';
+import { runMarp } from '../utils/marp-runner';
 
 type OutputFormat = 'table' | 'json' | 'llm';
 type InfoFormat = 'text' | 'json' | 'llm';
@@ -752,7 +752,8 @@ export async function executeTemplatePreview(
 
     // Generate screenshot
     try {
-      execFileSync('npx', ['marp', '--images', 'png', '-o', previewDir, mdPath], {
+      runMarp(['--images', 'png', '-o', previewDir, mdPath], {
+        projectDir: process.cwd(),
         stdio: 'pipe',
       });
     } catch {

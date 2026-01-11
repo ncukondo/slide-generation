@@ -1,12 +1,12 @@
 import { Command } from 'commander';
 import { access, mkdir, readdir, unlink } from 'fs/promises';
 import { basename, dirname, join } from 'path';
-import { execSync, execFileSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ConfigLoader } from '../../config/loader';
 import { ExitCode } from './convert';
+import { runMarp, isMarpAvailable } from '../utils/marp-runner';
 
 export interface ScreenshotOptions {
   output?: string;
@@ -73,20 +73,16 @@ export async function filterToSpecificSlide(
 }
 
 /**
- * Check if marp-cli is available in the system
+ * Check if marp-cli is available in the system (globally or locally)
+ * Uses the centralized marp-runner utility
  */
-export function checkMarpCliAvailable(): boolean {
-  try {
-    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
-    return true;
-  } catch {
-    return false;
-  }
+export function checkMarpCliAvailable(projectDir?: string): boolean {
+  return isMarpAvailable(projectDir);
 }
 
 /**
  * Build marp-cli command arguments for taking screenshots
- * Returns an array of arguments to be used with execFileSync
+ * Returns an array of arguments (without the 'marp' command itself)
  */
 export function buildMarpCommandArgs(
   markdownPath: string,
@@ -94,7 +90,7 @@ export function buildMarpCommandArgs(
   options: ScreenshotOptions
 ): string[] {
   const format = options.format || 'png';
-  const args = ['marp', '--images', format];
+  const args = ['--images', format];
 
   // Calculate image scale if width is different from default
   if (options.width && options.width !== 1280) {
@@ -159,10 +155,10 @@ export async function executeScreenshot(
 
   // Check marp-cli availability
   spinner?.start('Checking for Marp CLI...');
-  if (!checkMarpCliAvailable()) {
+  if (!checkMarpCliAvailable(dirname(inputPath))) {
     spinner?.fail('Marp CLI not found');
     const message =
-      'Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli';
+      'Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli';
     console.error(chalk.red(`Error: ${message}`));
     errors.push(message);
     process.exitCode = ExitCode.GeneralError;
@@ -246,11 +242,14 @@ export async function executeScreenshot(
   const marpArgs = buildMarpCommandArgs(tempMdPath, outputDir, options);
 
   if (options.verbose) {
-    console.log(`Running: npx ${marpArgs.join(' ')}`);
+    console.log(`Running: marp ${marpArgs.join(' ')}`);
   }
 
   try {
-    execFileSync('npx', marpArgs, { stdio: options.verbose ? 'inherit' : 'pipe' });
+    runMarp(marpArgs, {
+      projectDir: dirname(inputPath),
+      stdio: options.verbose ? 'inherit' : 'pipe',
+    });
     spinner?.succeed(`Screenshots saved to ${outputDir}`);
   } catch (error) {
     spinner?.fail('Failed to take screenshots');

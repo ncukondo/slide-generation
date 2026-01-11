@@ -4,7 +4,15 @@ import { mkdir, rm, readFile, readdir, stat, access, writeFile } from 'fs/promis
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { Command } from 'commander';
-import { createInitCommand, executeInit, isMarpCliInstalled, detectPackageManager } from './init';
+import {
+  createInitCommand,
+  executeInit,
+  isMarpCliInstalled,
+  isMarpCliInstalledGlobally,
+  isMarpCliInstalledLocally,
+  detectPackageManager,
+  getMarpInstallCommand,
+} from './init';
 
 describe('init command', () => {
   let testDir: string;
@@ -260,10 +268,29 @@ describe('init command', () => {
   });
 
   describe('Marp CLI installation helpers', () => {
-    it('should detect if Marp CLI is installed', { timeout: 10000 }, () => {
+    it('should detect if Marp CLI is installed (deprecated function)', { timeout: 10000 }, () => {
       // Uses 'marp --version' directly (faster than npx)
       const result = isMarpCliInstalled();
       expect(typeof result).toBe('boolean');
+    });
+
+    it('should detect if Marp CLI is installed globally', { timeout: 10000 }, () => {
+      const result = isMarpCliInstalledGlobally();
+      expect(typeof result).toBe('boolean');
+    });
+
+    it('should detect if Marp CLI is installed locally', async () => {
+      const targetDir = join(testDir, 'local-marp-test');
+      await mkdir(targetDir, { recursive: true });
+
+      // No node_modules/.bin/marp exists
+      expect(isMarpCliInstalledLocally(targetDir)).toBe(false);
+
+      // Create fake node_modules/.bin/marp
+      await mkdir(join(targetDir, 'node_modules', '.bin'), { recursive: true });
+      await writeFile(join(targetDir, 'node_modules', '.bin', 'marp'), '');
+
+      expect(isMarpCliInstalledLocally(targetDir)).toBe(true);
     });
 
     it('should detect package manager', () => {
@@ -295,6 +322,12 @@ describe('init command', () => {
 
       const pm = detectPackageManager(targetDir);
       expect(pm).toBe('npm');
+    });
+
+    it('should return correct install command for each package manager', () => {
+      expect(getMarpInstallCommand('pnpm')).toBe('pnpm add -D @marp-team/marp-cli');
+      expect(getMarpInstallCommand('yarn')).toBe('yarn add -D @marp-team/marp-cli');
+      expect(getMarpInstallCommand('npm')).toBe('npm install -D @marp-team/marp-cli');
     });
 
     it('should skip Marp CLI info with --skip-marp-install', async () => {

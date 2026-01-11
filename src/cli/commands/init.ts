@@ -1,7 +1,8 @@
 import { Command } from 'commander';
 import { mkdir, writeFile, access, readdir, cp } from 'fs/promises';
 import { existsSync } from 'fs';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
+import { createInterface } from 'readline';
 import { dirname, join, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
@@ -201,7 +202,7 @@ export async function executeInit(
 
     // Show Marp CLI installation info if not skipped
     if (options.skipMarpInstall !== true) {
-      showMarpCliInfo(targetDir);
+      await showMarpCliInfo(targetDir);
     }
   } catch (error) {
     spinner.fail('Failed to initialize project');
@@ -239,17 +240,34 @@ async function copyFileIfNotExists(source: string, dest: string): Promise<void> 
 }
 
 /**
- * Check if Marp CLI is installed
- * Uses 'marp --version' directly instead of 'npx marp --version'
- * because npx is slow (searches local, global, and npm registry)
+ * Check if Marp CLI is installed globally
+ * Uses 'marp --version' directly
  */
-export function isMarpCliInstalled(): boolean {
+export function isMarpCliInstalledGlobally(): boolean {
   try {
     execSync('marp --version', { stdio: 'pipe', timeout: 5000 });
     return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * Check if Marp CLI is installed locally in the project
+ * Checks node_modules/.bin/marp
+ */
+export function isMarpCliInstalledLocally(targetDir?: string): boolean {
+  const dir = targetDir ?? process.cwd();
+  const marpBinPath = join(dir, 'node_modules', '.bin', 'marp');
+  return existsSync(marpBinPath);
+}
+
+/**
+ * Check if Marp CLI is available (either globally or locally)
+ * @deprecated Use isMarpCliInstalledGlobally() or isMarpCliInstalledLocally() for specific checks
+ */
+export function isMarpCliInstalled(): boolean {
+  return isMarpCliInstalledGlobally();
 }
 
 /**
@@ -263,29 +281,133 @@ export function detectPackageManager(targetDir?: string): 'pnpm' | 'yarn' | 'npm
 }
 
 /**
- * Show Marp CLI installation information
+ * Get the install command for Marp CLI based on package manager
  */
-function showMarpCliInfo(targetDir: string): void {
-  if (isMarpCliInstalled()) {
-    return;
+export function getMarpInstallCommand(pm: 'pnpm' | 'yarn' | 'npm'): string {
+  switch (pm) {
+    case 'pnpm':
+      return 'pnpm add -D @marp-team/marp-cli';
+    case 'yarn':
+      return 'yarn add -D @marp-team/marp-cli';
+    default:
+      return 'npm install -D @marp-team/marp-cli';
+  }
+}
+
+/**
+ * Prompt user for Yes/No confirmation
+ * Returns true for Yes, false for No
+ */
+export async function promptYesNo(question: string, defaultYes = true): Promise<boolean> {
+  // Check if running in non-interactive mode (CI, piped input, etc.)
+  if (!process.stdin.isTTY) {
+    return defaultYes;
+  }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const hint = defaultYes ? '(Y/n)' : '(y/N)';
+  const prompt = `${question} ${hint} `;
+
+  return new Promise((resolve) => {
+    rl.question(prompt, (answer) => {
+      rl.close();
+      const normalized = answer.trim().toLowerCase();
+      if (normalized === '') {
+        resolve(defaultYes);
+      } else {
+        resolve(normalized === 'y' || normalized === 'yes');
+      }
+    });
+  });
+}
+
+/**
+ * Install Marp CLI using the detected package manager
+ * Returns true if installation succeeded
+ */
+export function installMarpCli(targetDir: string): boolean {
+  const pm = detectPackageManager(targetDir);
+  const installCmd = getMarpInstallCommand(pm);
+  const spinner = ora(`Installing Marp CLI with ${pm}...`).start();
+
+  try {
+    // Run install command in the target directory
+    const result = spawnSync(pm, ['add', '-D', '@marp-team/marp-cli'], {
+      cwd: targetDir,
+      stdio: 'pipe',
+      shell: true,
+      timeout: 120000, // 2 minutes timeout
+    });
+
+    if (result.status === 0) {
+      spinner.succeed('Marp CLI installed successfully');
+      return true;
+    } else {
+      const stderr = result.stderr?.toString() || 'Unknown error';
+      spinner.fail(`Failed to install Marp CLI: ${stderr}`);
+      console.log(chalk.dim(`You can install it manually with: ${installCmd}`));
+      return false;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    spinner.fail(`Failed to install Marp CLI: ${message}`);
+    console.log(chalk.dim(`You can install it manually with: ${installCmd}`));
+    return false;
+  }
+}
+
+/**
+ * Show Marp CLI installation information and optionally install
+ * Returns true if Marp CLI is available after this function completes
+ */
+async function showMarpCliInfo(targetDir: string): Promise<boolean> {
+  // Check if already installed (globally or locally)
+  if (isMarpCliInstalledGlobally() || isMarpCliInstalledLocally(targetDir)) {
+    console.log('');
+    console.log(chalk.green('✓') + ' Marp CLI is available');
+    return true;
   }
 
   const pm = detectPackageManager(targetDir);
-  const installCmd =
-    pm === 'pnpm'
-      ? 'pnpm add -D @marp-team/marp-cli'
-      : pm === 'yarn'
-        ? 'yarn add -D @marp-team/marp-cli'
-        : 'npm install -D @marp-team/marp-cli';
+  const installCmd = getMarpInstallCommand(pm);
 
   console.log('');
+  console.log(chalk.dim('─'.repeat(45)));
   console.log(chalk.yellow('Marp CLI is recommended for full features:'));
-  console.log('  - Preview slides in browser');
-  console.log('  - Take screenshots for AI review');
-  console.log('  - Export to PDF/HTML/PPTX');
+  console.log('  • Preview slides in browser');
+  console.log('  • Take screenshots for AI review');
+  console.log('  • Export to PDF/HTML/PPTX');
   console.log('');
-  console.log(chalk.dim('Install with:'));
-  console.log(`  ${chalk.cyan(installCmd)}`);
+  console.log(chalk.dim('Marp CLI is not currently installed.'));
+  console.log(chalk.dim('─'.repeat(45)));
+  console.log('');
+
+  // Check if package.json exists (required for local installation)
+  const packageJsonPath = join(targetDir, 'package.json');
+  const hasPackageJson = existsSync(packageJsonPath);
+
+  if (!hasPackageJson) {
+    console.log(chalk.dim('No package.json found. You can install Marp CLI globally:'));
+    console.log(`  ${chalk.cyan('npm install -g @marp-team/marp-cli')}`);
+    return false;
+  }
+
+  // Prompt for installation
+  const shouldInstall = await promptYesNo('Install Marp CLI now?', true);
+
+  if (shouldInstall) {
+    const success = installMarpCli(targetDir);
+    return success;
+  } else {
+    console.log('');
+    console.log(chalk.dim('You can install it later with:'));
+    console.log(`  ${chalk.cyan(installCmd)}`);
+    return false;
+  }
 }
 
 /**

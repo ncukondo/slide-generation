@@ -47,7 +47,7 @@ describe('screenshot command - marp integration', () => {
 
     const args = buildMarpCommandArgs('/path/to/slides.md', '/output', options);
 
-    expect(args).toContain('marp');
+    // Note: 'marp' command is not included in args - it's handled by runMarp()
     expect(args).toContain('--images');
     expect(args).toContain('png');
   });
