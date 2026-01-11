@@ -1,9 +1,17 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as yaml from 'yaml';
+import { mkdir, writeFile, rm, readFile } from 'fs/promises';
+import { join, basename, extname } from 'path';
+import * as path from 'path';
+import { tmpdir } from 'os';
+import { execSync, execFileSync } from 'child_process';
+import { createServer, Server } from 'http';
 import { TemplateLoader, type TemplateDefinition } from '../../templates';
 import { ConfigLoader } from '../../config/loader';
+import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ExitCode } from './convert';
+import { generateGalleryHtml, collectSlideInfo, type SlideInfo } from './preview';
 
 type OutputFormat = 'table' | 'json' | 'llm';
 type InfoFormat = 'text' | 'json' | 'llm';
@@ -470,6 +478,71 @@ function createPreviewSubcommand(): Command {
 }
 
 /**
+ * Generate sample YAML for a template
+ */
+function generateSampleYaml(template: TemplateDefinition): string {
+  const slide = {
+    template: template.name,
+    content: template.example ?? {},
+  };
+  return yaml.stringify({ slides: [slide] });
+}
+
+/**
+ * Start a simple HTTP server to serve template preview files
+ */
+function startTemplatePreviewServer(
+  previewDir: string,
+  port: number
+): Promise<Server> {
+  return new Promise((resolve, reject) => {
+    const mimeTypes: Record<string, string> = {
+      '.html': 'text/html',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.css': 'text/css',
+      '.js': 'application/javascript',
+    };
+
+    const server = createServer(async (req, res) => {
+      try {
+        // Parse URL and get pathname only (ignore query strings)
+        const urlPath = new URL(req.url || '/', `http://localhost`).pathname;
+        const requestedPath = urlPath === '/' ? '/index.html' : urlPath;
+
+        // Resolve to absolute path and normalize (handles .. and .)
+        const resolvedPreviewDir = path.resolve(previewDir);
+        const filePath = path.resolve(previewDir, '.' + requestedPath);
+
+        // Security: Ensure the resolved path is within previewDir (prevent path traversal)
+        if (!filePath.startsWith(resolvedPreviewDir + '/') && filePath !== resolvedPreviewDir) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
+
+        const ext = extname(filePath);
+        const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+        const data = await readFile(filePath);
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+      } catch {
+        res.writeHead(404);
+        res.end('Not found');
+      }
+    });
+
+    server.on('error', reject);
+    server.listen(port, () => {
+      console.log(`Template preview server running at ${chalk.cyan(`http://localhost:${port}`)}`);
+      resolve(server);
+    });
+  });
+}
+
+/**
  * Execute template preview
  */
 export async function executeTemplatePreview(
@@ -483,6 +556,33 @@ export async function executeTemplatePreview(
     return;
   }
 
+  const port = Number(options.port) || 8080;
+  const previewDir = join(tmpdir(), `slide-gen-template-preview-${Date.now()}`);
+
+  // Check marp-cli availability
+  console.log('Checking for Marp CLI...');
+  try {
+    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
+  } catch {
+    console.error(
+      chalk.red(
+        'Error: Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli'
+      )
+    );
+    process.exitCode = ExitCode.GeneralError;
+    return;
+  }
+  console.log(chalk.green('✓') + ' Marp CLI found');
+
+  // Load configuration and templates
+  const configLoader = new ConfigLoader();
+  let configPath = options.config;
+
+  if (!configPath) {
+    configPath = await configLoader.findConfig(process.cwd());
+  }
+
+  const config = await configLoader.load(configPath);
   const templateLoader = await loadTemplates(options.config);
 
   // Get templates to preview
@@ -505,16 +605,133 @@ export async function executeTemplatePreview(
   }
 
   console.log(`Found ${templates.length} template(s) to preview`);
-  console.log('Template preview mode is available through gallery mode.');
-  console.log('');
-  console.log('To preview templates:');
-  console.log('  1. Create a YAML file with example slides');
-  console.log('  2. Run: slide-gen preview --gallery <file.yaml>');
-  console.log('');
-  console.log('Template examples:');
-  for (const template of templates) {
-    console.log(`  - ${template.name}: ${template.description}`);
+
+  // Create preview directory
+  await mkdir(previewDir, { recursive: true });
+
+  // Initialize pipeline
+  console.log('Initializing pipeline...');
+  const pipeline = new Pipeline(config);
+
+  try {
+    await pipeline.initialize();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown initialization error';
+    console.error(chalk.red(`Error: Failed to initialize pipeline: ${message}`));
+    process.exitCode = ExitCode.GeneralError;
+    await rm(previewDir, { recursive: true, force: true });
+    return;
   }
+
+  // Generate screenshots for each template
+  const allSlides: SlideInfo[] = [];
+
+  for (const template of templates) {
+    console.log(`Processing template: ${chalk.cyan(template.name)}...`);
+
+    // Generate sample YAML
+    const sampleYaml = generateSampleYaml(template);
+    const yamlPath = join(previewDir, `${template.name}.yaml`);
+    await writeFile(yamlPath, sampleYaml);
+
+    // Convert to markdown
+    const mdPath = join(previewDir, `${template.name}.md`);
+    try {
+      await pipeline.runWithResult(yamlPath, { outputPath: mdPath });
+    } catch (error) {
+      const message =
+        error instanceof PipelineError
+          ? `${error.stage}: ${error.message}`
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error';
+      console.warn(chalk.yellow(`  Warning: Failed to convert ${template.name}: ${message}`));
+      continue;
+    }
+
+    // Generate screenshot
+    try {
+      execFileSync('npx', ['marp', '--images', 'png', '-o', previewDir, mdPath], {
+        stdio: 'pipe',
+      });
+    } catch {
+      console.warn(chalk.yellow(`  Warning: Failed to generate screenshot for ${template.name}`));
+      continue;
+    }
+
+    // Collect slide info for this template
+    const templateSlides = await collectSlideInfo(previewDir, template.name, 'png');
+    for (const slide of templateSlides) {
+      allSlides.push({
+        ...slide,
+        path: basename(slide.path),
+        title: `${template.name} - ${template.description}`,
+      });
+    }
+
+    console.log(chalk.green('  ✓') + ` ${template.name}`);
+  }
+
+  if (allSlides.length === 0) {
+    console.error(chalk.red('Error: No template previews generated'));
+    process.exitCode = ExitCode.GeneralError;
+    await rm(previewDir, { recursive: true, force: true });
+    return;
+  }
+
+  // Generate gallery HTML
+  const galleryHtml = generateGalleryHtml(allSlides);
+  await writeFile(join(previewDir, 'index.html'), galleryHtml);
+
+  // Start preview server
+  console.log(`\nStarting preview server on port ${chalk.cyan(port)}...`);
+
+  let server: Server;
+  try {
+    server = await startTemplatePreviewServer(previewDir, port);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to start server';
+    console.error(chalk.red(`Error: ${message}`));
+    process.exitCode = ExitCode.GeneralError;
+    await rm(previewDir, { recursive: true, force: true });
+    return;
+  }
+
+  // Open browser
+  const url = `http://localhost:${port}`;
+  try {
+    // Dynamic import for optional 'open' package (ESM)
+    // Use variable to prevent TypeScript from checking module existence at compile time
+    const moduleName = 'open';
+    const openModule = (await import(moduleName)) as { default: (target: string) => Promise<unknown> };
+    await openModule.default(url);
+  } catch {
+    console.log(`Open ${chalk.cyan(url)} in your browser`);
+  }
+
+  console.log(`\nShowing ${allSlides.length} template preview(s)`);
+  console.log('Press Ctrl+C to stop the server');
+
+  // Cleanup on exit
+  const cleanup = async () => {
+    server.close();
+    await rm(previewDir, { recursive: true, force: true });
+  };
+
+  const signalHandler = async () => {
+    console.log('\n' + chalk.yellow('Template preview server stopped.'));
+    await cleanup();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', signalHandler);
+  process.on('SIGTERM', signalHandler);
+
+  // Wait for server to close
+  await new Promise<void>((resolve) => {
+    server.on('close', () => resolve());
+  });
 }
 
 /**

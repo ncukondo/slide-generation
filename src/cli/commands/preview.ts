@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { access, unlink, readdir, mkdir, writeFile, readFile, rm } from 'fs/promises';
 import { basename, dirname, join, extname } from 'path';
+import * as path from 'path';
 import { tmpdir } from 'os';
 import { spawn, execSync, execFileSync } from 'child_process';
 import { createServer, Server } from 'http';
@@ -32,6 +33,18 @@ export interface SlideInfo {
 }
 
 /**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Generate HTML for gallery view with slide thumbnails
  */
 export function generateGalleryHtml(slides: SlideInfo[]): string {
@@ -40,9 +53,9 @@ export function generateGalleryHtml(slides: SlideInfo[]): string {
       ? slides
           .map(
             (s) => `
-      <div class="slide" onclick="showSlide(${s.index}, '${s.path}')">
-        <img src="${s.path}" alt="Slide ${s.index}">
-        <div class="slide-title">${s.title}</div>
+      <div class="slide" data-index="${s.index}" data-path="${escapeHtml(s.path)}">
+        <img src="${escapeHtml(s.path)}" alt="Slide ${s.index}">
+        <div class="slide-title">${escapeHtml(s.title)}</div>
       </div>
     `
           )
@@ -77,11 +90,11 @@ export function generateGalleryHtml(slides: SlideInfo[]): string {
   <div class="gallery">
     ${slideItems}
   </div>
-  <div class="modal" id="modal" onclick="hideSlide(event)">
-    <span class="modal-close" onclick="hideSlide(event)">&times;</span>
-    <span class="modal-nav prev" onclick="navigateSlide(event, -1)">&lt;</span>
+  <div class="modal" id="modal">
+    <span class="modal-close">&times;</span>
+    <span class="modal-nav prev">&lt;</span>
     <img id="modal-img" src="">
-    <span class="modal-nav next" onclick="navigateSlide(event, 1)">&gt;</span>
+    <span class="modal-nav next">&gt;</span>
   </div>
   <script>
     const slides = ${JSON.stringify(slides)};
@@ -99,23 +112,50 @@ export function generateGalleryHtml(slides: SlideInfo[]): string {
       }
     }
 
-    function navigateSlide(event, direction) {
-      event.stopPropagation();
+    function navigateSlide(direction) {
       currentIndex = (currentIndex + direction + slides.length) % slides.length;
       const slide = slides[currentIndex];
       document.getElementById('modal-img').src = slide.path;
     }
 
+    // Event delegation for slide clicks
+    document.querySelector('.gallery').addEventListener('click', (e) => {
+      const slideEl = e.target.closest('.slide');
+      if (slideEl) {
+        const index = parseInt(slideEl.dataset.index, 10);
+        const path = slideEl.dataset.path;
+        showSlide(index, path);
+      }
+    });
+
+    // Modal event handlers
+    document.getElementById('modal').addEventListener('click', hideSlide);
+    document.querySelector('.modal-nav.prev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateSlide(-1);
+    });
+    document.querySelector('.modal-nav.next').addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateSlide(1);
+    });
+
     document.addEventListener('keydown', (e) => {
       const modal = document.getElementById('modal');
       if (!modal.classList.contains('active')) return;
       if (e.key === 'Escape') modal.classList.remove('active');
-      if (e.key === 'ArrowLeft') navigateSlide(e, -1);
-      if (e.key === 'ArrowRight') navigateSlide(e, 1);
+      if (e.key === 'ArrowLeft') navigateSlide(-1);
+      if (e.key === 'ArrowRight') navigateSlide(1);
     });
   </script>
 </body>
 </html>`;
+}
+
+/**
+ * Escape special characters in a string for use in a regular expression
+ */
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -128,7 +168,7 @@ export async function collectSlideInfo(
 ): Promise<SlideInfo[]> {
   try {
     const files = await readdir(dir);
-    const slidePattern = new RegExp(`^${baseName}\\.(\\d{3})\\.${format}$`);
+    const slidePattern = new RegExp(`^${escapeRegExp(baseName)}\\.(\\d{3})\\.${escapeRegExp(format)}$`);
 
     const slides: SlideInfo[] = [];
     for (const file of files) {
@@ -213,8 +253,20 @@ export function startGalleryServer(
 
     const server = createServer(async (req, res) => {
       try {
-        let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
-        filePath = join(galleryDir, filePath);
+        // Parse URL and get pathname only (ignore query strings)
+        const urlPath = new URL(req.url || '/', `http://localhost`).pathname;
+        const requestedPath = urlPath === '/' ? '/index.html' : urlPath;
+
+        // Resolve to absolute path and normalize (handles .. and .)
+        const resolvedGalleryDir = path.resolve(galleryDir);
+        const filePath = path.resolve(galleryDir, '.' + requestedPath);
+
+        // Security: Ensure the resolved path is within galleryDir (prevent path traversal)
+        if (!filePath.startsWith(resolvedGalleryDir + '/') && filePath !== resolvedGalleryDir) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
 
         const ext = extname(filePath);
         const contentType = mimeTypes[ext] || 'application/octet-stream';
@@ -384,8 +436,11 @@ export async function executeGalleryPreview(
     : `http://localhost:${port}`;
 
   try {
-    const open = await import('open' as string);
-    await open.default(url);
+    // Dynamic import for optional 'open' package (ESM)
+    // Use variable to prevent TypeScript from checking module existence at compile time
+    const moduleName = 'open';
+    const openModule = (await import(moduleName)) as { default: (target: string) => Promise<unknown> };
+    await openModule.default(url);
   } catch {
     console.log(`Open ${chalk.cyan(url)} in your browser`);
   }
