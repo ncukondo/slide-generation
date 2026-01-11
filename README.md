@@ -158,6 +158,24 @@ Options:
 - `--no-ai-config` - Do not create AI assistant config files
 - `--skip-marp-install` - Skip Marp CLI installation prompt
 
+### sources
+
+Manage source materials for slide creation.
+
+```bash
+# Initialize source management (interactive)
+slide-gen sources init
+
+# Import materials from directory
+slide-gen sources init --from-directory ~/Projects/materials/
+
+# Add material file
+slide-gen sources import ~/data.xlsx
+
+# Check source status
+slide-gen sources status
+```
+
 ### preview
 
 Preview with Marp CLI (requires @marp-team/marp-cli).
@@ -230,6 +248,8 @@ Config file search order:
 
 ## AI Assistant Integration
 
+> **For AI Assistants:** If you are an AI assistant reading this README, see [AI-GUIDE.md](./AI-GUIDE.md) for a quick start guide optimized for AI workflows.
+
 When you run `slide-gen init`, AI assistant configuration files are automatically generated:
 
 ### Supported AI Assistants
@@ -272,6 +292,33 @@ Use `--format llm` for token-efficient output:
 slide-gen templates list --format llm
 slide-gen templates info <name> --format llm
 ```
+
+### AI Collaboration Workflows
+
+This tool is designed for seamless collaboration with AI assistants.
+
+#### Source Material Collection
+
+AI supports three patterns for gathering information needed for slide creation:
+
+| Pattern | Situation | AI Behavior |
+|---------|-----------|-------------|
+| A: Explore Mode | Materials organized in a directory | Explore and analyze directory |
+| B: Supplement Mode | Only scenario or partial materials | Analyze content, interview for missing info |
+| C: Interview Mode | No materials (starting from scratch) | Collect information via dialogue |
+
+#### Image Preparation
+
+Based on the presentation scenario, AI will:
+
+1. Identify required images for each slide
+2. Propose specific specifications (composition, resolution, notes)
+3. Review provided images
+4. Provide feedback and adjustment suggestions
+
+For detailed specifications, see `spec/sources.md` and `spec/images.md`.
+
+### Skip AI Configuration
 
 To skip AI configuration files, use:
 

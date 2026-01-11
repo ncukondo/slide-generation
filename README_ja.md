@@ -151,6 +151,30 @@ slide-gen icons preview <name>
 slide-gen init [directory]
 ```
 
+オプション:
+- `--template <name>` - 初期テンプレート
+- `--no-examples` - サンプルファイルを作成しない
+- `--no-ai-config` - AIアシスタント設定ファイルを作成しない
+- `--skip-marp-install` - Marp CLIインストール確認をスキップ
+
+### sources
+
+ソース資料を管理します。
+
+```bash
+# ソース管理を初期化（対話形式）
+slide-gen sources init
+
+# ディレクトリから素材を取り込み
+slide-gen sources init --from-directory ~/Projects/materials/
+
+# 素材ファイルを追加
+slide-gen sources import ~/data.xlsx
+
+# ソース状況を確認
+slide-gen sources status
+```
+
 ### preview
 
 Marp CLIでプレビューを表示します（@marp-team/marp-cliが必要）。
@@ -220,6 +244,86 @@ output:
 2. `./config.yaml`
 3. `./slide-gen.yaml`
 4. `~/.slide-gen/config.yaml`
+
+## AIアシスタント連携
+
+> **AIアシスタントへ:** このREADMEを読んでいるAIアシスタントは、AIワークフローに最適化されたクイックスタートガイド [AI-GUIDE.md](./AI-GUIDE.md) を参照してください。
+
+`slide-gen init` を実行すると、AIアシスタント用の設定ファイルが自動生成されます。
+
+### 対応AIアシスタント
+
+| アシスタント | 設定ファイル |
+|-------------|-------------|
+| Claude Code | `CLAUDE.md`, `.claude/commands/*.md` |
+| OpenCode | `AGENTS.md`, `.opencode/agent/slide.md` |
+| Cursor | `.cursorrules` |
+| 共通 (AgentSkills) | `.skills/slide-assistant/` |
+
+### 生成されるファイル
+
+```
+my-presentation/
+├── .skills/
+│   └── slide-assistant/
+│       ├── SKILL.md              # AgentSkills形式（共通）
+│       └── references/
+│           ├── templates.md      # テンプレート参照
+│           └── workflows.md      # ワークフロー参照
+├── .claude/
+│   └── commands/                 # Claude Code スラッシュコマンド
+│       ├── slide-create.md
+│       ├── slide-validate.md
+│       └── ...
+├── .opencode/
+│   └── agent/
+│       └── slide.md              # OpenCode サブエージェント
+├── AGENTS.md                     # OpenCode プロジェクトガイド
+├── CLAUDE.md                     # Claude Code プロジェクトガイド
+└── .cursorrules                  # Cursor ルール
+```
+
+### AI向け最適化出力
+
+トークン効率の良い出力には `--format llm` を使用します:
+
+```bash
+slide-gen templates list --format llm
+slide-gen templates info <name> --format llm
+```
+
+### AI協働ワークフロー
+
+本ツールはAIアシスタントとの協働を前提に設計されています。
+
+#### ソース素材の収集
+
+AIは以下の3つのパターンでスライド作成に必要な情報を収集します:
+
+| パターン | 状況 | AIの動作 |
+|---------|------|---------|
+| A: 探索モード | 素材がディレクトリに整理済み | ディレクトリを探索・分析 |
+| B: 補完モード | シナリオや一部素材のみ | 内容を分析し、不足情報をインタビュー |
+| C: インタビューモード | 素材なし（ゼロから） | 対話で情報収集 |
+
+#### 画像の準備
+
+AIはプレゼンテーションのシナリオに基づいて:
+
+1. 必要な画像を特定
+2. 具体的な仕様を提案（構図、解像度、注意点）
+3. 提供された画像をレビュー
+4. フィードバックと調整を支援
+
+詳細は `spec/sources.md` および `spec/images.md` を参照してください。
+
+### AI設定ファイルをスキップ
+
+AI設定ファイルを生成しない場合:
+
+```bash
+slide-gen init --no-ai-config
+```
 
 ## 開発
 

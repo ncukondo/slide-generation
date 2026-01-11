@@ -41,7 +41,38 @@ slide-gen templates info <name> --format llm
 5. Convert: `slide-gen convert`
 6. Preview or screenshot for review
 
-### 5. YAML Source Format
+### 5. Source Material Collection
+
+Support three patterns based on user's material situation:
+
+| Pattern | Situation | Your Behavior |
+|---------|-----------|---------------|
+| A: Explore | Materials in a directory | Scan with Glob, analyze with Read, organize into sources/ |
+| B: Supplement | Only scenario/partial materials | Analyze content, interview for missing info |
+| C: Interview | No materials | Collect info via dialogue, build from scratch |
+
+Commands:
+```bash
+slide-gen sources init                              # Interactive
+slide-gen sources init --from-directory ~/materials/  # From directory
+slide-gen sources status                            # Check status
+```
+
+### 6. Image Collaboration
+
+Based on presentation scenario:
+1. Identify required images and their purpose
+2. Generate specific requests (composition, resolution, notes)
+3. Review provided images against scenario-derived criteria
+4. Provide feedback and suggest adjustments
+
+Commands:
+```bash
+slide-gen validate --check-images   # List missing images
+slide-gen images request --format llm  # Generate request list
+```
+
+### 7. YAML Source Format
 
 ```yaml
 meta:
