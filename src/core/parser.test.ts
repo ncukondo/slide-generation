@@ -178,4 +178,70 @@ slides:
       );
     });
   });
+
+  describe('parseWithLineInfo', () => {
+    it('should track line numbers for each slide', () => {
+      const yaml = `meta:
+  title: "Test"
+slides:
+  - template: title
+    content:
+      title: "Slide 1"
+  - template: bullet-list
+    content:
+      title: "Slide 2"
+`;
+      const parser = new Parser();
+      const result = parser.parseWithLineInfo(yaml);
+
+      expect(result.slideLines).toHaveLength(2);
+      expect(result.slideLines[0]).toBe(4); // Line 4: "- template: title"
+      expect(result.slideLines[1]).toBe(7); // Line 7: "- template: bullet-list"
+    });
+
+    it('should return parsed presentation data with line info', () => {
+      const yaml = `meta:
+  title: "Test Presentation"
+slides:
+  - template: section
+    content:
+      title: "Section 1"
+`;
+      const parser = new Parser();
+      const result = parser.parseWithLineInfo(yaml);
+
+      expect(result.meta.title).toBe('Test Presentation');
+      expect(result.slides).toHaveLength(1);
+      expect(result.slides[0]?.template).toBe('section');
+      expect(result.slideLines[0]).toBe(4);
+    });
+
+    it('should handle empty slides array', () => {
+      const yaml = `meta:
+  title: "Empty Presentation"
+slides: []
+`;
+      const parser = new Parser();
+      const result = parser.parseWithLineInfo(yaml);
+
+      expect(result.slideLines).toHaveLength(0);
+    });
+
+    it('should throw ParseError for invalid YAML', () => {
+      // Tab character in indentation is invalid in YAML
+      const yaml = "meta:\n\ttitle: Test";
+      const parser = new Parser();
+
+      expect(() => parser.parseWithLineInfo(yaml)).toThrow(ParseError);
+    });
+
+    it('should throw ValidationError for invalid schema', () => {
+      const yaml = `meta: {}
+slides: []
+`;
+      const parser = new Parser();
+
+      expect(() => parser.parseWithLineInfo(yaml)).toThrow(ValidationError);
+    });
+  });
 });

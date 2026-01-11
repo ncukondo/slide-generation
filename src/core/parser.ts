@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, parseDocument, isSeq, isMap, isNode, LineCounter } from 'yaml';
 import { readFile } from 'fs/promises';
 
 // References config schema
@@ -35,6 +35,10 @@ export const presentationSchema = z.object({
 export type PresentationMeta = z.infer<typeof metaSchema>;
 export type ParsedSlide = z.infer<typeof slideSchema>;
 export type ParsedPresentation = z.infer<typeof presentationSchema>;
+
+export interface ParseResultWithLines extends ParsedPresentation {
+  slideLines: number[];
+}
 
 export class ParseError extends Error {
   constructor(
@@ -91,5 +95,62 @@ export class Parser {
     }
 
     return this.parse(content);
+  }
+
+  parseWithLineInfo(yamlContent: string): ParseResultWithLines {
+    const lineCounter = new LineCounter();
+    const doc = parseDocument(yamlContent, { lineCounter });
+
+    // Check for YAML parsing errors
+    if (doc.errors && doc.errors.length > 0) {
+      throw new ParseError('Failed to parse YAML', doc.errors);
+    }
+
+    // Extract line numbers for slides
+    const slideLines: number[] = [];
+    const contents = doc.contents;
+
+    if (isMap(contents)) {
+      const slidesNode = contents.get('slides', true);
+      if (isSeq(slidesNode)) {
+        for (const item of slidesNode.items) {
+          if (isNode(item) && item.range) {
+            const pos = lineCounter.linePos(item.range[0]);
+            slideLines.push(pos.line);
+          }
+        }
+      }
+    }
+
+    // Validate with schema
+    const rawData = doc.toJSON();
+    const result = presentationSchema.safeParse(rawData);
+
+    if (!result.success) {
+      throw new ValidationError(
+        'Schema validation failed',
+        result.error.format()
+      );
+    }
+
+    return {
+      ...result.data,
+      slideLines,
+    };
+  }
+
+  async parseFileWithLineInfo(filePath: string): Promise<ParseResultWithLines> {
+    let content: string;
+
+    try {
+      content = await readFile(filePath, 'utf-8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new ParseError(`File not found: ${filePath}`);
+      }
+      throw new ParseError(`Failed to read file: ${filePath}`, error);
+    }
+
+    return this.parseWithLineInfo(content);
   }
 }
