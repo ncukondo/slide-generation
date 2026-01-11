@@ -33,6 +33,18 @@ describe('preview command', () => {
       expect(optionNames).toContain('--watch');
     });
 
+    it('should accept --gallery option', () => {
+      const cmd = createPreviewCommand();
+      const options = cmd.options.map((o) => o.long);
+      expect(options).toContain('--gallery');
+    });
+
+    it('should accept --slide option', () => {
+      const cmd = createPreviewCommand();
+      const options = cmd.options.map((o) => o.long);
+      expect(options).toContain('--slide');
+    });
+
     it('should have port default value', () => {
       const cmd = createPreviewCommand();
       const portOption = cmd.options.find((o) => o.long === '--port');

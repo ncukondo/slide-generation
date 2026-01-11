@@ -15,6 +15,8 @@ export interface PreviewOptions {
   config?: string;
   verbose?: boolean;
   signal?: AbortSignal;
+  gallery?: boolean;
+  slide?: number;
 }
 
 export interface PreviewResult {
@@ -77,6 +79,8 @@ export function createPreviewCommand(): Command {
     .option('-w, --watch', 'Watch for changes and auto-reload')
     .option('-c, --config <path>', 'Config file path')
     .option('-v, --verbose', 'Verbose output')
+    .option('-g, --gallery', 'Show thumbnail gallery')
+    .option('-s, --slide <number>', 'Show specific slide', parseInt)
     .action(async (input: string, options: PreviewOptions) => {
       await executePreview(input, options);
     });
