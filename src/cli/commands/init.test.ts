@@ -37,7 +37,7 @@ describe('init command', () => {
   describe('executeInit', () => {
     it('should create directory structure', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -47,7 +47,7 @@ describe('init command', () => {
 
     it('should create config.yaml with default content', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const configContent = await readFile(join(targetDir, 'config.yaml'), 'utf-8');
       expect(configContent).toContain('templates:');
@@ -57,7 +57,7 @@ describe('init command', () => {
 
     it('should create sample presentation.yaml when examples enabled (default)', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('presentation.yaml');
@@ -78,7 +78,7 @@ describe('init command', () => {
 
     it('should create themes directory with custom.css', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const themesDir = join(targetDir, 'themes');
       const themeStat = await stat(themesDir);
@@ -90,7 +90,7 @@ describe('init command', () => {
 
     it('should create icons/custom directory', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const iconsCustomDir = join(targetDir, 'icons', 'custom');
       const dirStat = await stat(iconsCustomDir);
@@ -118,7 +118,7 @@ describe('init command', () => {
       await mkdir(join(targetDir, 'config.yaml'), { recursive: true }); // Create as dir to simulate existing file
 
       const consoleSpy = vi.spyOn(console, 'log');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       // Check that warning or info was logged about existing directory
       // The exact implementation will determine the behavior
@@ -136,7 +136,7 @@ describe('init command', () => {
 
     it('should create nested directories', async () => {
       const targetDir = join(testDir, 'nested', 'deep', 'presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -162,7 +162,7 @@ describe('init command', () => {
   describe('executeInit - AI config generation', () => {
     it('should generate .skills/slide-assistant/SKILL.md', async () => {
       const targetDir = join(testDir, 'ai-config-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(
         join(targetDir, '.skills', 'slide-assistant', 'SKILL.md'),
@@ -174,7 +174,7 @@ describe('init command', () => {
 
     it('should generate CLAUDE.md', async () => {
       const targetDir = join(testDir, 'claude-md-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(join(targetDir, 'CLAUDE.md'), 'utf-8');
       expect(content).toContain('slide-gen');
@@ -182,7 +182,7 @@ describe('init command', () => {
 
     it('should generate .claude/commands/', async () => {
       const targetDir = join(testDir, 'claude-commands-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const commands = await readdir(join(targetDir, '.claude', 'commands'));
       expect(commands).toContain('slide-create.md');
@@ -192,7 +192,7 @@ describe('init command', () => {
 
     it('should generate AGENTS.md', async () => {
       const targetDir = join(testDir, 'agents-md-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(join(targetDir, 'AGENTS.md'), 'utf-8');
       expect(content).toContain('slide-gen');
@@ -200,7 +200,7 @@ describe('init command', () => {
 
     it('should generate .opencode/agent/slide.md', async () => {
       const targetDir = join(testDir, 'opencode-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(
         join(targetDir, '.opencode', 'agent', 'slide.md'),
@@ -211,7 +211,7 @@ describe('init command', () => {
 
     it('should generate .cursorrules', async () => {
       const targetDir = join(testDir, 'cursorrules-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(join(targetDir, '.cursorrules'), 'utf-8');
       expect(content).toContain('slide-gen');
@@ -230,7 +230,7 @@ describe('init command', () => {
       await mkdir(targetDir, { recursive: true });
       await writeFile(join(targetDir, 'CLAUDE.md'), '# Existing');
 
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(join(targetDir, 'CLAUDE.md'), 'utf-8');
       expect(content).toBe('# Existing');
@@ -238,7 +238,7 @@ describe('init command', () => {
 
     it('should generate references/templates.md', async () => {
       const targetDir = join(testDir, 'references-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(
         join(targetDir, '.skills', 'slide-assistant', 'references', 'templates.md'),
@@ -249,7 +249,7 @@ describe('init command', () => {
 
     it('should generate references/workflows.md', async () => {
       const targetDir = join(testDir, 'workflows-test');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const content = await readFile(
         join(targetDir, '.skills', 'slide-assistant', 'references', 'workflows.md'),
