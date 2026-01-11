@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imageProcessingArraySchema } from "./processing-schema";
 
 /**
  * Permission status for images
@@ -65,6 +66,9 @@ export const individualMetadataSchema = z.object({
 
   // Tags for search/filtering
   tags: z.array(z.string()).optional(),
+
+  // Image processing instructions (crop, blur, etc.)
+  processing: imageProcessingArraySchema.optional(),
 });
 
 export type ImageMetadata = z.infer<typeof individualMetadataSchema>;

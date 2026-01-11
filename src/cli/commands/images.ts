@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import { readFile } from "fs/promises";
-import { dirname } from "path";
+import { readFile, stat, mkdir } from "fs/promises";
+import { dirname, basename, join } from "path";
 import chalk from "chalk";
 import { stringify as stringifyYaml } from "yaml";
 import { Parser } from "../../core/parser";
@@ -8,8 +8,11 @@ import {
   ImageValidator,
   ImageStats,
   ImageMetadataLoader,
+  ImageProcessor,
+  ImageProcessingPipeline,
   type ImageMetadata,
 } from "../../images";
+import { isImageFile } from "../../images/constants";
 
 /**
  * Create the images command with subcommands
@@ -19,6 +22,7 @@ export function createImagesCommand(): Command {
 
   cmd.addCommand(createImagesStatusCommand());
   cmd.addCommand(createImagesRequestCommand());
+  cmd.addCommand(createImagesProcessCommand());
 
   return cmd;
 }
@@ -413,4 +417,238 @@ function findTemplateForImage(
     }
   }
   return "unknown";
+}
+
+/**
+ * Create the images process subcommand
+ */
+function createImagesProcessCommand(): Command {
+  return new Command("process")
+    .description("Process images (crop, blur)")
+    .argument("<path>", "Image file or directory")
+    .option("--crop <spec>", 'Crop specification (e.g., "right:10,bottom:5")')
+    .option("--blur <spec>", 'Blur region (e.g., "100,100,50,50")')
+    .option("--from-meta", "Apply processing from metadata files")
+    .option("--output <dir>", "Output directory", ".processed")
+    .action(async (inputPath: string, options: ProcessOptions) => {
+      await executeImagesProcess(inputPath, options);
+    });
+}
+
+/**
+ * Options for images process command
+ */
+interface ProcessOptions {
+  crop?: string;
+  blur?: string;
+  fromMeta?: boolean;
+  output: string;
+}
+
+/**
+ * Execute images process command
+ */
+async function executeImagesProcess(
+  inputPath: string,
+  options: ProcessOptions
+): Promise<void> {
+  try {
+    const pathStat = await stat(inputPath);
+    const isDirectory = pathStat.isDirectory();
+
+    if (isDirectory) {
+      // Process directory
+      await processDirectory(inputPath, options);
+    } else {
+      // Process single file
+      await processSingleFile(inputPath, options);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(chalk.red(`Error: ${message}`));
+    process.exitCode = 1;
+  }
+}
+
+/**
+ * Process all images in a directory
+ */
+async function processDirectory(
+  dirPath: string,
+  options: ProcessOptions
+): Promise<void> {
+  if (options.fromMeta) {
+    // Use metadata-based processing
+    const outputDir = join(dirPath, options.output);
+    const pipeline = new ImageProcessingPipeline(dirPath, { outputDir });
+    const result = await pipeline.processDirectory();
+
+    console.log("");
+    console.log(chalk.bold("Image Processing Results:"));
+    console.log("━".repeat(50));
+    console.log(`Total images: ${result.totalImages}`);
+    console.log(chalk.green(`Processed: ${result.processedImages}`));
+    console.log(chalk.gray(`Skipped: ${result.skippedImages} (no processing instructions)`));
+
+    if (result.errors.length > 0) {
+      console.log(chalk.red(`Errors: ${result.errors.length}`));
+      for (const err of result.errors) {
+        console.log(chalk.red(`  - ${err}`));
+      }
+    }
+
+    console.log("");
+    console.log(`${result.processedImages} processed, ${result.skippedImages} skipped`);
+  } else {
+    console.log(
+      chalk.yellow(
+        "Warning: Processing directory requires --from-meta flag to apply metadata instructions"
+      )
+    );
+    console.log(
+      chalk.gray("Use --crop or --blur options with a single file, or use --from-meta for directory")
+    );
+  }
+}
+
+/**
+ * Process a single image file
+ */
+async function processSingleFile(
+  filePath: string,
+  options: ProcessOptions
+): Promise<void> {
+  if (!isImageFile(filePath)) {
+    console.error(chalk.red(`Error: ${filePath} is not a supported image file`));
+    process.exitCode = 1;
+    return;
+  }
+
+  const processor = new ImageProcessor();
+  const dir = dirname(filePath);
+  const filename = basename(filePath);
+  const outputDir = join(dir, options.output);
+
+  // Ensure output directory exists
+  await mkdir(outputDir, { recursive: true });
+
+  const outputPath = join(outputDir, filename);
+  let success = false;
+
+  if (options.crop) {
+    // Parse crop specification
+    const edges = parseCropSpec(options.crop);
+    if (!edges) {
+      console.error(chalk.red("Invalid crop specification. Use format: right:10,bottom:5"));
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = await processor.cropEdges(filePath, edges, outputPath);
+    if (!result.success) {
+      console.error(chalk.red(`Crop failed: ${result.error}`));
+      process.exitCode = 1;
+      return;
+    }
+    success = true;
+    console.log(chalk.green(`Processed: ${filename} (cropped to ${result.width}x${result.height})`));
+  }
+
+  if (options.blur) {
+    // Parse blur specification
+    const region = parseBlurSpec(options.blur);
+    if (!region) {
+      console.error(chalk.red("Invalid blur specification. Use format: x,y,width,height"));
+      process.exitCode = 1;
+      return;
+    }
+
+    const inputForBlur = success ? outputPath : filePath;
+    const result = await processor.blurRegion(inputForBlur, region, outputPath);
+    if (!result.success) {
+      console.error(chalk.red(`Blur failed: ${result.error}`));
+      process.exitCode = 1;
+      return;
+    }
+    success = true;
+    console.log(chalk.green(`Processed: ${filename} (blurred region)`));
+  }
+
+  if (options.fromMeta) {
+    // Process from metadata
+    const metadataLoader = new ImageMetadataLoader(dir);
+    const metadata = await metadataLoader.load(filename);
+
+    if (!metadata.processing || metadata.processing.length === 0) {
+      console.log(chalk.yellow(`No processing instructions found for ${filename}`));
+      return;
+    }
+
+    const pipeline = new ImageProcessingPipeline(dir, { outputDir });
+    const result = await pipeline.processImage(filename);
+
+    if (!result.success) {
+      console.error(chalk.red(`Processing failed: ${result.error}`));
+      process.exitCode = 1;
+      return;
+    }
+
+    success = true;
+    console.log(
+      chalk.green(`Processed: ${filename} (${result.instructionsApplied} instruction(s))`)
+    );
+  }
+
+  if (!success && !options.crop && !options.blur && !options.fromMeta) {
+    console.log(
+      chalk.yellow("No processing options specified. Use --crop, --blur, or --from-meta")
+    );
+  }
+
+  if (success) {
+    console.log(`Output: ${chalk.cyan(outputPath)}`);
+  }
+}
+
+/**
+ * Parse crop specification string (e.g., "right:10,bottom:5")
+ */
+function parseCropSpec(spec: string): { left?: number; right?: number; top?: number; bottom?: number } | null {
+  const result: { left?: number; right?: number; top?: number; bottom?: number } = {};
+  const parts = spec.split(",");
+
+  for (const part of parts) {
+    const [key, value] = part.split(":");
+    if (!key || !value) return null;
+
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue) || numValue < 0 || numValue > 50) return null;
+
+    const edge = key.trim().toLowerCase();
+    if (edge === "left") result.left = numValue;
+    else if (edge === "right") result.right = numValue;
+    else if (edge === "top") result.top = numValue;
+    else if (edge === "bottom") result.bottom = numValue;
+    else return null;
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
+ * Parse blur specification string (e.g., "100,100,50,50")
+ */
+function parseBlurSpec(spec: string): { x: number; y: number; width: number; height: number } | null {
+  const parts = spec.split(",").map((p) => parseInt(p.trim(), 10));
+
+  if (parts.length !== 4 || parts.some(isNaN)) {
+    return null;
+  }
+
+  const [x, y, width, height] = parts as [number, number, number, number];
+  if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  return { x, y, width, height };
 }

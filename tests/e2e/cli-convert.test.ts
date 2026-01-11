@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
+import sharp from 'sharp';
 import { createConvertCommand } from '../../src/cli/commands/convert';
 import { Command } from 'commander';
 
@@ -253,5 +254,141 @@ slides:
     // Content should follow frontmatter
     const content = output.slice(frontmatterEnd + 4);
     expect(content.trim().length).toBeGreaterThan(0);
+  });
+
+  describe('--process-images option', () => {
+    it('should process images with --process-images flag', async () => {
+      const imagesDir = join(testDir, 'images');
+      mkdirSync(imagesDir, { recursive: true });
+
+      // Create a test image
+      await sharp({
+        create: {
+          width: 1000,
+          height: 800,
+          channels: 3,
+          background: { r: 255, g: 0, b: 0 },
+        },
+      })
+        .jpeg()
+        .toFile(join(imagesDir, 'test-photo.jpg'));
+
+      // Create metadata with processing instructions
+      writeFileSync(
+        join(imagesDir, 'test-photo.jpg.meta.yaml'),
+        `description: Test photo
+processing:
+  - type: crop
+    edges:
+      right: 10
+`
+      );
+
+      // Create presentation using the image
+      const presentation = `
+meta:
+  title: Image Processing Test
+slides:
+  - template: title
+    content:
+      title: Test Slide
+      image: images/test-photo.jpg
+`;
+      const inputPath = join(testDir, 'image-test.yaml');
+      writeFileSync(inputPath, presentation);
+
+      const outputPath = join(testDir, 'image-test.md');
+      const configPath = join(testDir, 'config.yaml');
+
+      const program = new Command();
+      program.addCommand(createConvertCommand());
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'convert',
+        inputPath,
+        '-o',
+        outputPath,
+        '-c',
+        configPath,
+        '--process-images',
+      ]);
+
+      expect(existsSync(outputPath)).toBe(true);
+
+      // Check processed image exists
+      const processedImagePath = join(imagesDir, '.processed', 'test-photo.jpg');
+      expect(existsSync(processedImagePath)).toBe(true);
+
+      // Verify processed image dimensions
+      const metadata = await sharp(processedImagePath).metadata();
+      expect(metadata.width).toBe(900); // 1000 - 10%
+    });
+
+    it('should skip image processing without --process-images flag', async () => {
+      const imagesDir = join(testDir, 'images');
+      mkdirSync(imagesDir, { recursive: true });
+
+      // Create a test image
+      await sharp({
+        create: {
+          width: 1000,
+          height: 800,
+          channels: 3,
+          background: { r: 0, g: 255, b: 0 },
+        },
+      })
+        .jpeg()
+        .toFile(join(imagesDir, 'no-process.jpg'));
+
+      // Create metadata with processing instructions
+      writeFileSync(
+        join(imagesDir, 'no-process.jpg.meta.yaml'),
+        `description: Test photo
+processing:
+  - type: crop
+    edges:
+      bottom: 10
+`
+      );
+
+      // Create presentation
+      const presentation = `
+meta:
+  title: No Processing Test
+slides:
+  - template: title
+    content:
+      title: Test Slide
+      image: images/no-process.jpg
+`;
+      const inputPath = join(testDir, 'no-process-test.yaml');
+      writeFileSync(inputPath, presentation);
+
+      const outputPath = join(testDir, 'no-process-test.md');
+      const configPath = join(testDir, 'config.yaml');
+
+      const program = new Command();
+      program.addCommand(createConvertCommand());
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'convert',
+        inputPath,
+        '-o',
+        outputPath,
+        '-c',
+        configPath,
+        // Note: no --process-images flag
+      ]);
+
+      expect(existsSync(outputPath)).toBe(true);
+
+      // Processed image should NOT exist
+      const processedImagePath = join(imagesDir, '.processed', 'no-process.jpg');
+      expect(existsSync(processedImagePath)).toBe(false);
+    });
   });
 });

@@ -1,10 +1,12 @@
 import { Command } from 'commander';
-import { access } from 'fs/promises';
+import { access, readFile } from 'fs/promises';
 import { basename, dirname, join } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
+import { parse as parseYaml } from 'yaml';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ConfigLoader } from '../../config/loader';
+import { ImageProcessingPipeline } from '../../images';
 
 /**
  * Exit codes for CLI commands
@@ -25,6 +27,7 @@ interface ConvertOptions {
   theme?: string;
   references?: boolean;
   verbose?: boolean;
+  processImages?: boolean;
 }
 
 /**
@@ -34,6 +37,81 @@ function getDefaultOutputPath(inputPath: string): string {
   const dir = dirname(inputPath);
   const base = basename(inputPath, '.yaml');
   return join(dir, `${base}.md`);
+}
+
+/**
+ * Extract unique image directories from presentation
+ */
+async function extractImageDirectories(
+  inputPath: string,
+  baseDir: string
+): Promise<string[]> {
+  const content = await readFile(inputPath, 'utf-8');
+  const parsed = parseYaml(content) as {
+    slides?: Array<{ content?: Record<string, unknown> }>;
+  };
+
+  const imageDirs = new Set<string>();
+
+  if (!parsed.slides) return [];
+
+  for (const slide of parsed.slides) {
+    const content = slide.content;
+    if (!content) continue;
+
+    // Collect image paths from various content fields
+    const imagePaths: string[] = [];
+
+    if (typeof content['image'] === 'string') {
+      imagePaths.push(content['image']);
+    }
+
+    const before = content['before'] as { image?: string } | undefined;
+    const after = content['after'] as { image?: string } | undefined;
+    if (before?.image) imagePaths.push(before.image);
+    if (after?.image) imagePaths.push(after.image);
+
+    const images = content['images'] as Array<{ src?: string }> | undefined;
+    if (images) {
+      for (const img of images) {
+        if (img.src) imagePaths.push(img.src);
+      }
+    }
+
+    // Extract directory for each image path
+    for (const imagePath of imagePaths) {
+      const dir = dirname(imagePath);
+      if (dir && dir !== '.') {
+        imageDirs.add(join(baseDir, dir));
+      }
+    }
+  }
+
+  return Array.from(imageDirs);
+}
+
+/**
+ * Process images based on metadata instructions
+ */
+async function processImages(
+  inputPath: string,
+  baseDir: string
+): Promise<number> {
+  const imageDirs = await extractImageDirectories(inputPath, baseDir);
+  let totalProcessed = 0;
+
+  for (const imageDir of imageDirs) {
+    try {
+      await access(imageDir);
+      const pipeline = new ImageProcessingPipeline(imageDir);
+      const result = await pipeline.processDirectory();
+      totalProcessed += result.processedImages;
+    } catch {
+      // Directory doesn't exist, skip
+    }
+  }
+
+  return totalProcessed;
 }
 
 /**
@@ -47,6 +125,7 @@ export function createConvertCommand(): Command {
     .option('-c, --config <path>', 'Config file path')
     .option('-t, --theme <name>', 'Theme name')
     .option('--no-references', 'Disable reference processing')
+    .option('--process-images', 'Apply image processing from metadata')
     .option('-v, --verbose', 'Verbose output')
     .action(async (input: string, options: ConvertOptions) => {
       await executeConvert(input, options);
@@ -126,6 +205,14 @@ async function executeConvert(
       return;
     }
 
+    // Process images if requested
+    let processedImageCount = 0;
+    if (options.processImages) {
+      updateSpinner('Processing images...');
+      const baseDir = dirname(inputPath);
+      processedImageCount = await processImages(inputPath, baseDir);
+    }
+
     // Run pipeline
     updateSpinner(`Converting ${inputPath}...`);
     const result = await pipeline.runWithResult(inputPath, { outputPath });
@@ -140,6 +227,11 @@ async function executeConvert(
       if (result.citations.length > 0) {
         console.log(
           chalk.green('  ✓') + ` Resolved ${result.citations.length} references`
+        );
+      }
+      if (processedImageCount > 0) {
+        console.log(
+          chalk.green('  ✓') + ` Processed ${processedImageCount} image(s)`
         );
       }
       console.log(chalk.green('  ✓') + ' Generated output');

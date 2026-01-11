@@ -41,7 +41,7 @@ describe('ImageProcessor', () => {
         top: 0,
         width: 800,
         height: 600
-      });
+      }, 'output.jpg');
 
       expect(result.width).toBe(800);
       expect(result.height).toBe(600);
@@ -51,7 +51,7 @@ describe('ImageProcessor', () => {
       const processor = new ImageProcessor();
       const result = await processor.cropEdges('input.jpg', {
         right: 10  // Crop 10% from right edge
-      });
+      }, 'output.jpg');
 
       expect(result.success).toBe(true);
     });
@@ -66,7 +66,7 @@ describe('ImageProcessor', () => {
         width: 50,
         height: 50,
         radius: 10
-      });
+      }, 'output.jpg');
 
       expect(result.success).toBe(true);
     });
@@ -108,15 +108,15 @@ interface ProcessResult {
 }
 
 export class ImageProcessor {
-  async crop(inputPath: string, options: CropOptions): Promise<ProcessResult> {
+  async crop(inputPath: string, options: CropOptions, outputPath: string): Promise<ProcessResult> {
     // Implementation using sharp or similar library
   }
 
-  async cropEdges(inputPath: string, options: EdgeCropOptions): Promise<ProcessResult> {
+  async cropEdges(inputPath: string, options: EdgeCropOptions, outputPath: string): Promise<ProcessResult> {
     // Crop percentage from specified edges
   }
 
-  async blurRegion(inputPath: string, options: BlurRegionOptions): Promise<ProcessResult> {
+  async blurRegion(inputPath: string, options: BlurRegionOptions, outputPath: string): Promise<ProcessResult> {
     // Apply blur to specified region
   }
 }

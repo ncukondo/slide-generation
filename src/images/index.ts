@@ -43,3 +43,36 @@ export {
   type ImageStats,
   type ImageDimensions,
 } from "./validator";
+
+// Processor exports
+export {
+  ImageProcessor,
+  type CropOptions,
+  type EdgeCropOptions,
+  type BlurRegionOptions,
+  type ProcessResult,
+  type ImageMetadataInfo,
+} from "./processor";
+
+// Processing schema exports
+export {
+  cropInstructionSchema,
+  blurInstructionSchema,
+  imageProcessingSchema,
+  imageProcessingArraySchema,
+  edgeCropOptionsSchema,
+  regionSchema,
+  type CropInstruction,
+  type BlurInstruction,
+  type ImageProcessingInstruction,
+  type ImageProcessingInstructions,
+  type Region,
+} from "./processing-schema";
+
+// Processing pipeline exports
+export {
+  ImageProcessingPipeline,
+  type ProcessImageResult,
+  type ProcessDirectoryResult,
+  type ProcessingPipelineOptions,
+} from "./processing-pipeline";
