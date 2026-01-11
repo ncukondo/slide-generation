@@ -645,10 +645,10 @@ function parseBlurSpec(spec: string): { x: number; y: number; width: number; hei
     return null;
   }
 
-  const [x, y, width, height] = parts;
-  if (x! < 0 || y! < 0 || width! <= 0 || height! <= 0) {
+  const [x, y, width, height] = parts as [number, number, number, number];
+  if (x < 0 || y < 0 || width <= 0 || height <= 0) {
     return null;
   }
 
-  return { x: x!, y: y!, width: width!, height: height! };
+  return { x, y, width, height };
 }

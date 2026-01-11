@@ -66,7 +66,6 @@ export {
   type BlurInstruction,
   type ImageProcessingInstruction,
   type ImageProcessingInstructions,
-  type EdgeCropOptions as EdgeCropOptionsSchema,
   type Region,
 } from "./processing-schema";
 
