@@ -21,3 +21,9 @@ export {
 } from "./resolver.js";
 
 export { IconCache } from "./cache.js";
+
+export {
+  IconFetcher,
+  type FetcherOptions,
+  type ParsedReference,
+} from "./fetcher.js";
