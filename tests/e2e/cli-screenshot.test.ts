@@ -195,7 +195,7 @@ references:
           stdio: 'pipe',
         });
         expect.fail('Should have thrown an error');
-      } catch (error) {
+      } catch {
         // Expected to fail
         expect(true).toBe(true);
       }
@@ -238,7 +238,7 @@ slides:
           const files = readdirSync(outputDir);
           expect(files.length).toBeGreaterThan(0);
           expect(files.some((f) => f.endsWith('.png'))).toBe(true);
-        } catch (error) {
+        } catch {
           // May fail if no browser is installed
           console.log('Screenshot test skipped: browser not available');
         }
