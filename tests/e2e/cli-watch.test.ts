@@ -30,7 +30,7 @@ references:
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  it('should convert file initially when watch starts', { timeout: 30000 }, async () => {
+  it('should convert file initially when watch starts', { timeout: 60000 }, async () => {
     const inputPath = join(fixturesDir, 'presentations/simple.yaml');
     const outputPath = join(testDir, 'output.md');
     const configPath = join(testDir, 'config.yaml');

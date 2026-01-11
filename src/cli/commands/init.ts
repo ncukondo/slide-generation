@@ -145,10 +145,12 @@ async function writeFileIfNotExists(filePath: string, content: string): Promise<
 
 /**
  * Check if Marp CLI is installed
+ * Uses 'marp --version' directly instead of 'npx marp --version'
+ * because npx is slow (searches local, global, and npm registry)
  */
 export function isMarpCliInstalled(): boolean {
   try {
-    execSync('npx marp --version', { stdio: 'pipe' });
+    execSync('marp --version', { stdio: 'pipe', timeout: 5000 });
     return true;
   } catch {
     return false;

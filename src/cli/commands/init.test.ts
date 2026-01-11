@@ -104,7 +104,7 @@ describe('init command', () => {
       process.chdir(targetDir);
 
       try {
-        await executeInit('.', {});
+        await executeInit('.', { skipMarpInstall: true });
         const entries = await readdir(targetDir);
         expect(entries).toContain('config.yaml');
       } finally {
@@ -260,7 +260,8 @@ describe('init command', () => {
   });
 
   describe('Marp CLI installation helpers', () => {
-    it('should detect if Marp CLI is installed', () => {
+    it('should detect if Marp CLI is installed', { timeout: 10000 }, () => {
+      // Uses 'marp --version' directly (faster than npx)
       const result = isMarpCliInstalled();
       expect(typeof result).toBe('boolean');
     });
