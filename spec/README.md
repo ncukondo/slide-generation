@@ -40,12 +40,15 @@
 
 | ファイル | 内容 |
 |---------|------|
-| [source-format.md](./source-format.md) | ソースファイル形式 |
+| [source-format.md](./source-format.md) | ソースファイル形式（YAML） |
+| [sources.md](./sources.md) | ソース資料管理・AI協働フロー |
 | [templates.md](./templates.md) | テンプレートシステム |
 | [icons.md](./icons.md) | アイコン・ピクトグラム管理 |
+| [images.md](./images.md) | 画像管理・AI協働フロー |
 | [references.md](./references.md) | 文献引用連携 |
 | [architecture.md](./architecture.md) | システムアーキテクチャ |
 | [cli.md](./cli.md) | CLIインターフェース |
+| [ai-integration.md](./ai-integration.md) | AI Agent連携 |
 
 ## 技術スタック
 
