@@ -25,6 +25,10 @@ export { IconCache } from "./cache.js";
 
 export {
   IconFetcher,
+  isExternalSource,
+  isValidIconName,
+  ICON_SOURCES,
   type FetcherOptions,
   type ParsedReference,
+  type IconSourceConfig,
 } from "./fetcher.js";

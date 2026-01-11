@@ -56,6 +56,36 @@ describe("IconFetcher", () => {
       const result = fetcher.parseReference("invalid");
       expect(result).toBeNull();
     });
+
+    it("should return null for path traversal attempts", () => {
+      const fetcher = new IconFetcher({ fetchedDir });
+      expect(fetcher.parseReference("health:../../../etc/passwd")).toBeNull();
+      expect(fetcher.parseReference("health:icon/../secret")).toBeNull();
+    });
+
+    it("should return null for invalid characters in name", () => {
+      const fetcher = new IconFetcher({ fetchedDir });
+      expect(fetcher.parseReference("health:icon?query=bad")).toBeNull();
+      expect(fetcher.parseReference("health:icon<script>")).toBeNull();
+      expect(fetcher.parseReference("health:icon with spaces")).toBeNull();
+    });
+
+    it("should return null for invalid prefix", () => {
+      const fetcher = new IconFetcher({ fetchedDir });
+      expect(fetcher.parseReference("pre-fix:icon")).toBeNull();
+      expect(fetcher.parseReference("pre fix:icon")).toBeNull();
+    });
+
+    it("should return null for empty name", () => {
+      const fetcher = new IconFetcher({ fetchedDir });
+      expect(fetcher.parseReference("health:")).toBeNull();
+    });
+
+    it("should return null for overly long names", () => {
+      const fetcher = new IconFetcher({ fetchedDir });
+      const longName = "a".repeat(101);
+      expect(fetcher.parseReference(`health:${longName}`)).toBeNull();
+    });
   });
 
   describe("getIconifySet", () => {
@@ -181,6 +211,27 @@ describe("IconFetcher", () => {
       // Verify file was NOT saved
       const localPath = path.join(fetchedDir, "healthicons", "stethoscope.svg");
       await expect(fs.access(localPath)).rejects.toThrow();
+    });
+
+    it("should throw timeout error when fetch takes too long", async () => {
+      // Mock fetch that never resolves (simulates network hang)
+      const abortError = new Error("The operation was aborted");
+      abortError.name = "AbortError";
+      mockFetch.mockImplementationOnce(() => {
+        return new Promise((_, reject) => {
+          // Simulate abort being triggered
+          setTimeout(() => reject(abortError), 10);
+        });
+      });
+
+      const fetcher = new IconFetcher({ fetchedDir, timeoutMs: 5 });
+      await expect(fetcher.fetchAndSave("health:stethoscope"))
+        .rejects.toThrow(/Fetch timeout/);
+    });
+
+    it("should use custom timeout value", async () => {
+      const fetcher = new IconFetcher({ fetchedDir, timeoutMs: 5000 });
+      expect(fetcher).toBeDefined();
     });
   });
 

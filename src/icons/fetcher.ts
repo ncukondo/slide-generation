@@ -10,6 +10,8 @@ export interface FetcherOptions {
   fetchedDir?: string;
   /** Whether to save icons locally (default: true) */
   saveLocally?: boolean;
+  /** Timeout for fetch requests in milliseconds (default: 10000) */
+  timeoutMs?: number;
 }
 
 /**
@@ -30,26 +32,60 @@ interface SourceEntry {
 }
 
 /**
- * Mapping from prefix to Iconify set name
+ * Icon source configuration
  */
-const PREFIX_TO_SET: Record<string, string> = {
-  health: "healthicons",
-  ms: "material-symbols",
-  hero: "heroicons",
-  mi: "material-icons",
-  mdi: "mdi",
+export interface IconSourceConfig {
+  /** Iconify set name */
+  set: string;
+  /** License identifier */
+  license: string;
+  /** Whether this source requires external fetching */
+  external: boolean;
+}
+
+/**
+ * Unified icon source definitions
+ * Single source of truth for prefix mappings, licenses, and external status
+ */
+export const ICON_SOURCES: Record<string, IconSourceConfig> = {
+  health: { set: "healthicons", license: "MIT", external: true },
+  ms: { set: "material-symbols", license: "Apache-2.0", external: true },
+  hero: { set: "heroicons", license: "MIT", external: true },
+  mi: { set: "material-icons", license: "Apache-2.0", external: false },
+  mdi: { set: "mdi", license: "Apache-2.0", external: true },
+  iconify: { set: "iconify", license: "Various", external: true },
 };
 
 /**
- * License information for known icon sets
+ * Check if a source prefix requires external fetching
  */
-const SET_LICENSES: Record<string, string> = {
-  healthicons: "MIT",
-  "material-symbols": "Apache-2.0",
-  "material-icons": "Apache-2.0",
-  heroicons: "MIT",
-  mdi: "Apache-2.0",
-};
+export function isExternalSource(prefix: string): boolean {
+  return ICON_SOURCES[prefix]?.external ?? false;
+}
+
+/**
+ * Valid icon name pattern
+ * Allows: lowercase letters, numbers, hyphens
+ * Must start with a letter or number, cannot end with hyphen
+ * Also allows forward slash for subdirectory paths (e.g., healthicons/stethoscope)
+ */
+const VALID_ICON_NAME = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/i;
+const VALID_ICON_NAME_WITH_PATH = /^[a-z0-9][a-z0-9-/]*[a-z0-9]$|^[a-z0-9]$/i;
+
+/**
+ * Validate icon name format
+ */
+export function isValidIconName(name: string, allowPath = false): boolean {
+  if (!name || name.length > 100) {
+    return false;
+  }
+  // Prevent path traversal
+  if (name.includes("..") || name.startsWith("/") || name.endsWith("/")) {
+    return false;
+  }
+  const pattern = allowPath ? VALID_ICON_NAME_WITH_PATH : VALID_ICON_NAME;
+  return pattern.test(name);
+}
 
 /**
  * IconFetcher - Fetches icons from external sources and saves them locally
@@ -60,14 +96,17 @@ const SET_LICENSES: Record<string, string> = {
 export class IconFetcher {
   private fetchedDir: string;
   private saveLocally: boolean;
+  private timeoutMs: number;
 
   constructor(options: FetcherOptions = {}) {
     this.fetchedDir = options.fetchedDir ?? "icons/fetched";
     this.saveLocally = options.saveLocally ?? true;
+    this.timeoutMs = options.timeoutMs ?? 10000;
   }
 
   /**
    * Parse an icon reference string (e.g., "health:stethoscope")
+   * Returns null if the format is invalid or contains unsafe characters
    */
   parseReference(iconRef: string): ParsedReference | null {
     const colonIndex = iconRef.indexOf(":");
@@ -75,17 +114,27 @@ export class IconFetcher {
       return null;
     }
 
-    return {
-      prefix: iconRef.substring(0, colonIndex),
-      name: iconRef.substring(colonIndex + 1),
-    };
+    const prefix = iconRef.substring(0, colonIndex);
+    const name = iconRef.substring(colonIndex + 1);
+
+    // Validate prefix (alphanumeric only)
+    if (!/^[a-z0-9]+$/i.test(prefix)) {
+      return null;
+    }
+
+    // Validate icon name
+    if (!isValidIconName(name)) {
+      return null;
+    }
+
+    return { prefix, name };
   }
 
   /**
    * Get the Iconify set name for a prefix
    */
   getIconifySet(prefix: string): string {
-    return PREFIX_TO_SET[prefix] ?? prefix;
+    return ICON_SOURCES[prefix]?.set ?? prefix;
   }
 
   /**
@@ -147,8 +196,22 @@ export class IconFetcher {
 
     const url = this.buildUrl(parsed.prefix, parsed.name);
 
-    // Fetch the icon
-    const response = await fetch(url);
+    // Fetch the icon with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    let response: Response;
+    try {
+      response = await fetch(url, { signal: controller.signal });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error(`Fetch timeout: ${iconRef} (exceeded ${this.timeoutMs}ms)`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
     if (!response.ok) {
       throw new Error(`Icon not found: ${iconRef} (HTTP ${response.status})`);
     }
@@ -220,6 +283,12 @@ export class IconFetcher {
    * Get the license for an icon set
    */
   private getLicense(setDir: string): string {
-    return SET_LICENSES[setDir] ?? "Unknown";
+    // Find license by set name
+    for (const config of Object.values(ICON_SOURCES)) {
+      if (config.set === setDir) {
+        return config.license;
+      }
+    }
+    return "Unknown";
   }
 }

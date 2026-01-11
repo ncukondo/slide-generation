@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { IconRegistryLoader } from '../../icons/registry.js';
 import { IconResolver } from '../../icons/resolver.js';
-import { IconFetcher } from '../../icons/fetcher.js';
+import { IconFetcher, isExternalSource } from '../../icons/fetcher.js';
 import { ConfigLoader } from '../../config/loader.js';
 import type { IconSource, IconRegistry } from '../../icons/schema.js';
 import { ExitCode } from './convert.js';
@@ -51,17 +51,8 @@ interface SyncOptions {
   config?: string;
 }
 
-/**
- * External sources that require fetching
- */
-const EXTERNAL_SOURCES = ['health', 'ms', 'hero', 'iconify'];
-
-/**
- * Check if a source prefix is external (requires fetching)
- */
-export function isExternalSource(prefix: string): boolean {
-  return EXTERNAL_SOURCES.includes(prefix);
-}
+// Re-export isExternalSource for backward compatibility (used by tests)
+export { isExternalSource };
 
 /**
  * Extract all icon references from a presentation
