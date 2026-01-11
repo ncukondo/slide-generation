@@ -215,10 +215,9 @@ slides:
   - template: title
     content:
       title: Test Slide 1
-  - template: content
+  - template: section
     content:
-      title: Content
-      body: Hello World
+      title: Section Title
 `;
         writeFileSync(yamlPath, yamlContent);
 

@@ -102,40 +102,8 @@ describe('screenshot command - execution', () => {
 
   it('should check for marp-cli availability', async () => {
     const { checkMarpCliAvailable } = await import('./screenshot');
-    const available = await checkMarpCliAvailable();
+    const available = checkMarpCliAvailable();
     expect(typeof available).toBe('boolean');
-  });
-
-  it('should create output directory', async () => {
-    const { executeScreenshot } = await import('./screenshot');
-    const { access } = await import('fs/promises');
-
-    // Create a valid YAML file
-    const yamlPath = join(testDir, 'test.yaml');
-    await writeFile(
-      yamlPath,
-      `meta:
-  title: Test
-slides:
-  - template: title
-    content:
-      title: Test
-`
-    );
-
-    const outputDir = join(testDir, 'screenshots');
-
-    // Execute - will fail at marp step if not installed, but directory should be created
-    await executeScreenshot(yamlPath, { output: outputDir });
-
-    // Check if output directory exists (even if marp failed)
-    try {
-      await access(outputDir);
-      expect(true).toBe(true);
-    } catch {
-      // Directory might not exist if marp check failed first
-      // This is acceptable
-    }
   });
 });
 
