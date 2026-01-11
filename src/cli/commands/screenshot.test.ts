@@ -138,3 +138,73 @@ slides:
     }
   });
 });
+
+describe('screenshot command - slide filtering', () => {
+  let testDir: string;
+
+  beforeEach(async () => {
+    testDir = join(tmpdir(), `slide-gen-screenshot-filter-${randomUUID()}`);
+    await mkdir(testDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(testDir, { recursive: true, force: true });
+  });
+
+  it('should filter specific slide from generated images', async () => {
+    const { filterToSpecificSlide } = await import('./screenshot');
+    const outputDir = join(testDir, 'screenshots');
+    await mkdir(outputDir, { recursive: true });
+
+    // Create mock slide images
+    await writeFile(join(outputDir, 'test.001.png'), 'slide1');
+    await writeFile(join(outputDir, 'test.002.png'), 'slide2');
+    await writeFile(join(outputDir, 'test.003.png'), 'slide3');
+
+    // Filter to slide 2
+    const result = await filterToSpecificSlide(outputDir, 'test', 2, 'png');
+
+    expect(result.success).toBe(true);
+    expect(result.keptFile).toContain('002');
+
+    // Check that only slide 2 remains
+    const { readdir } = await import('fs/promises');
+    const files = await readdir(outputDir);
+    expect(files.length).toBe(1);
+    expect(files[0]).toContain('002');
+  });
+
+  it('should return error if slide number is out of range', async () => {
+    const { filterToSpecificSlide } = await import('./screenshot');
+    const outputDir = join(testDir, 'screenshots');
+    await mkdir(outputDir, { recursive: true });
+
+    // Create only 2 slide images
+    await writeFile(join(outputDir, 'test.001.png'), 'slide1');
+    await writeFile(join(outputDir, 'test.002.png'), 'slide2');
+
+    // Try to filter to non-existent slide 5
+    const result = await filterToSpecificSlide(outputDir, 'test', 5, 'png');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('not found');
+  });
+
+  it('should handle slide number 1', async () => {
+    const { filterToSpecificSlide } = await import('./screenshot');
+    const outputDir = join(testDir, 'screenshots');
+    await mkdir(outputDir, { recursive: true });
+
+    await writeFile(join(outputDir, 'test.001.png'), 'slide1');
+    await writeFile(join(outputDir, 'test.002.png'), 'slide2');
+
+    const result = await filterToSpecificSlide(outputDir, 'test', 1, 'png');
+
+    expect(result.success).toBe(true);
+
+    const { readdir } = await import('fs/promises');
+    const files = await readdir(outputDir);
+    expect(files.length).toBe(1);
+    expect(files[0]).toContain('001');
+  });
+});

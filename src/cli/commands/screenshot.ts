@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { access, mkdir } from 'fs/promises';
-import { dirname } from 'path';
+import { access, mkdir, readdir, unlink } from 'fs/promises';
+import { basename, dirname, join } from 'path';
 import { execSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -22,6 +22,54 @@ export interface ScreenshotResult {
   errors: string[];
   outputDir?: string;
   files?: string[];
+}
+
+export interface FilterResult {
+  success: boolean;
+  keptFile?: string;
+  error?: string;
+}
+
+/**
+ * Filter generated images to keep only a specific slide
+ * Marp generates files like: basename.001.png, basename.002.png, etc.
+ */
+export async function filterToSpecificSlide(
+  outputDir: string,
+  baseName: string,
+  slideNumber: number,
+  format: string
+): Promise<FilterResult> {
+  const slideStr = slideNumber.toString().padStart(3, '0');
+  const targetFileName = `${baseName}.${slideStr}.${format}`;
+  const targetPath = join(outputDir, targetFileName);
+
+  // Check if the target slide exists
+  try {
+    await access(targetPath);
+  } catch {
+    return {
+      success: false,
+      error: `Slide ${slideNumber} not found (expected: ${targetFileName})`,
+    };
+  }
+
+  // Get all slide files and remove all except the target
+  const files = await readdir(outputDir);
+  const slideFiles = files.filter(
+    (f) => f.startsWith(baseName) && f.endsWith(`.${format}`)
+  );
+
+  for (const file of slideFiles) {
+    if (file !== targetFileName) {
+      await unlink(join(outputDir, file));
+    }
+  }
+
+  return {
+    success: true,
+    keptFile: targetFileName,
+  };
 }
 
 /**
@@ -192,6 +240,30 @@ export async function executeScreenshot(
     errors.push(message);
     process.exitCode = ExitCode.GeneralError;
     return { success: false, errors };
+  }
+
+  // Filter to specific slide if requested
+  if (options.slide !== undefined) {
+    spinner?.start(`Filtering to slide ${options.slide}...`);
+    const mdBaseName = basename(tempMdPath, '.md');
+    const format = options.format || 'png';
+
+    const filterResult = await filterToSpecificSlide(
+      outputDir,
+      mdBaseName,
+      options.slide,
+      format
+    );
+
+    if (!filterResult.success) {
+      spinner?.fail('Failed to filter slides');
+      console.error(chalk.red(`Error: ${filterResult.error}`));
+      errors.push(filterResult.error || 'Filter failed');
+      process.exitCode = ExitCode.GeneralError;
+      return { success: false, errors };
+    }
+
+    spinner?.succeed(`Kept slide ${options.slide}: ${filterResult.keptFile}`);
   }
 
   console.log('');
