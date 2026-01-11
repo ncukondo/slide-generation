@@ -31,6 +31,6 @@
       }
     }
   },
-  "postCreateCommand": "sudo chown -R vscode:vscode /workspace",
+  "postCreateCommand": "sudo chown vscode:vscode /workspaces && pnpm install",
   "remoteUser": "vscode"
 }
