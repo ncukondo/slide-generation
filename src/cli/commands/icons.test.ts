@@ -1,15 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { Command } from 'commander';
 import {
   createIconsCommand,
   formatIconSourceList,
   formatAliasesList,
   formatSearchResults,
+  addAliasToRegistry,
+  updateAliasInRegistry,
 } from './icons.js';
 
 // Mock console.log and console.error
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
 const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+// Mock fetch for icon add tests
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
 describe('icons command', () => {
   beforeEach(() => {
@@ -165,6 +174,109 @@ describe('icons command', () => {
       const output = formatSearchResults(results, 'table');
 
       expect(output).toContain('No results found');
+    });
+  });
+
+  describe('addAliasToRegistry', () => {
+    let tempDir: string;
+    let registryPath: string;
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'icons-add-test-'));
+      registryPath = path.join(tempDir, 'registry.yaml');
+      await fs.writeFile(
+        registryPath,
+        `sources:
+  - name: fetched
+    type: local-svg
+    prefix: fetched
+    path: "./icons/fetched/"
+
+aliases:
+  planning: "mi:event_note"
+`
+      );
+    });
+
+    afterEach(async () => {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    });
+
+    it('should add new alias to registry', async () => {
+      await addAliasToRegistry(registryPath, 'stethoscope', 'fetched:healthicons/stethoscope');
+
+      const content = await fs.readFile(registryPath, 'utf-8');
+      expect(content).toContain('stethoscope:');
+      expect(content).toContain('fetched:healthicons/stethoscope');
+    });
+
+    it('should reject duplicate alias', async () => {
+      await expect(
+        addAliasToRegistry(registryPath, 'planning', 'fetched:something')
+      ).rejects.toThrow('Alias already exists');
+    });
+
+    it('should preserve existing aliases', async () => {
+      await addAliasToRegistry(registryPath, 'new-icon', 'fetched:test/icon');
+
+      const content = await fs.readFile(registryPath, 'utf-8');
+      expect(content).toContain('planning:');
+      expect(content).toContain('mi:event_note');
+      expect(content).toContain('new-icon:');
+    });
+  });
+
+  describe('updateAliasInRegistry', () => {
+    let tempDir: string;
+    let registryPath: string;
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'icons-update-test-'));
+      registryPath = path.join(tempDir, 'registry.yaml');
+      await fs.writeFile(
+        registryPath,
+        `sources: []
+
+aliases:
+  stethoscope: "health:stethoscope"
+`
+      );
+    });
+
+    afterEach(async () => {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    });
+
+    it('should update existing alias', async () => {
+      await updateAliasInRegistry(registryPath, 'stethoscope', 'fetched:healthicons/stethoscope');
+
+      const content = await fs.readFile(registryPath, 'utf-8');
+      expect(content).toContain('stethoscope:');
+      expect(content).toContain('fetched:healthicons/stethoscope');
+      expect(content).not.toContain('health:stethoscope');
+    });
+
+    it('should add alias if not exists', async () => {
+      await updateAliasInRegistry(registryPath, 'new-alias', 'fetched:test/icon');
+
+      const content = await fs.readFile(registryPath, 'utf-8');
+      expect(content).toContain('new-alias:');
+    });
+  });
+
+  describe('icons add command', () => {
+    it('should have add subcommand', () => {
+      const cmd = createIconsCommand();
+      const subcommands = cmd.commands.map((c: Command) => c.name());
+
+      expect(subcommands).toContain('add');
+    });
+
+    it('should have sync subcommand', () => {
+      const cmd = createIconsCommand();
+      const subcommands = cmd.commands.map((c: Command) => c.name());
+
+      expect(subcommands).toContain('sync');
     });
   });
 });

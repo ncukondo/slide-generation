@@ -1,9 +1,13 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { IconRegistryLoader } from '../../icons/registry.js';
 import { IconResolver } from '../../icons/resolver.js';
+import { IconFetcher } from '../../icons/fetcher.js';
 import { ConfigLoader } from '../../config/loader.js';
-import type { IconSource } from '../../icons/schema.js';
+import type { IconSource, IconRegistry } from '../../icons/schema.js';
 import { ExitCode } from './convert.js';
 
 type OutputFormat = 'table' | 'json';
@@ -31,6 +35,18 @@ interface SearchResult {
   query: string;
   aliases: Array<{ alias: string; target: string }>;
   sources: Array<{ name: string; prefix: string; type: string }>;
+}
+
+interface AddOptions {
+  from?: string;
+  search?: boolean;
+  saveLocal?: boolean;
+  config?: string;
+}
+
+interface SyncOptions {
+  localize?: boolean;
+  config?: string;
 }
 
 /**
@@ -345,6 +361,202 @@ function createSearchCommand(): Command {
 }
 
 /**
+ * Add an alias to the registry file
+ */
+export async function addAliasToRegistry(
+  registryPath: string,
+  alias: string,
+  target: string
+): Promise<void> {
+  const content = await fs.readFile(registryPath, 'utf-8');
+  const registry = parseYaml(content) as IconRegistry;
+
+  // Check if alias already exists
+  if (registry.aliases && registry.aliases[alias]) {
+    throw new Error(`Alias already exists: ${alias}`);
+  }
+
+  // Add the new alias
+  if (!registry.aliases) {
+    registry.aliases = {};
+  }
+  registry.aliases[alias] = target;
+
+  // Write back
+  await fs.writeFile(registryPath, stringifyYaml(registry), 'utf-8');
+}
+
+/**
+ * Update an existing alias in the registry file (or add if not exists)
+ */
+export async function updateAliasInRegistry(
+  registryPath: string,
+  alias: string,
+  target: string
+): Promise<void> {
+  const content = await fs.readFile(registryPath, 'utf-8');
+  const registry = parseYaml(content) as IconRegistry;
+
+  // Add or update the alias
+  if (!registry.aliases) {
+    registry.aliases = {};
+  }
+  registry.aliases[alias] = target;
+
+  // Write back
+  await fs.writeFile(registryPath, stringifyYaml(registry), 'utf-8');
+}
+
+/**
+ * Get registry path from config
+ */
+async function getRegistryPath(configPath?: string): Promise<string> {
+  const configLoader = new ConfigLoader();
+
+  let resolvedConfigPath = configPath;
+  if (!resolvedConfigPath) {
+    resolvedConfigPath = await configLoader.findConfig(process.cwd());
+  }
+
+  if (!resolvedConfigPath) {
+    // No config found, use default registry path
+    return path.join(process.cwd(), 'icons', 'registry.yaml');
+  }
+
+  const config = await configLoader.load(resolvedConfigPath);
+
+  if (config.icons?.registry) {
+    // Make path relative to config file location
+    const configDir = path.dirname(resolvedConfigPath);
+    return path.resolve(configDir, config.icons.registry);
+  }
+
+  // Default registry path
+  return path.join(process.cwd(), 'icons', 'registry.yaml');
+}
+
+/**
+ * Create the icons add subcommand
+ */
+function createAddCommand(): Command {
+  return new Command('add')
+    .description('Add an icon alias to registry (fetches and saves locally by default)')
+    .argument('<alias>', 'Alias name to add')
+    .option('--from <icon>', 'Source icon reference (e.g., health:stethoscope)')
+    .option('--search', 'Search for icon interactively')
+    .option('--no-save-local', 'Do not save SVG locally (not recommended)')
+    .option('-c, --config <path>', 'Config file path')
+    .action(async (alias: string, options: AddOptions) => {
+      try {
+        const registryPath = await getRegistryPath(options.config);
+
+        // Check if alias already exists
+        const registry = new IconRegistryLoader();
+        await registry.load(registryPath);
+
+        if (registry.getAliases()[alias]) {
+          console.error(chalk.red(`Error: Alias already exists: ${alias}`));
+          process.exitCode = ExitCode.GeneralError;
+          return;
+        }
+
+        // Get icon reference
+        let iconRef: string;
+        if (options.from) {
+          iconRef = options.from;
+        } else if (options.search) {
+          console.error(chalk.yellow('Interactive search not yet implemented. Use --from instead.'));
+          process.exitCode = ExitCode.GeneralError;
+          return;
+        } else {
+          console.error(chalk.red('Error: Either --from or --search is required'));
+          process.exitCode = ExitCode.GeneralError;
+          return;
+        }
+
+        // Get fetched directory from registry path
+        const registryDir = path.dirname(registryPath);
+        const fetchedDir = path.join(registryDir, 'fetched');
+
+        // Fetch and save
+        const fetcher = new IconFetcher({
+          fetchedDir,
+          saveLocally: options.saveLocal !== false,
+        });
+
+        const saveLocal = options.saveLocal !== false;
+
+        try {
+          await fetcher.fetchAndSave(iconRef);
+        } catch (error) {
+          console.error(chalk.red(`Error fetching icon: ${error instanceof Error ? error.message : 'Unknown error'}`));
+          process.exitCode = ExitCode.GeneralError;
+          return;
+        }
+
+        // Determine final reference
+        let finalRef: string;
+        if (saveLocal) {
+          const parsed = fetcher.parseReference(iconRef);
+          if (!parsed) {
+            console.error(chalk.red(`Invalid icon reference: ${iconRef}`));
+            process.exitCode = ExitCode.GeneralError;
+            return;
+          }
+          const setDir = fetcher.getIconifySet(parsed.prefix);
+          finalRef = `fetched:${setDir}/${parsed.name}`;
+        } else {
+          finalRef = iconRef;
+        }
+
+        // Add to registry
+        await addAliasToRegistry(registryPath, alias, finalRef);
+
+        if (saveLocal) {
+          console.log(chalk.green(`Added alias: ${alias} -> ${finalRef}`));
+          console.log(chalk.dim(`SVG saved to: ${fetchedDir}/${fetcher.getIconifySet(fetcher.parseReference(iconRef)!.prefix)}/${fetcher.parseReference(iconRef)!.name}.svg`));
+        } else {
+          console.log(chalk.yellow(`Added alias: ${alias} -> ${finalRef}`));
+          console.log(chalk.yellow('Warning: SVG not saved locally. Project may not be reproducible.'));
+        }
+      } catch (error) {
+        console.error(
+          chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        );
+        process.exitCode = ExitCode.GeneralError;
+      }
+    });
+}
+
+/**
+ * Create the icons sync subcommand
+ */
+function createSyncCommand(): Command {
+  return new Command('sync')
+    .description('Analyze icon usage and localize external icons')
+    .argument('<input>', 'Presentation YAML file')
+    .option('--localize', 'Download and save external icons locally')
+    .option('-c, --config <path>', 'Config file path')
+    .action(async (input: string, options: SyncOptions) => {
+      try {
+        // TODO: Full implementation in Step 4
+        console.log(chalk.blue('Icon sync analysis for:'), input);
+
+        if (options.localize) {
+          console.log(chalk.blue('Localizing external icons...'));
+        }
+
+        console.log(chalk.dim('Full sync implementation coming in next step.'));
+      } catch (error) {
+        console.error(
+          chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        );
+        process.exitCode = ExitCode.GeneralError;
+      }
+    });
+}
+
+/**
  * Create the icons preview subcommand
  */
 function createPreviewCommand(): Command {
@@ -457,6 +669,8 @@ export function createIconsCommand(): Command {
   cmd.addCommand(createListCommand());
   cmd.addCommand(createSearchCommand());
   cmd.addCommand(createPreviewCommand());
+  cmd.addCommand(createAddCommand());
+  cmd.addCommand(createSyncCommand());
 
   return cmd;
 }
