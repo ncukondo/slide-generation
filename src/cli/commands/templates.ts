@@ -1,17 +1,16 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as yaml from 'yaml';
-import { mkdir, writeFile, rm, readFile } from 'fs/promises';
-import { join, basename, extname } from 'path';
-import * as path from 'path';
+import { mkdir, writeFile, rm } from 'fs/promises';
+import { join, basename } from 'path';
 import { tmpdir } from 'os';
-import { execSync, execFileSync } from 'child_process';
-import { createServer, Server } from 'http';
+import { execFileSync } from 'child_process';
+import type { Server } from 'http';
 import { TemplateLoader, type TemplateDefinition } from '../../templates';
 import { ConfigLoader } from '../../config/loader';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ExitCode } from './convert';
-import { generateGalleryHtml, collectSlideInfo, type SlideInfo } from './preview';
+import { collectSlideInfo, startStaticServer, checkMarpCliAvailable } from './preview';
 
 type OutputFormat = 'table' | 'json' | 'llm';
 type InfoFormat = 'text' | 'json' | 'llm';
@@ -478,6 +477,162 @@ function createPreviewSubcommand(): Command {
 }
 
 /**
+ * Template preview information with schema details
+ */
+interface TemplatePreviewInfo {
+  template: TemplateDefinition;
+  imagePath: string;
+}
+
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Format schema property for HTML display
+ */
+function formatSchemaPropertyHtml(
+  name: string,
+  prop: Record<string, unknown>,
+  required: boolean
+): string {
+  const type = (prop['type'] as string) ?? 'unknown';
+  const description = prop['description'] as string | undefined;
+  const requiredBadge = required
+    ? '<span class="badge required">required</span>'
+    : '<span class="badge optional">optional</span>';
+
+  return `
+    <div class="param">
+      <div class="param-header">
+        <code class="param-name">${escapeHtml(name)}</code>
+        <span class="param-type">${escapeHtml(type)}</span>
+        ${requiredBadge}
+      </div>
+      ${description ? `<div class="param-desc">${escapeHtml(description)}</div>` : ''}
+    </div>
+  `;
+}
+
+/**
+ * Generate HTML for template preview with parameter information
+ */
+function generateTemplatePreviewHtml(previews: TemplatePreviewInfo[]): string {
+  const templateCards = previews
+    .map((p) => {
+      const schema = p.template.schema as {
+        type?: string;
+        required?: string[];
+        properties?: Record<string, Record<string, unknown>>;
+      };
+
+      const requiredFields = schema.required ?? [];
+      const properties = schema.properties ?? {};
+
+      const paramsHtml = Object.entries(properties)
+        .map(([name, prop]) =>
+          formatSchemaPropertyHtml(name, prop, requiredFields.includes(name))
+        )
+        .join('');
+
+      return `
+        <div class="template-card">
+          <div class="template-preview">
+            <img src="${escapeHtml(p.imagePath)}" alt="${escapeHtml(p.template.name)}" class="template-img" data-template="${escapeHtml(p.template.name)}">
+          </div>
+          <div class="template-info">
+            <h2 class="template-name">${escapeHtml(p.template.name)}</h2>
+            <p class="template-desc">${escapeHtml(p.template.description)}</p>
+            <div class="template-category">Category: <code>${escapeHtml(p.template.category)}</code></div>
+            <div class="template-params">
+              <h3>Parameters</h3>
+              ${paramsHtml || '<p class="no-params">No parameters</p>'}
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Template Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+    h1 { text-align: center; padding: 24px; background: #fff; border-bottom: 1px solid #ddd; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .template-card { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .template-preview { display: flex; align-items: center; justify-content: center; }
+    .template-img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: transform 0.2s; }
+    .template-img:hover { transform: scale(1.02); }
+    .template-info { padding: 12px 0; }
+    .template-name { font-size: 24px; margin-bottom: 8px; color: #1a1a1a; }
+    .template-desc { color: #666; margin-bottom: 16px; font-size: 16px; }
+    .template-category { margin-bottom: 16px; font-size: 14px; color: #888; }
+    .template-category code { background: #e8e8e8; padding: 2px 8px; border-radius: 4px; }
+    .template-params h3 { font-size: 16px; margin-bottom: 12px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .param { margin-bottom: 12px; padding: 8px; background: #fafafa; border-radius: 6px; }
+    .param-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .param-name { font-size: 14px; font-weight: 600; color: #0066cc; }
+    .param-type { font-size: 12px; color: #666; background: #e8e8e8; padding: 2px 6px; border-radius: 4px; }
+    .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .badge.required { background: #fee2e2; color: #dc2626; }
+    .badge.optional { background: #e0f2fe; color: #0284c7; }
+    .param-desc { font-size: 13px; color: #666; margin-top: 4px; padding-left: 4px; }
+    .no-params { color: #999; font-style: italic; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+    @media (max-width: 768px) {
+      .template-card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Template Preview</h1>
+  <div class="container">
+    ${templateCards || '<p>No templates to preview</p>'}
+  </div>
+  <div class="modal" id="modal">
+    <span class="modal-close">&times;</span>
+    <img id="modal-img" src="">
+  </div>
+  <script>
+    // Click on image to show modal
+    document.querySelectorAll('.template-img').forEach(img => {
+      img.addEventListener('click', () => {
+        document.getElementById('modal-img').src = img.src;
+        document.getElementById('modal').classList.add('active');
+      });
+    });
+    // Close modal
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal') || e.target.classList.contains('modal-close')) {
+        document.getElementById('modal').classList.remove('active');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('modal').classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>`;
+}
+
+/**
  * Generate sample YAML for a template
  */
 function generateSampleYaml(template: TemplateDefinition): string {
@@ -486,60 +641,6 @@ function generateSampleYaml(template: TemplateDefinition): string {
     content: template.example ?? {},
   };
   return yaml.stringify({ slides: [slide] });
-}
-
-/**
- * Start a simple HTTP server to serve template preview files
- */
-function startTemplatePreviewServer(
-  previewDir: string,
-  port: number
-): Promise<Server> {
-  return new Promise((resolve, reject) => {
-    const mimeTypes: Record<string, string> = {
-      '.html': 'text/html',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.css': 'text/css',
-      '.js': 'application/javascript',
-    };
-
-    const server = createServer(async (req, res) => {
-      try {
-        // Parse URL and get pathname only (ignore query strings)
-        const urlPath = new URL(req.url || '/', `http://localhost`).pathname;
-        const requestedPath = urlPath === '/' ? '/index.html' : urlPath;
-
-        // Resolve to absolute path and normalize (handles .. and .)
-        const resolvedPreviewDir = path.resolve(previewDir);
-        const filePath = path.resolve(previewDir, '.' + requestedPath);
-
-        // Security: Ensure the resolved path is within previewDir (prevent path traversal)
-        if (!filePath.startsWith(resolvedPreviewDir + '/') && filePath !== resolvedPreviewDir) {
-          res.writeHead(403);
-          res.end('Forbidden');
-          return;
-        }
-
-        const ext = extname(filePath);
-        const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-        const data = await readFile(filePath);
-        res.writeHead(200, { 'Content-Type': contentType });
-        res.end(data);
-      } catch {
-        res.writeHead(404);
-        res.end('Not found');
-      }
-    });
-
-    server.on('error', reject);
-    server.listen(port, () => {
-      console.log(`Template preview server running at ${chalk.cyan(`http://localhost:${port}`)}`);
-      resolve(server);
-    });
-  });
 }
 
 /**
@@ -561,9 +662,8 @@ export async function executeTemplatePreview(
 
   // Check marp-cli availability
   console.log('Checking for Marp CLI...');
-  try {
-    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
-  } catch {
+  const marpAvailable = await checkMarpCliAvailable();
+  if (!marpAvailable) {
     console.error(
       chalk.red(
         'Error: Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli'
@@ -625,7 +725,7 @@ export async function executeTemplatePreview(
   }
 
   // Generate screenshots for each template
-  const allSlides: SlideInfo[] = [];
+  const templatePreviews: TemplatePreviewInfo[] = [];
 
   for (const template of templates) {
     console.log(`Processing template: ${chalk.cyan(template.name)}...`);
@@ -660,36 +760,37 @@ export async function executeTemplatePreview(
       continue;
     }
 
-    // Collect slide info for this template
+    // Collect slide info for this template (use first slide as preview)
     const templateSlides = await collectSlideInfo(previewDir, template.name, 'png');
-    for (const slide of templateSlides) {
-      allSlides.push({
-        ...slide,
-        path: basename(slide.path),
-        title: `${template.name} - ${template.description}`,
+    if (templateSlides.length > 0) {
+      templatePreviews.push({
+        template,
+        imagePath: basename(templateSlides[0]!.path),
       });
     }
 
     console.log(chalk.green('  ✓') + ` ${template.name}`);
   }
 
-  if (allSlides.length === 0) {
+  if (templatePreviews.length === 0) {
     console.error(chalk.red('Error: No template previews generated'));
     process.exitCode = ExitCode.GeneralError;
     await rm(previewDir, { recursive: true, force: true });
     return;
   }
 
-  // Generate gallery HTML
-  const galleryHtml = generateGalleryHtml(allSlides);
-  await writeFile(join(previewDir, 'index.html'), galleryHtml);
+  // Generate template preview HTML with parameter info
+  const previewHtml = generateTemplatePreviewHtml(templatePreviews);
+  await writeFile(join(previewDir, 'index.html'), previewHtml);
 
   // Start preview server
   console.log(`\nStarting preview server on port ${chalk.cyan(port)}...`);
 
   let server: Server;
   try {
-    server = await startTemplatePreviewServer(previewDir, port);
+    server = await startStaticServer(previewDir, port, {
+      messagePrefix: 'Template preview server',
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to start server';
     console.error(chalk.red(`Error: ${message}`));
@@ -710,7 +811,7 @@ export async function executeTemplatePreview(
     console.log(`Open ${chalk.cyan(url)} in your browser`);
   }
 
-  console.log(`\nShowing ${allSlides.length} template preview(s)`);
+  console.log(`\nShowing ${templatePreviews.length} template preview(s)`);
   console.log('Press Ctrl+C to stop the server');
 
   // Cleanup on exit

@@ -97,7 +97,7 @@ export function generateGalleryHtml(slides: SlideInfo[]): string {
     <span class="modal-nav next">&gt;</span>
   </div>
   <script>
-    const slides = ${JSON.stringify(slides)};
+    const slides = ${JSON.stringify(slides).replace(/<\//g, '<\\/')};
     let currentIndex = 0;
 
     function showSlide(index, path) {
@@ -233,13 +233,23 @@ export function buildMarpCommand(
   return parts.join(' ');
 }
 
+export interface StaticServerOptions {
+  /** Initial slide number for URL hash */
+  initialSlide?: number;
+  /** Custom message prefix (default: "Server") */
+  messagePrefix?: string;
+  /** Suppress console output */
+  silent?: boolean;
+}
+
 /**
- * Start a simple HTTP server to serve gallery files
+ * Start a simple HTTP server to serve static files
+ * Reusable for gallery preview, template preview, etc.
  */
-export function startGalleryServer(
-  galleryDir: string,
+export function startStaticServer(
+  baseDir: string,
   port: number,
-  initialSlide?: number
+  options: StaticServerOptions = {}
 ): Promise<Server> {
   return new Promise((resolve, reject) => {
     const mimeTypes: Record<string, string> = {
@@ -258,11 +268,11 @@ export function startGalleryServer(
         const requestedPath = urlPath === '/' ? '/index.html' : urlPath;
 
         // Resolve to absolute path and normalize (handles .. and .)
-        const resolvedGalleryDir = path.resolve(galleryDir);
-        const filePath = path.resolve(galleryDir, '.' + requestedPath);
+        const resolvedBaseDir = path.resolve(baseDir);
+        const filePath = path.resolve(baseDir, '.' + requestedPath);
 
-        // Security: Ensure the resolved path is within galleryDir (prevent path traversal)
-        if (!filePath.startsWith(resolvedGalleryDir + '/') && filePath !== resolvedGalleryDir) {
+        // Security: Ensure the resolved path is within baseDir (prevent path traversal)
+        if (!filePath.startsWith(resolvedBaseDir + '/') && filePath !== resolvedBaseDir) {
           res.writeHead(403);
           res.end('Forbidden');
           return;
@@ -282,12 +292,30 @@ export function startGalleryServer(
 
     server.on('error', reject);
     server.listen(port, () => {
-      const url = initialSlide
-        ? `http://localhost:${port}/#slide-${initialSlide}`
+      const url = options.initialSlide
+        ? `http://localhost:${port}/#slide-${options.initialSlide}`
         : `http://localhost:${port}`;
-      console.log(`Gallery server running at ${chalk.cyan(url)}`);
+      if (!options.silent) {
+        const prefix = options.messagePrefix ?? 'Server';
+        console.log(`${prefix} running at ${chalk.cyan(url)}`);
+      }
       resolve(server);
     });
+  });
+}
+
+/**
+ * Start a simple HTTP server to serve gallery files
+ * @deprecated Use startStaticServer instead
+ */
+export function startGalleryServer(
+  galleryDir: string,
+  port: number,
+  initialSlide?: number
+): Promise<Server> {
+  return startStaticServer(galleryDir, port, {
+    ...(initialSlide !== undefined && { initialSlide }),
+    messagePrefix: 'Gallery server',
   });
 }
 
@@ -314,9 +342,8 @@ export async function executeGalleryPreview(
 
   // Check marp-cli availability
   console.log('Checking for Marp CLI...');
-  try {
-    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
-  } catch {
+  const marpAvailable = await checkMarpCliAvailable();
+  if (!marpAvailable) {
     console.error(
       chalk.red(
         'Error: Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli'
@@ -420,7 +447,10 @@ export async function executeGalleryPreview(
 
   let server: Server;
   try {
-    server = await startGalleryServer(galleryDir, port, options.slide);
+    server = await startStaticServer(galleryDir, port, {
+      ...(options.slide !== undefined && { initialSlide: options.slide }),
+      messagePrefix: 'Gallery server',
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to start server';
     console.error(chalk.red(`Error: ${message}`));
