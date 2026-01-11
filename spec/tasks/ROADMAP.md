@@ -64,7 +64,7 @@
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 22 | [AI Agent Integration - 基盤](./22-ai-integration.md) | 15 | Pending |
+| 22 | [AI Agent Integration - 基盤](./22-ai-integration.md) | 15 | Done |
 | 23 | [Screenshot Command](./23-screenshot-command.md) | 11, 22 | Pending |
 | 24 | [Preview Enhancements](./24-preview-enhancements.md) | 16, 13, 23 | Pending |
 | 25 | [Image Management](./25-image-management.md) | 19, 11 | Pending |
