@@ -1,0 +1,139 @@
+name: before-after
+description: "ビフォー・アフター比較レイアウト"
+category: layouts
+
+schema:
+  type: object
+  required:
+    - title
+    - before
+    - after
+  properties:
+    title:
+      type: string
+      description: "スライドタイトル"
+    before:
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          description: "ビフォー画像パス"
+        label:
+          type: string
+          default: "Before"
+          description: "ラベル"
+        caption:
+          type: string
+          description: "キャプション"
+    after:
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          description: "アフター画像パス"
+        label:
+          type: string
+          default: "After"
+          description: "ラベル"
+        caption:
+          type: string
+          description: "キャプション"
+    layout:
+      type: string
+      enum:
+        - horizontal
+        - vertical
+        - overlay
+      default: horizontal
+      description: "レイアウト方向"
+
+example:
+  title: "リノベーション結果"
+  before:
+    image: "images/photos/before.jpg"
+    caption: "改修前 (2023年1月)"
+  after:
+    image: "images/photos/after.jpg"
+    caption: "改修後 (2024年3月)"
+
+output: |
+  <!-- _class: before-after-slide layout-{{ content.layout | default('horizontal') }} -->
+
+  # {{ content.title }}
+
+  <div class="before-after-container">
+    <div class="before-section">
+      <span class="comparison-label">{{ content.before.label | default('Before') }}</span>
+      <img src="{{ content.before.image }}" alt="{{ content.before.label | default('Before') }}">
+      {%- if content.before.caption %}
+      <p class="comparison-caption">{{ content.before.caption }}</p>
+      {%- endif %}
+    </div>
+    <div class="after-section">
+      <span class="comparison-label">{{ content.after.label | default('After') }}</span>
+      <img src="{{ content.after.image }}" alt="{{ content.after.label | default('After') }}">
+      {%- if content.after.caption %}
+      <p class="comparison-caption">{{ content.after.caption }}</p>
+      {%- endif %}
+    </div>
+  </div>
+
+css: |
+  .before-after-slide .before-after-container {
+    display: flex;
+    gap: 2em;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+  }
+  .before-after-slide.layout-horizontal .before-after-container {
+    flex-direction: row;
+  }
+  .before-after-slide.layout-vertical .before-after-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .before-after-slide .before-section,
+  .before-after-slide .after-section {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .before-after-slide.layout-vertical .before-section,
+  .before-after-slide.layout-vertical .after-section {
+    width: 80%;
+    flex: none;
+  }
+  .before-after-slide .comparison-label {
+    display: inline-block;
+    padding: 0.3em 1em;
+    background: #333;
+    color: white;
+    font-size: 0.9em;
+    font-weight: bold;
+    border-radius: 4px;
+    margin-bottom: 0.5em;
+  }
+  .before-after-slide .before-section .comparison-label {
+    background: #666;
+  }
+  .before-after-slide .after-section .comparison-label {
+    background: #2196F3;
+  }
+  .before-after-slide .before-section img,
+  .before-after-slide .after-section img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  .before-after-slide .comparison-caption {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 0.5em;
+  }
