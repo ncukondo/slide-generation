@@ -9,6 +9,7 @@ import {
   PreviewOptions,
   generateGalleryHtml,
   SlideInfo,
+  collectSlideInfo,
 } from './preview';
 
 describe('preview command', () => {
@@ -154,6 +155,44 @@ describe('generateGalleryHtml', () => {
     const html = generateGalleryHtml([]);
     expect(html).toContain('gallery');
     expect(html).toContain('No slides');
+  });
+});
+
+describe('collectSlideInfo', () => {
+  let testDir: string;
+
+  beforeEach(async () => {
+    testDir = join(tmpdir(), `slide-gen-collect-test-${randomUUID()}`);
+    await mkdir(testDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(testDir, { recursive: true, force: true });
+  });
+
+  it('should collect slide info from screenshot directory', async () => {
+    // Create mock screenshot files
+    const { writeFile } = await import('fs/promises');
+    await writeFile(join(testDir, 'test.001.png'), 'mock png data');
+    await writeFile(join(testDir, 'test.002.png'), 'mock png data');
+    await writeFile(join(testDir, 'test.003.png'), 'mock png data');
+
+    const slides = await collectSlideInfo(testDir, 'test', 'png');
+    expect(slides).toHaveLength(3);
+    expect(slides[0]!.index).toBe(1);
+    expect(slides[0]!.path).toContain('test.001.png');
+    expect(slides[1]!.index).toBe(2);
+    expect(slides[2]!.index).toBe(3);
+  });
+
+  it('should return empty array for non-existent directory', async () => {
+    const slides = await collectSlideInfo('/non/existent/dir', 'test', 'png');
+    expect(slides).toEqual([]);
+  });
+
+  it('should handle directory with no matching files', async () => {
+    const slides = await collectSlideInfo(testDir, 'nomatch', 'png');
+    expect(slides).toEqual([]);
   });
 });
 

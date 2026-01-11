@@ -1,8 +1,9 @@
 import { Command } from 'commander';
-import { access, unlink } from 'fs/promises';
-import { basename, dirname, join } from 'path';
+import { access, unlink, readdir, mkdir, writeFile, readFile, rm } from 'fs/promises';
+import { basename, dirname, join, extname } from 'path';
 import { tmpdir } from 'os';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, execFileSync } from 'child_process';
+import { createServer, Server } from 'http';
 import chalk from 'chalk';
 import { watch as chokidarWatch, FSWatcher } from 'chokidar';
 import { Pipeline, PipelineError } from '../../core/pipeline';
@@ -118,6 +119,37 @@ export function generateGalleryHtml(slides: SlideInfo[]): string {
 }
 
 /**
+ * Collect slide information from screenshot directory
+ */
+export async function collectSlideInfo(
+  dir: string,
+  baseName: string,
+  format: string
+): Promise<SlideInfo[]> {
+  try {
+    const files = await readdir(dir);
+    const slidePattern = new RegExp(`^${baseName}\\.(\\d{3})\\.${format}$`);
+
+    const slides: SlideInfo[] = [];
+    for (const file of files) {
+      const match = file.match(slidePattern);
+      if (match) {
+        const index = parseInt(match[1]!, 10);
+        slides.push({
+          path: join(dir, file),
+          title: `Slide ${index}`,
+          index,
+        });
+      }
+    }
+
+    return slides.sort((a, b) => a.index - b.index);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Check if marp-cli is available in the system
  * Uses 'marp --version' directly instead of 'npx marp --version'
  * because npx is slow (searches local, global, and npm registry)
@@ -162,6 +194,236 @@ export function buildMarpCommand(
 }
 
 /**
+ * Start a simple HTTP server to serve gallery files
+ */
+export function startGalleryServer(
+  galleryDir: string,
+  port: number,
+  initialSlide?: number
+): Promise<Server> {
+  return new Promise((resolve, reject) => {
+    const mimeTypes: Record<string, string> = {
+      '.html': 'text/html',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.css': 'text/css',
+      '.js': 'application/javascript',
+    };
+
+    const server = createServer(async (req, res) => {
+      try {
+        let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
+        filePath = join(galleryDir, filePath);
+
+        const ext = extname(filePath);
+        const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+        const data = await readFile(filePath);
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+      } catch {
+        res.writeHead(404);
+        res.end('Not found');
+      }
+    });
+
+    server.on('error', reject);
+    server.listen(port, () => {
+      const url = initialSlide
+        ? `http://localhost:${port}/#slide-${initialSlide}`
+        : `http://localhost:${port}`;
+      console.log(`Gallery server running at ${chalk.cyan(url)}`);
+      resolve(server);
+    });
+  });
+}
+
+/**
+ * Execute gallery preview mode
+ */
+export async function executeGalleryPreview(
+  inputPath: string,
+  options: PreviewOptions
+): Promise<PreviewResult> {
+  const errors: string[] = [];
+  const port = Number(options.port) || 8080;
+  const galleryDir = join(tmpdir(), `slide-gen-gallery-${Date.now()}`);
+
+  // Validate input file exists
+  try {
+    await access(inputPath);
+  } catch {
+    console.error(chalk.red(`Error: File not found: ${inputPath}`));
+    errors.push(`File not found: ${inputPath}`);
+    process.exitCode = ExitCode.FileReadError;
+    return { success: false, errors };
+  }
+
+  // Check marp-cli availability
+  console.log('Checking for Marp CLI...');
+  try {
+    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
+  } catch {
+    console.error(
+      chalk.red(
+        'Error: Marp CLI not found. Install it with: npm install -g @marp-team/marp-cli'
+      )
+    );
+    errors.push('Marp CLI not available');
+    process.exitCode = ExitCode.GeneralError;
+    return { success: false, errors };
+  }
+  console.log(chalk.green('✓') + ' Marp CLI found');
+
+  // Create gallery directory
+  await mkdir(galleryDir, { recursive: true });
+
+  // Load configuration
+  const configLoader = new ConfigLoader();
+  let configPath = options.config;
+
+  if (!configPath) {
+    configPath = await configLoader.findConfig(dirname(inputPath));
+  }
+
+  const config = await configLoader.load(configPath);
+
+  // Create and initialize pipeline
+  console.log('Initializing pipeline...');
+  const pipeline = new Pipeline(config);
+
+  try {
+    await pipeline.initialize();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown initialization error';
+    console.error(chalk.red(`Error: Failed to initialize pipeline: ${message}`));
+    errors.push(message);
+    process.exitCode = ExitCode.ConversionError;
+    await rm(galleryDir, { recursive: true, force: true });
+    return { success: false, errors };
+  }
+
+  // Generate markdown
+  const tempMdPath = join(galleryDir, 'slides.md');
+  console.log(`Converting ${chalk.cyan(inputPath)}...`);
+
+  try {
+    await pipeline.runWithResult(inputPath, { outputPath: tempMdPath });
+    console.log(chalk.green('✓') + ' Conversion complete');
+  } catch (error) {
+    const message =
+      error instanceof PipelineError
+        ? `${error.stage}: ${error.message}`
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
+    console.error(chalk.red(`Error: Conversion failed: ${message}`));
+    errors.push(message);
+    process.exitCode = ExitCode.ConversionError;
+    await rm(galleryDir, { recursive: true, force: true });
+    return { success: false, errors };
+  }
+
+  // Take screenshots
+  console.log('Taking screenshots...');
+  try {
+    execFileSync('npx', ['marp', '--images', 'png', '-o', galleryDir, tempMdPath], {
+      stdio: options.verbose ? 'inherit' : 'pipe',
+    });
+    console.log(chalk.green('✓') + ' Screenshots generated');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Marp CLI failed';
+    console.error(chalk.red(`Error: ${message}`));
+    errors.push(message);
+    process.exitCode = ExitCode.GeneralError;
+    await rm(galleryDir, { recursive: true, force: true });
+    return { success: false, errors };
+  }
+
+  // Collect slide info
+  const slides = await collectSlideInfo(galleryDir, 'slides', 'png');
+
+  if (slides.length === 0) {
+    console.error(chalk.red('Error: No slides found'));
+    errors.push('No slides generated');
+    process.exitCode = ExitCode.GeneralError;
+    await rm(galleryDir, { recursive: true, force: true });
+    return { success: false, errors };
+  }
+
+  // Update paths to be relative for HTTP serving
+  const relativeSlides = slides.map((s) => ({
+    ...s,
+    path: basename(s.path),
+  }));
+
+  // Generate gallery HTML
+  const galleryHtml = generateGalleryHtml(relativeSlides);
+  await writeFile(join(galleryDir, 'index.html'), galleryHtml);
+
+  // Start gallery server
+  console.log(`\nStarting gallery server on port ${chalk.cyan(port)}...`);
+
+  let server: Server;
+  try {
+    server = await startGalleryServer(galleryDir, port, options.slide);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to start server';
+    console.error(chalk.red(`Error: ${message}`));
+    errors.push(message);
+    process.exitCode = ExitCode.GeneralError;
+    await rm(galleryDir, { recursive: true, force: true });
+    return { success: false, errors };
+  }
+
+  // Open browser
+  const url = options.slide
+    ? `http://localhost:${port}/#slide-${options.slide}`
+    : `http://localhost:${port}`;
+
+  try {
+    const open = await import('open' as string);
+    await open.default(url);
+  } catch {
+    console.log(`Open ${chalk.cyan(url)} in your browser`);
+  }
+
+  console.log(`\nShowing ${slides.length} slides in gallery mode`);
+  console.log('Press Ctrl+C to stop the server');
+
+  // Cleanup on exit
+  const cleanup = async () => {
+    server.close();
+    await rm(galleryDir, { recursive: true, force: true });
+  };
+
+  if (options.signal) {
+    options.signal.addEventListener('abort', cleanup);
+  }
+
+  const signalHandler = async () => {
+    console.log('\n' + chalk.yellow('Gallery server stopped.'));
+    await cleanup();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', signalHandler);
+  process.on('SIGTERM', signalHandler);
+
+  // Wait for signal
+  await new Promise<void>((resolve) => {
+    if (options.signal) {
+      options.signal.addEventListener('abort', () => resolve());
+    }
+    server.on('close', () => resolve());
+  });
+
+  return { success: true, errors };
+}
+
+/**
  * Create the preview command
  */
 export function createPreviewCommand(): Command {
@@ -186,6 +448,11 @@ export async function executePreview(
   inputPath: string,
   options: PreviewOptions
 ): Promise<PreviewResult> {
+  // Route to gallery mode if requested
+  if (options.gallery) {
+    return executeGalleryPreview(inputPath, options);
+  }
+
   const errors: string[] = [];
   const verbose = options.verbose ?? false;
   const port = Number(options.port) || 8080;
