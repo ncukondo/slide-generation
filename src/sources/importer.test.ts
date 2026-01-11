@@ -76,7 +76,8 @@ describe('SourceImporter', () => {
       const data = await manager.load();
       const expectedPath = path.join('materials', 'doc.pdf');
       const entry = data.sources?.find((s) => s.path === expectedPath);
-      expect(entry?.origin).toBe(sourcePath);
+      // Use path.resolve for cross-platform path comparison
+      expect(entry?.origin).toBe(path.resolve(sourcePath));
     });
 
     it('should classify files by extension', async () => {
