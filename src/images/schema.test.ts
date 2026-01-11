@@ -167,6 +167,29 @@ describe("Image Metadata Schema", () => {
       const result = individualMetadataSchema.safeParse(metadata);
       expect(result.success).toBe(true);
     });
+
+    it("should validate metadata with processing instructions", () => {
+      const metadata = {
+        description: "Product photo with watermark",
+        processing: [
+          { type: "crop", edges: { right: 10 } },
+          { type: "blur", region: { x: 100, y: 100, width: 50, height: 50 } },
+        ],
+      };
+      const result = individualMetadataSchema.safeParse(metadata);
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject metadata with invalid processing instruction", () => {
+      const metadata = {
+        description: "Test",
+        processing: [
+          { type: "invalid_type" },
+        ],
+      };
+      const result = individualMetadataSchema.safeParse(metadata);
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("directoryMetadataSchema", () => {
