@@ -2,7 +2,8 @@
  * slide-generation - A CLI tool to generate Marp-compatible Markdown from YAML source files
  */
 
-export const VERSION = "0.1.0";
+declare const __VERSION__: string;
+export const VERSION = __VERSION__;
 
 // Core modules
 export * from './core';
