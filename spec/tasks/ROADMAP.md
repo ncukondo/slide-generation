@@ -70,15 +70,15 @@
 | 24 | [Preview Enhancements](./24-preview-enhancements.md) | 16, 13, 23 | Pending |
 | 25 | [Image Management](./completed/25-image-management.md) | 19, 11 | Done |
 | 26 | [Icon Enhancements](./completed/26-icon-enhancements.md) | 07, 14 | Done |
-| 27 | [Source Management](./27-source-management.md) | 22, 15 | Pending |
+| 27 | [Source Management](./completed/27-source-management.md) | 22, 15 | Done |
 | 28 | [Image Processing (Crop/Blur)](./completed/28-image-processing.md) | 25 | Done |
 
 ## Progress Summary
 
 - **Total Tasks**: 29
-- **Completed**: 26
+- **Completed**: 27
 - **In Progress**: 0
-- **Pending**: 3
+- **Pending**: 2
 
 ## Architecture Overview
 
