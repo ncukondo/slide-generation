@@ -104,6 +104,32 @@ describe('templates command', () => {
       const exampleCmd = cmd.commands.find((c: Command) => c.name() === 'example');
       expect(exampleCmd).toBeDefined();
     });
+
+    it('should have preview subcommand', () => {
+      const cmd = createTemplatesCommand();
+      const previewCmd = cmd.commands.find((c: Command) => c.name() === 'preview');
+      expect(previewCmd).toBeDefined();
+    });
+
+    it('preview should accept template name argument', () => {
+      const cmd = createTemplatesCommand();
+      const previewCmd = cmd.commands.find((c: Command) => c.name() === 'preview');
+      expect(previewCmd?.registeredArguments[0]?.name()).toBe('name');
+    });
+
+    it('preview should have --all option', () => {
+      const cmd = createTemplatesCommand();
+      const previewCmd = cmd.commands.find((c: Command) => c.name() === 'preview');
+      const options = previewCmd?.options.map((o) => o.long);
+      expect(options).toContain('--all');
+    });
+
+    it('preview should have --category option', () => {
+      const cmd = createTemplatesCommand();
+      const previewCmd = cmd.commands.find((c: Command) => c.name() === 'preview');
+      const options = previewCmd?.options.map((o) => o.long);
+      expect(options).toContain('--category');
+    });
   });
 
   describe('formatTemplateList', () => {
