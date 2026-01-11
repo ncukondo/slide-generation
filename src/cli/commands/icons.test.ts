@@ -342,4 +342,65 @@ aliases:
       expect(isExternalSource('mi')).toBe(false);
     });
   });
+
+  describe('formatAliasesListWithStatus', () => {
+    it('should show local/external status', async () => {
+      const { formatAliasesListWithStatus } = await import('./icons.js');
+      const aliases = {
+        planning: 'mi:event_note',
+        stethoscope: 'health:stethoscope',
+      };
+
+      const output = formatAliasesListWithStatus(aliases, 'table');
+      expect(output).toContain('planning');
+      expect(output).toContain('[local]');
+      expect(output).toContain('stethoscope');
+      expect(output).toContain('[external]');
+    });
+  });
+
+  describe('formatAliasesListLLM', () => {
+    it('should output YAML format for LLM', async () => {
+      const { formatAliasesListLLM } = await import('./icons.js');
+      const aliases = {
+        planning: 'mi:event_note',
+        success: 'mi:check_circle',
+      };
+
+      const output = formatAliasesListLLM(aliases);
+      expect(output).toContain('aliases:');
+      expect(output).toContain('planning');
+      expect(output).toContain('mi:event_note');
+    });
+  });
+
+  describe('filterAliasesByCategory', () => {
+    it('should filter aliases by category', async () => {
+      const { filterAliasesByCategory } = await import('./icons.js');
+      const aliases = {
+        // Medical
+        stethoscope: 'health:stethoscope',
+        hospital: 'health:hospital',
+        // Actions
+        planning: 'mi:event_note',
+        success: 'mi:check_circle',
+      };
+
+      const filtered = filterAliasesByCategory(aliases, 'medical');
+      expect(filtered).toHaveProperty('stethoscope');
+      expect(filtered).toHaveProperty('hospital');
+      expect(filtered).not.toHaveProperty('planning');
+    });
+
+    it('should return all aliases for unknown category', async () => {
+      const { filterAliasesByCategory } = await import('./icons.js');
+      const aliases = {
+        planning: 'mi:event_note',
+        success: 'mi:check_circle',
+      };
+
+      const filtered = filterAliasesByCategory(aliases, 'unknown');
+      expect(Object.keys(filtered).length).toBe(2);
+    });
+  });
 });

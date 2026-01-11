@@ -10,13 +10,15 @@ import { ConfigLoader } from '../../config/loader.js';
 import type { IconSource, IconRegistry } from '../../icons/schema.js';
 import { ExitCode } from './convert.js';
 
-type OutputFormat = 'table' | 'json';
+type OutputFormat = 'table' | 'json' | 'llm';
 
 interface ListOptions {
   source?: string;
   aliases?: boolean;
   config?: string;
   format?: OutputFormat;
+  category?: string;
+  showStatus?: boolean;
 }
 
 interface SearchOptions {
@@ -152,6 +154,126 @@ export function formatIconSourceList(
     default:
       return formatTableSourceList(sources);
   }
+}
+
+/**
+ * Category to alias patterns mapping
+ */
+const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
+  medical: [/^(health|hospital|clinic|ambulance|emergency|stethoscope|syringe|vaccine|pill|medicine|doctor|nurse|patient)/i, /^health:/],
+  action: [/^(planning|action|analysis|start|stop|pause|save|edit|delete|add|remove|search|refresh|sync|upload|download)/i],
+  status: [/^(success|warning|error|info|question|pending|completed|cancelled|approved|rejected)/i],
+  navigation: [/^(home|back|forward|up|down|left|right|expand|collapse|menu|close)/i],
+  communication: [/^(email|phone|chat|message|notification|feedback|comment)/i],
+  business: [/^(workflow|process|cycle|milestone|target|goal|kpi|metric|report|dashboard|chart)/i],
+};
+
+/**
+ * Filter aliases by category
+ */
+export function filterAliasesByCategory(
+  aliases: Record<string, string>,
+  category: string
+): Record<string, string> {
+  const patterns = CATEGORY_PATTERNS[category.toLowerCase()];
+
+  if (!patterns) {
+    // Unknown category, return all aliases
+    return aliases;
+  }
+
+  const filtered: Record<string, string> = {};
+  for (const [alias, target] of Object.entries(aliases)) {
+    const matchesPattern = patterns.some(pattern =>
+      pattern.test(alias) || pattern.test(target)
+    );
+    if (matchesPattern) {
+      filtered[alias] = target;
+    }
+  }
+
+  return filtered;
+}
+
+/**
+ * Get icon status (local or external)
+ */
+function getIconStatus(target: string): 'local' | 'external' {
+  const colonIndex = target.indexOf(':');
+  if (colonIndex === -1) {
+    return 'local';
+  }
+  const prefix = target.substring(0, colonIndex);
+  return isExternalSource(prefix) ? 'external' : 'local';
+}
+
+/**
+ * Format aliases with status for table output
+ */
+export function formatAliasesListWithStatus(
+  aliases: Record<string, string>,
+  format: 'table' | 'json'
+): string {
+  const entries = Object.entries(aliases);
+
+  if (entries.length === 0) {
+    return 'No aliases defined.';
+  }
+
+  if (format === 'json') {
+    const result = entries.map(([alias, target]) => ({
+      alias,
+      target,
+      status: getIconStatus(target),
+    }));
+    return JSON.stringify(result, null, 2);
+  }
+
+  const lines: string[] = ['Icon Aliases with Status:', ''];
+
+  // Calculate column widths
+  const maxAliasLen = Math.max(...entries.map(([a]) => a.length), 5);
+  const maxTargetLen = Math.max(...entries.map(([, t]) => t.length), 6);
+
+  // Header
+  const aliasPad = 'Alias'.padEnd(maxAliasLen);
+  const targetPad = 'Target'.padEnd(maxTargetLen);
+  lines.push(`  ${aliasPad}  ${targetPad}  Status`);
+  lines.push(`  ${'─'.repeat(maxAliasLen)}  ${'─'.repeat(maxTargetLen)}  ${'─'.repeat(10)}`);
+
+  // Sort alphabetically
+  entries.sort((a, b) => a[0].localeCompare(b[0]));
+
+  for (const [alias, target] of entries) {
+    const aliasStr = alias.padEnd(maxAliasLen);
+    const targetStr = target.padEnd(maxTargetLen);
+    const status = getIconStatus(target);
+    const statusStr = status === 'local' ? '[local]' : '[external]';
+    lines.push(`  ${aliasStr}  ${targetStr}  ${statusStr}`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format aliases for LLM output (YAML format)
+ */
+export function formatAliasesListLLM(aliases: Record<string, string>): string {
+  const lines: string[] = [
+    '# Icon Aliases',
+    '# Use these semantic names instead of raw icon references',
+    '',
+    'aliases:',
+  ];
+
+  // Group by category for better readability
+  const entries = Object.entries(aliases).sort((a, b) => a[0].localeCompare(b[0]));
+
+  for (const [alias, target] of entries) {
+    lines.push(`  ${alias}: "${target}"`);
+  }
+
+  return lines.join('\n');
 }
 
 /**
@@ -325,7 +447,9 @@ function createListCommand(): Command {
     .description('List icon sources and aliases')
     .option('--source <name>', 'Filter by source name')
     .option('--aliases', 'Show only aliases')
-    .option('--format <fmt>', 'Output format (table/json)', 'table')
+    .option('--format <fmt>', 'Output format (table/json/llm)', 'table')
+    .option('--category <cat>', 'Filter aliases by category (medical/action/status/navigation/communication/business)')
+    .option('--show-status', 'Show local/external status for aliases')
     .option('-c, --config <path>', 'Config file path')
     .action(async (options: ListOptions) => {
       try {
@@ -340,8 +464,22 @@ function createListCommand(): Command {
 
         if (options.aliases) {
           // Show only aliases
-          const aliases = registry.getAliases();
-          const output = formatAliasesList(aliases, format);
+          let aliases = registry.getAliases();
+
+          // Filter by category if specified
+          if (options.category) {
+            aliases = filterAliasesByCategory(aliases, options.category);
+          }
+
+          // Choose output format
+          let output: string;
+          if (format === 'llm') {
+            output = formatAliasesListLLM(aliases);
+          } else if (options.showStatus) {
+            output = formatAliasesListWithStatus(aliases, format === 'json' ? 'json' : 'table');
+          } else {
+            output = formatAliasesList(aliases, format === 'json' ? 'json' : 'table');
+          }
           console.log(output);
           return;
         }
