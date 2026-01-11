@@ -14,10 +14,10 @@ export interface CropOptions {
  * Edge crop options for cropping percentage from edges
  */
 export interface EdgeCropOptions {
-  left?: number; // Percentage to crop from left (0-50)
-  right?: number; // Percentage to crop from right (0-50)
-  top?: number; // Percentage to crop from top (0-50)
-  bottom?: number; // Percentage to crop from bottom (0-50)
+  left?: number | undefined; // Percentage to crop from left (0-50)
+  right?: number | undefined; // Percentage to crop from right (0-50)
+  top?: number | undefined; // Percentage to crop from top (0-50)
+  bottom?: number | undefined; // Percentage to crop from bottom (0-50)
 }
 
 /**
@@ -28,7 +28,7 @@ export interface BlurRegionOptions {
   y: number;
   width: number;
   height: number;
-  radius?: number; // Default: 10
+  radius?: number | undefined; // Default: 10
 }
 
 /**

@@ -69,3 +69,11 @@ export {
   type EdgeCropOptions as EdgeCropOptionsSchema,
   type Region,
 } from "./processing-schema";
+
+// Processing pipeline exports
+export {
+  ImageProcessingPipeline,
+  type ProcessImageResult,
+  type ProcessDirectoryResult,
+  type ProcessingPipelineOptions,
+} from "./processing-pipeline";
