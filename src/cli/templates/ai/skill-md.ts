@@ -111,6 +111,12 @@ Use \`--format llm\` for token-efficient output:
 \`\`\`bash
 slide-gen templates list --format llm
 slide-gen templates info <name> --format llm
+slide-gen validate <input> --format llm
 \`\`\`
+
+The \`validate --format llm\` command provides:
+- Error locations with line numbers
+- Fix examples from template definitions
+- Contextual hints for unknown templates/icons
 `;
 }
