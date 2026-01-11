@@ -41,6 +41,13 @@ sources:
     prefix: custom
     path: "./icons/custom/"
 
+  # Fetched icons (auto-saved from external sources)
+  # Icons are saved locally for offline use and reproducibility
+  - name: fetched
+    type: local-svg
+    prefix: fetched
+    path: "./icons/fetched/"
+
 # Semantic aliases - map meaningful names to actual icons
 # AIはこれらのエイリアスを使用してアイコンを選択します
 aliases:

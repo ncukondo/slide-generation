@@ -14,15 +14,25 @@ export interface IconOptions {
 }
 
 /**
+ * Options for the IconResolver
+ */
+export interface IconResolverOptions {
+  /** Use CSS variables for theme colors (e.g., var(--theme-primary)) */
+  useThemeVariables?: boolean;
+}
+
+/**
  * Icon Resolver - renders icons from various sources
  */
 export class IconResolver {
   private nunjucksEnv: nunjucks.Environment;
+  private options: IconResolverOptions;
 
-  constructor(private registry: IconRegistryLoader) {
+  constructor(private registry: IconRegistryLoader, options: IconResolverOptions = {}) {
     this.nunjucksEnv = new nunjucks.Environment(null, {
       autoescape: false,
     });
+    this.options = options;
   }
 
   /**
@@ -50,7 +60,7 @@ export class IconResolver {
     const defaults = this.registry.getDefaults();
     const mergedOptions: Required<Omit<IconOptions, "class">> & Pick<IconOptions, "class"> = {
       size: options?.size ?? defaults.size,
-      color: options?.color ?? defaults.color,
+      color: this.resolveColor(options?.color) ?? defaults.color,
       ...(options?.class !== undefined ? { class: options.class } : {}),
     };
 
@@ -226,5 +236,26 @@ export class IconResolver {
     }
 
     return classes.join(" ");
+  }
+
+  /**
+   * Resolve color value, supporting palette names and CSS variables
+   */
+  private resolveColor(color?: string): string | undefined {
+    if (!color) {
+      return undefined;
+    }
+
+    // Check if it's a palette name
+    const paletteColor = this.registry.getColor(color);
+    if (paletteColor) {
+      if (this.options.useThemeVariables) {
+        return `var(--theme-${color})`;
+      }
+      return paletteColor;
+    }
+
+    // Pass through hex/rgb/other colors
+    return color;
   }
 }

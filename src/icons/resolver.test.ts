@@ -299,4 +299,66 @@ sources:
       expect(html).toContain("#check");
     });
   });
+
+  describe("theme color integration", () => {
+    beforeEach(async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: material-icons
+    type: web-font
+    prefix: mi
+    render: '<span class="material-icons" style="{{ style }}">{{ name }}</span>'
+
+aliases:
+  planning: "mi:event_note"
+
+colors:
+  primary: "#1976D2"
+  secondary: "#424242"
+  success: "#4CAF50"
+
+defaults:
+  size: "24px"
+  color: "currentColor"
+`
+      );
+      await loader.load(registryPath);
+      resolver = new IconResolver(loader);
+    });
+
+    it("should resolve color from palette name", async () => {
+      const html = await resolver.render("planning", { color: "primary" });
+      expect(html).toContain("color: #1976D2");
+    });
+
+    it("should pass through hex colors", async () => {
+      const html = await resolver.render("planning", { color: "#FF5722" });
+      expect(html).toContain("color: #FF5722");
+    });
+
+    it("should pass through rgb colors", async () => {
+      const html = await resolver.render("planning", { color: "rgb(255, 87, 34)" });
+      expect(html).toContain("color: rgb(255, 87, 34)");
+    });
+
+    it("should use CSS variable for theme colors when enabled", async () => {
+      const resolverWithVars = new IconResolver(loader, { useThemeVariables: true });
+      const html = await resolverWithVars.render("planning", { color: "primary" });
+      expect(html).toContain("var(--theme-primary)");
+    });
+
+    it("should still pass through hex colors in CSS variable mode", async () => {
+      const resolverWithVars = new IconResolver(loader, { useThemeVariables: true });
+      const html = await resolverWithVars.render("planning", { color: "#FF5722" });
+      expect(html).toContain("color: #FF5722");
+    });
+
+    it("should use default color when not specified", async () => {
+      const html = await resolver.render("planning");
+      expect(html).toContain("color: currentColor");
+    });
+  });
 });

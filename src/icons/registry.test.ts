@@ -318,4 +318,93 @@ colors:
       expect(loader.getColor("unknown")).toBeUndefined();
     });
   });
+
+  describe("fetched source", () => {
+    it("should resolve fetched (local) source", async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: fetched
+    type: local-svg
+    prefix: fetched
+    path: "./icons/fetched/"
+`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+
+      const source = loader.getSource("fetched");
+      expect(source).toBeDefined();
+      expect(source?.type).toBe("local-svg");
+      expect(source?.path).toBe("./icons/fetched/");
+    });
+
+    it("should resolve Health Icons source", async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: healthicons
+    type: svg-inline
+    prefix: health
+    url: "https://api.iconify.design/healthicons/{name}.svg"
+`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+
+      const source = loader.getSource("health");
+      expect(source).toBeDefined();
+      expect(source?.name).toBe("healthicons");
+    });
+
+    it("should resolve medical aliases", async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: healthicons
+    type: svg-inline
+    prefix: health
+    url: "https://api.iconify.design/healthicons/{name}.svg"
+
+aliases:
+  stethoscope: "health:stethoscope"
+`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+
+      const resolved = loader.resolveAlias("stethoscope");
+      expect(resolved).toBe("health:stethoscope");
+    });
+
+    it("should parse fetched icon reference with subdirectory", async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: fetched
+    type: local-svg
+    prefix: fetched
+    path: "./icons/fetched/"
+`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+
+      // fetched:healthicons/stethoscope format
+      const result = loader.parseIconReference("fetched:healthicons/stethoscope");
+      expect(result).toEqual({ prefix: "fetched", name: "healthicons/stethoscope" });
+    });
+  });
 });
