@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { join } from 'path';
-import { mkdir, rm, readFile, readdir, stat } from 'fs/promises';
+import { mkdir, rm, readFile, readdir, stat, access, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { Command } from 'commander';
-import { createInitCommand, executeInit } from './init';
+import { createInitCommand, executeInit, isMarpCliInstalled, detectPackageManager } from './init';
 
 describe('init command', () => {
   let testDir: string;
@@ -37,7 +37,7 @@ describe('init command', () => {
   describe('executeInit', () => {
     it('should create directory structure', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -47,7 +47,7 @@ describe('init command', () => {
 
     it('should create config.yaml with default content', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const configContent = await readFile(join(targetDir, 'config.yaml'), 'utf-8');
       expect(configContent).toContain('templates:');
@@ -57,7 +57,7 @@ describe('init command', () => {
 
     it('should create sample presentation.yaml when examples enabled (default)', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('presentation.yaml');
@@ -69,7 +69,7 @@ describe('init command', () => {
 
     it('should not create sample files when --no-examples is set', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, { examples: false });
+      await executeInit(targetDir, { examples: false, skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -78,7 +78,7 @@ describe('init command', () => {
 
     it('should create themes directory with custom.css', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const themesDir = join(targetDir, 'themes');
       const themeStat = await stat(themesDir);
@@ -90,7 +90,7 @@ describe('init command', () => {
 
     it('should create icons/custom directory', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const iconsCustomDir = join(targetDir, 'icons', 'custom');
       const dirStat = await stat(iconsCustomDir);
@@ -104,7 +104,7 @@ describe('init command', () => {
       process.chdir(targetDir);
 
       try {
-        await executeInit('.', {});
+        await executeInit('.', { skipMarpInstall: true });
         const entries = await readdir(targetDir);
         expect(entries).toContain('config.yaml');
       } finally {
@@ -118,7 +118,7 @@ describe('init command', () => {
       await mkdir(join(targetDir, 'config.yaml'), { recursive: true }); // Create as dir to simulate existing file
 
       const consoleSpy = vi.spyOn(console, 'log');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       // Check that warning or info was logged about existing directory
       // The exact implementation will determine the behavior
@@ -127,7 +127,7 @@ describe('init command', () => {
 
     it('should handle template option', async () => {
       const targetDir = join(testDir, 'with-template');
-      await executeInit(targetDir, { template: 'basic' });
+      await executeInit(targetDir, { template: 'basic', skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -136,10 +136,177 @@ describe('init command', () => {
 
     it('should create nested directories', async () => {
       const targetDir = join(testDir, 'nested', 'deep', 'presentation');
-      await executeInit(targetDir, {});
+      await executeInit(targetDir, { skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
+    });
+  });
+
+  describe('init command - AI config options', () => {
+    it('should accept --no-ai-config option', () => {
+      const cmd = createInitCommand();
+      const options = cmd.options;
+      const optionNames = options.map((o) => o.long);
+      expect(optionNames).toContain('--no-ai-config');
+    });
+
+    it('should accept --skip-marp-install option', () => {
+      const cmd = createInitCommand();
+      const options = cmd.options;
+      const optionNames = options.map((o) => o.long);
+      expect(optionNames).toContain('--skip-marp-install');
+    });
+  });
+
+  describe('executeInit - AI config generation', () => {
+    it('should generate .skills/slide-assistant/SKILL.md', async () => {
+      const targetDir = join(testDir, 'ai-config-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(
+        join(targetDir, '.skills', 'slide-assistant', 'SKILL.md'),
+        'utf-8'
+      );
+      expect(content).toContain('name: slide-assistant');
+      expect(content).toContain('slide-gen');
+    });
+
+    it('should generate CLAUDE.md', async () => {
+      const targetDir = join(testDir, 'claude-md-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(join(targetDir, 'CLAUDE.md'), 'utf-8');
+      expect(content).toContain('slide-gen');
+    });
+
+    it('should generate .claude/commands/', async () => {
+      const targetDir = join(testDir, 'claude-commands-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const commands = await readdir(join(targetDir, '.claude', 'commands'));
+      expect(commands).toContain('slide-create.md');
+      expect(commands).toContain('slide-validate.md');
+      expect(commands).toContain('slide-preview.md');
+    });
+
+    it('should generate AGENTS.md', async () => {
+      const targetDir = join(testDir, 'agents-md-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(join(targetDir, 'AGENTS.md'), 'utf-8');
+      expect(content).toContain('slide-gen');
+    });
+
+    it('should generate .opencode/agent/slide.md', async () => {
+      const targetDir = join(testDir, 'opencode-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(
+        join(targetDir, '.opencode', 'agent', 'slide.md'),
+        'utf-8'
+      );
+      expect(content).toContain('mode: subagent');
+    });
+
+    it('should generate .cursorrules', async () => {
+      const targetDir = join(testDir, 'cursorrules-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(join(targetDir, '.cursorrules'), 'utf-8');
+      expect(content).toContain('slide-gen');
+    });
+
+    it('should skip AI config with --no-ai-config', async () => {
+      const targetDir = join(testDir, 'no-ai-config-test');
+      await executeInit(targetDir, { aiConfig: false, skipMarpInstall: true });
+
+      await expect(access(join(targetDir, 'CLAUDE.md'))).rejects.toThrow();
+      await expect(access(join(targetDir, '.skills'))).rejects.toThrow();
+    });
+
+    it('should not overwrite existing CLAUDE.md', async () => {
+      const targetDir = join(testDir, 'existing-claude-md');
+      await mkdir(targetDir, { recursive: true });
+      await writeFile(join(targetDir, 'CLAUDE.md'), '# Existing');
+
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(join(targetDir, 'CLAUDE.md'), 'utf-8');
+      expect(content).toBe('# Existing');
+    });
+
+    it('should generate references/templates.md', async () => {
+      const targetDir = join(testDir, 'references-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(
+        join(targetDir, '.skills', 'slide-assistant', 'references', 'templates.md'),
+        'utf-8'
+      );
+      expect(content).toContain('Template Reference');
+    });
+
+    it('should generate references/workflows.md', async () => {
+      const targetDir = join(testDir, 'workflows-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(
+        join(targetDir, '.skills', 'slide-assistant', 'references', 'workflows.md'),
+        'utf-8'
+      );
+      expect(content).toContain('Workflow Reference');
+    });
+  });
+
+  describe('Marp CLI installation helpers', () => {
+    it('should detect if Marp CLI is installed', { timeout: 10000 }, () => {
+      // Uses 'marp --version' directly (faster than npx)
+      const result = isMarpCliInstalled();
+      expect(typeof result).toBe('boolean');
+    });
+
+    it('should detect package manager', () => {
+      const pm = detectPackageManager();
+      expect(['npm', 'pnpm', 'yarn']).toContain(pm);
+    });
+
+    it('should detect pnpm when pnpm-lock.yaml exists', async () => {
+      const targetDir = join(testDir, 'pnpm-project');
+      await mkdir(targetDir, { recursive: true });
+      await writeFile(join(targetDir, 'pnpm-lock.yaml'), '');
+
+      const pm = detectPackageManager(targetDir);
+      expect(pm).toBe('pnpm');
+    });
+
+    it('should detect yarn when yarn.lock exists', async () => {
+      const targetDir = join(testDir, 'yarn-project');
+      await mkdir(targetDir, { recursive: true });
+      await writeFile(join(targetDir, 'yarn.lock'), '');
+
+      const pm = detectPackageManager(targetDir);
+      expect(pm).toBe('yarn');
+    });
+
+    it('should default to npm when no lock file exists', async () => {
+      const targetDir = join(testDir, 'npm-project');
+      await mkdir(targetDir, { recursive: true });
+
+      const pm = detectPackageManager(targetDir);
+      expect(pm).toBe('npm');
+    });
+
+    it('should skip Marp CLI info with --skip-marp-install', async () => {
+      const targetDir = join(testDir, 'skip-marp-test');
+      const consoleSpy = vi.spyOn(console, 'log');
+
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      // Should not show Marp CLI info
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).not.toContain('Marp CLI is recommended');
+      consoleSpy.mockRestore();
     });
   });
 });

@@ -24,10 +24,12 @@ export interface PreviewResult {
 
 /**
  * Check if marp-cli is available in the system
+ * Uses 'marp --version' directly instead of 'npx marp --version'
+ * because npx is slow (searches local, global, and npm registry)
  */
 export async function checkMarpCliAvailable(): Promise<boolean> {
   try {
-    execSync('npx marp --version', { stdio: 'ignore' });
+    execSync('marp --version', { stdio: 'ignore', timeout: 5000 });
     return true;
   } catch {
     return false;
