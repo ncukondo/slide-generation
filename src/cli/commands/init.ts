@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { mkdir, writeFile, access, readdir, cp } from 'fs/promises';
 import { existsSync } from 'fs';
 import { execSync } from 'child_process';
-import { dirname, join, resolve } from 'path';
+import { dirname, join, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -40,7 +40,8 @@ function getPackageRoot(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
 
   // Check if we're in source (src/) or bundled (dist/)
-  if (__dirname.includes('/src/')) {
+  // Use path separator agnostic check for Windows compatibility
+  if (__dirname.includes(`${sep}src${sep}`) || __dirname.includes('/src/')) {
     // Source: go up from src/cli/commands to package root
     return join(__dirname, '..', '..', '..');
   }
