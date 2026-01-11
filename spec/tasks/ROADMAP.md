@@ -67,7 +67,7 @@
 | 22 | [AI Agent Integration - 基盤](./completed/22-ai-integration.md) | 15 | Done |
 | 29 | [Validate LLM Format](./completed/29-validate-llm-format.md) | 12, 22 | Done |
 | 23 | [Screenshot Command](./completed/23-screenshot-command.md) | 11, 22 | Done |
-| 24 | [Preview Enhancements](./24-preview-enhancements.md) | 16, 13, 23 | Pending |
+| 24 | [Preview Enhancements](./completed/24-preview-enhancements.md) | 16, 13, 23 | Done |
 | 25 | [Image Management](./completed/25-image-management.md) | 19, 11 | Done |
 | 26 | [Icon Enhancements](./completed/26-icon-enhancements.md) | 07, 14 | Done |
 | 27 | [Source Management](./completed/27-source-management.md) | 22, 15 | Done |
@@ -76,9 +76,9 @@
 ## Progress Summary
 
 - **Total Tasks**: 29
-- **Completed**: 27
+- **Completed**: 28
 - **In Progress**: 0
-- **Pending**: 2
+- **Pending**: 1
 
 ## Architecture Overview
 
