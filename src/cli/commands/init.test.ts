@@ -69,7 +69,7 @@ describe('init command', () => {
 
     it('should not create sample files when --no-examples is set', async () => {
       const targetDir = join(testDir, 'my-presentation');
-      await executeInit(targetDir, { examples: false });
+      await executeInit(targetDir, { examples: false, skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -127,7 +127,7 @@ describe('init command', () => {
 
     it('should handle template option', async () => {
       const targetDir = join(testDir, 'with-template');
-      await executeInit(targetDir, { template: 'basic' });
+      await executeInit(targetDir, { template: 'basic', skipMarpInstall: true });
 
       const entries = await readdir(targetDir);
       expect(entries).toContain('config.yaml');
@@ -219,7 +219,7 @@ describe('init command', () => {
 
     it('should skip AI config with --no-ai-config', async () => {
       const targetDir = join(testDir, 'no-ai-config-test');
-      await executeInit(targetDir, { aiConfig: false });
+      await executeInit(targetDir, { aiConfig: false, skipMarpInstall: true });
 
       await expect(access(join(targetDir, 'CLAUDE.md'))).rejects.toThrow();
       await expect(access(join(targetDir, '.skills'))).rejects.toThrow();
