@@ -1,8 +1,9 @@
 import { Command } from 'commander';
-import { mkdir, writeFile, access, readdir } from 'fs/promises';
+import { mkdir, writeFile, access, readdir, cp } from 'fs/promises';
 import { existsSync } from 'fs';
 import { execSync } from 'child_process';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import ora from 'ora';
 import { ExitCode } from './convert.js';
@@ -29,6 +30,22 @@ export interface InitOptions {
   sources?: boolean;
   fromDirectory?: string;
   skipMarpInstall?: boolean;
+}
+
+/**
+ * Get the package root directory
+ * Works for both bundled (dist/cli/index.js) and source (src/cli/commands/init.ts)
+ */
+function getPackageRoot(): string {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+
+  // Check if we're in source (src/) or bundled (dist/)
+  if (__dirname.includes('/src/')) {
+    // Source: go up from src/cli/commands to package root
+    return join(__dirname, '..', '..', '..');
+  }
+  // Bundled: go up from dist/cli to package root
+  return join(__dirname, '..', '..');
 }
 
 /**
@@ -81,6 +98,31 @@ export async function executeInit(
     await mkdir(join(targetDir, 'themes'), { recursive: true });
     await mkdir(join(targetDir, 'icons', 'custom'), { recursive: true });
 
+    // Copy built-in templates and icons registry from package
+    const packageRoot = getPackageRoot();
+
+    // Copy templates
+    const sourceTemplatesDir = join(packageRoot, 'templates');
+    const targetTemplatesDir = join(targetDir, 'templates');
+
+    try {
+      await access(targetTemplatesDir);
+      // Templates directory already exists, skip copying
+    } catch {
+      // Templates directory doesn't exist, copy from package
+      await cp(sourceTemplatesDir, targetTemplatesDir, { recursive: true });
+    }
+
+    // Copy icons registry
+    const sourceIconsRegistry = join(packageRoot, 'icons', 'registry.yaml');
+    const targetIconsRegistry = join(targetDir, 'icons', 'registry.yaml');
+    await copyFileIfNotExists(sourceIconsRegistry, targetIconsRegistry);
+
+    // Copy default theme
+    const sourceDefaultTheme = join(packageRoot, 'themes', 'default.css');
+    const targetDefaultTheme = join(targetDir, 'themes', 'default.css');
+    await copyFileIfNotExists(sourceDefaultTheme, targetDefaultTheme);
+
     // Create config.yaml
     const configContent = generateConfigContent();
     await writeFileIfNotExists(join(targetDir, 'config.yaml'), configContent);
@@ -128,7 +170,10 @@ export async function executeInit(
     console.log('');
     console.log(chalk.green('Created files:'));
     console.log(`  ${chalk.cyan('config.yaml')} - Project configuration`);
+    console.log(`  ${chalk.cyan('templates/')} - Slide templates`);
+    console.log(`  ${chalk.cyan('themes/default.css')} - Default theme`);
     console.log(`  ${chalk.cyan('themes/custom.css')} - Custom theme styles`);
+    console.log(`  ${chalk.cyan('icons/registry.yaml')} - Icon registry`);
     console.log(`  ${chalk.cyan('icons/custom/')} - Custom icons directory`);
     if (includeExamples) {
       console.log(`  ${chalk.cyan('presentation.yaml')} - Sample presentation`);
@@ -176,6 +221,19 @@ async function writeFileIfNotExists(filePath: string, content: string): Promise<
   } catch {
     // File doesn't exist, create it
     await writeFile(filePath, content, 'utf-8');
+  }
+}
+
+/**
+ * Copy file only if destination doesn't exist
+ */
+async function copyFileIfNotExists(source: string, dest: string): Promise<void> {
+  try {
+    await access(dest);
+    // File exists, skip
+  } catch {
+    // File doesn't exist, copy from source
+    await cp(source, dest);
   }
 }
 
@@ -356,14 +414,12 @@ slides:
     content:
       title: My Presentation
       subtitle: A sample slide deck
-      author: Your Name
 
-  - template: content
+  - template: bullet-list
     content:
       title: Introduction
-      body: |
-        Welcome to this presentation!
-
+      items:
+        - Welcome to this presentation!
         - Point one
         - Point two
         - Point three
@@ -373,15 +429,14 @@ slides:
       title: Section Title
       subtitle: Section description
 
-  - template: content
+  - template: bullet-list
     content:
       title: Main Content
-      body: |
-        Here's the main content of your presentation.
+      items:
+        - Here's the main content of your presentation.
+        - You can use **markdown** formatting in the body text.
 
-        You can use **markdown** formatting in the body text.
-
-  - template: end
+  - template: section
     content:
       title: Thank You
       subtitle: Questions?
