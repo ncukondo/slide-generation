@@ -7,25 +7,28 @@ import {
   type ImageMetadata,
   type PermissionStatus,
 } from "./schema";
+import { isImageFile } from "./constants";
 
 /**
- * Supported image file extensions
+ * Warning info for metadata loading issues
  */
-const IMAGE_EXTENSIONS = new Set([
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".gif",
-  ".webp",
-  ".svg",
-]);
+export interface MetadataWarning {
+  path: string;
+  message: string;
+}
 
 /**
- * Check if a file is an image file
+ * Collected warnings during metadata loading
  */
-function isImageFile(filename: string): boolean {
-  const ext = path.extname(filename).toLowerCase();
-  return IMAGE_EXTENSIONS.has(ext);
+let metadataWarnings: MetadataWarning[] = [];
+
+/**
+ * Get and clear collected warnings
+ */
+export function getAndClearMetadataWarnings(): MetadataWarning[] {
+  const warnings = metadataWarnings;
+  metadataWarnings = [];
+  return warnings;
 }
 
 /**
@@ -133,6 +136,15 @@ export class ImageMetadataLoader {
   ): Promise<ImageMetadata | null> {
     const metadataPath = this.getIndividualMetadataPath(imagePath);
 
+    // Check if file exists first
+    try {
+      await fs.access(metadataPath);
+    } catch {
+      // File doesn't exist - this is normal, not a warning
+      return null;
+    }
+
+    // File exists, try to read and parse it
     try {
       const content = await fs.readFile(metadataPath, "utf-8");
       const parsed = parseYaml(content);
@@ -141,10 +153,20 @@ export class ImageMetadataLoader {
       if (validated.success) {
         return validated.data;
       }
-      // Invalid metadata, return null to fall back to directory metadata
+      // Schema validation failed
+      metadataWarnings.push({
+        path: metadataPath,
+        message: `Invalid metadata schema: ${validated.error.issues.map((i) => i.message).join(", ")}`,
+      });
       return null;
-    } catch {
-      // File doesn't exist or can't be read
+    } catch (error) {
+      // YAML parse error or read error
+      const message =
+        error instanceof Error ? error.message : "Unknown parse error";
+      metadataWarnings.push({
+        path: metadataPath,
+        message: `Failed to parse metadata file: ${message}`,
+      });
       return null;
     }
   }
@@ -157,6 +179,15 @@ export class ImageMetadataLoader {
   ): Promise<Record<string, unknown> | null> {
     const metadataPath = this.getDirectoryMetadataPath(imagePath);
 
+    // Check if file exists first
+    try {
+      await fs.access(metadataPath);
+    } catch {
+      // File doesn't exist - this is normal, not a warning
+      return null;
+    }
+
+    // File exists, try to read and parse it
     try {
       const content = await fs.readFile(metadataPath, "utf-8");
       const parsed = parseYaml(content);
@@ -165,9 +196,20 @@ export class ImageMetadataLoader {
       if (validated.success) {
         return validated.data;
       }
+      // Schema validation failed
+      metadataWarnings.push({
+        path: metadataPath,
+        message: `Invalid metadata schema: ${validated.error.issues.map((i) => i.message).join(", ")}`,
+      });
       return null;
-    } catch {
-      // File doesn't exist or can't be read
+    } catch (error) {
+      // YAML parse error or read error
+      const message =
+        error instanceof Error ? error.message : "Unknown parse error";
+      metadataWarnings.push({
+        path: metadataPath,
+        message: `Failed to parse metadata file: ${message}`,
+      });
       return null;
     }
   }

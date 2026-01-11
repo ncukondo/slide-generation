@@ -3,6 +3,13 @@
  * Provides metadata loading and validation for presentation images
  */
 
+// Constants exports
+export {
+  IMAGE_EXTENSIONS,
+  isImageFile,
+  DEFAULT_MIN_RESOLUTION,
+} from "./constants";
+
 // Schema exports
 export {
   permissionStatusSchema,
@@ -22,7 +29,11 @@ export {
 } from "./schema";
 
 // Loader exports
-export { ImageMetadataLoader } from "./metadata-loader";
+export {
+  ImageMetadataLoader,
+  getAndClearMetadataWarnings,
+  type MetadataWarning,
+} from "./metadata-loader";
 
 // Validator exports
 export {
@@ -30,4 +41,5 @@ export {
   type ImageValidationResult,
   type ValidatePresentationOptions,
   type ImageStats,
+  type ImageDimensions,
 } from "./validator";

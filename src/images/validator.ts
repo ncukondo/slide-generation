@@ -1,18 +1,8 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import imageSize from "image-size";
 import { ImageMetadataLoader } from "./metadata-loader";
-
-/**
- * Supported image file extensions
- */
-const SUPPORTED_EXTENSIONS = new Set([
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".gif",
-  ".webp",
-  ".svg",
-]);
+import { IMAGE_EXTENSIONS, DEFAULT_MIN_RESOLUTION } from "./constants";
 
 /**
  * Validation result for a single check
@@ -24,10 +14,24 @@ export interface ImageValidationResult {
 }
 
 /**
+ * Image dimensions info
+ */
+export interface ImageDimensions {
+  width: number;
+  height: number;
+  type?: string;
+}
+
+/**
  * Options for presentation validation
  */
 export interface ValidatePresentationOptions {
   checkImages?: boolean;
+  checkResolution?: boolean;
+  minResolution?: {
+    width: number;
+    height: number;
+  };
 }
 
 /**
@@ -71,7 +75,7 @@ export class ImageValidator {
     const ext = path.extname(imagePath).toLowerCase();
 
     // Check file extension
-    if (!SUPPORTED_EXTENSIONS.has(ext)) {
+    if (!IMAGE_EXTENSIONS.has(ext)) {
       errors.push(`Unsupported image format: ${imagePath}`);
       return { valid: false, errors, warnings };
     }
@@ -82,6 +86,58 @@ export class ImageValidator {
     } catch {
       errors.push(`Image not found: ${imagePath}`);
       return { valid: false, errors, warnings };
+    }
+
+    return { valid: true, errors, warnings };
+  }
+
+  /**
+   * Get image dimensions
+   */
+  async getImageDimensions(imagePath: string): Promise<ImageDimensions | null> {
+    const fullPath = path.join(this.baseDir, imagePath);
+
+    try {
+      const buffer = await fs.readFile(fullPath);
+      const dimensions = imageSize(buffer);
+
+      if (dimensions.width && dimensions.height) {
+        return {
+          width: dimensions.width,
+          height: dimensions.height,
+          ...(dimensions.type ? { type: dimensions.type } : {}),
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Validate image resolution
+   */
+  async validateImageResolution(
+    imagePath: string,
+    minResolution: { width: number; height: number } = DEFAULT_MIN_RESOLUTION
+  ): Promise<ImageValidationResult> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    const dimensions = await this.getImageDimensions(imagePath);
+
+    if (!dimensions) {
+      // Can't read dimensions - not an error, might be SVG or unsupported
+      return { valid: true, errors, warnings };
+    }
+
+    const { width, height, type } = dimensions;
+    const typeStr = type ? type.toUpperCase() : "unknown";
+
+    if (width < minResolution.width || height < minResolution.height) {
+      warnings.push(
+        `Low resolution: ${imagePath} (${width}x${height}, ${typeStr}) - minimum recommended: ${minResolution.width}x${minResolution.height}`
+      );
     }
 
     return { valid: true, errors, warnings };
@@ -138,7 +194,11 @@ export class ImageValidator {
     slides: SlideContent[],
     options: ValidatePresentationOptions = {}
   ): Promise<ImageValidationResult> {
-    const { checkImages = false } = options;
+    const {
+      checkImages = false,
+      checkResolution = false,
+      minResolution = DEFAULT_MIN_RESOLUTION,
+    } = options;
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -150,11 +210,22 @@ export class ImageValidator {
       errors.push(...existsResult.errors);
       warnings.push(...existsResult.warnings);
 
-      // Check permissions if requested
-      if (checkImages && existsResult.valid) {
-        const permResult = await this.validateImagePermissions(imagePath);
-        errors.push(...permResult.errors);
-        warnings.push(...permResult.warnings);
+      if (existsResult.valid) {
+        // Check resolution if requested
+        if (checkResolution) {
+          const resResult = await this.validateImageResolution(
+            imagePath,
+            minResolution
+          );
+          warnings.push(...resResult.warnings);
+        }
+
+        // Check permissions if requested
+        if (checkImages) {
+          const permResult = await this.validateImagePermissions(imagePath);
+          errors.push(...permResult.errors);
+          warnings.push(...permResult.warnings);
+        }
       }
     }
 

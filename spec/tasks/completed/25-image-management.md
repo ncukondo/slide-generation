@@ -462,3 +462,76 @@ describe('E2E: Image Management', () => {
 - メタデータファイルはオプション。存在しない場合は空のメタデータとして扱う
 - 画像解像度チェックは警告のみ（エラーにはしない）
 - AI協働フローでは、メタデータのpermissions.statusを重視
+
+---
+
+## Additional Fixes (PR Review Feedback)
+
+The following items were identified during PR #2 review and need to be addressed.
+
+### Fix 1: Implement detailed `images status` output
+
+**Issue**: Current implementation only shows summary statistics. The spec requires per-image details.
+
+**Spec reference**: `spec/images.md:937-960`
+
+**Expected output**:
+```
+✓ Approved (3):
+  - customer-site.jpg (Company A, expires: none)
+  - product-front.jpg (Internal, expires: none)
+
+⏳ Pending (1):
+  - customer-b-site.jpg
+    Contact: Checking with Company B, Mr. Sato
+```
+
+**Files to modify**: `src/cli/commands/images.ts`
+
+---
+
+### Fix 2: Extract shared constants
+
+**Issue**: `IMAGE_EXTENSIONS` is duplicated in `metadata-loader.ts` and `validator.ts`.
+
+**Solution**: Create `src/images/constants.ts` and share the constant.
+
+**Files to modify**:
+- `src/images/constants.ts` - Create new file
+- `src/images/metadata-loader.ts` - Update imports
+- `src/images/validator.ts` - Update imports
+- `src/images/index.ts` - Add export
+
+---
+
+### Fix 3: Add resolution check feature
+
+**Issue**: Resolution validation (warning for low-resolution images) is required by spec but not implemented.
+
+**Spec reference**: `spec/images.md:541-563`
+
+**Solution**: Use `image-size` package to read image dimensions and warn if below threshold.
+
+**Expected output**:
+```
+⚠ images/photos/detail.jpg (640x480, JPEG) - Low resolution
+```
+
+**Files to modify**:
+- `package.json` - Add `image-size` dependency
+- `src/images/validator.ts` - Add resolution check
+- `src/images/validator.test.ts` - Add tests
+
+---
+
+### Fix 4: Warn on YAML parse errors
+
+**Issue**: YAML parse errors in metadata files are silently ignored. Users should receive warnings.
+
+**Location**: `src/images/metadata-loader.ts:146-148`
+
+**Solution**: When a file exists but parsing fails, emit a warning instead of silently returning null.
+
+**Files to modify**:
+- `src/images/metadata-loader.ts` - Improve error handling
+- `src/images/metadata-loader.test.ts` - Add tests

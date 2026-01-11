@@ -4,7 +4,12 @@ import { dirname } from "path";
 import chalk from "chalk";
 import { stringify as stringifyYaml } from "yaml";
 import { Parser } from "../../core/parser";
-import { ImageValidator, ImageStats } from "../../images";
+import {
+  ImageValidator,
+  ImageStats,
+  ImageMetadataLoader,
+  type ImageMetadata,
+} from "../../images";
 
 /**
  * Create the images command with subcommands
@@ -64,7 +69,7 @@ async function executeImagesStatus(inputPath: string): Promise<void> {
     const stats = await validator.getImageStats(slides);
 
     // Output formatted status
-    outputImageStatus(stats, imageRefs, validator, baseDir);
+    await outputImageStatus(stats, imageRefs, validator, baseDir);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(chalk.red(`Error: ${message}`));
@@ -73,47 +78,111 @@ async function executeImagesStatus(inputPath: string): Promise<void> {
 }
 
 /**
- * Output image status in a formatted way
+ * Image info with metadata for status display
+ */
+interface ImageStatusInfo {
+  path: string;
+  metadata: ImageMetadata;
+}
+
+/**
+ * Output image status in a formatted way with per-image details
  */
 async function outputImageStatus(
   stats: ImageStats,
-  _imageRefs: string[],
+  imageRefs: string[],
   _validator: ImageValidator,
-  _baseDir: string
+  baseDir: string
 ): Promise<void> {
+  const metadataLoader = new ImageMetadataLoader(baseDir);
+
+  // Group images by status
+  const approved: ImageStatusInfo[] = [];
+  const pending: ImageStatusInfo[] = [];
+  const restricted: ImageStatusInfo[] = [];
+  const rejected: ImageStatusInfo[] = [];
+  const unknown: ImageStatusInfo[] = [];
+
+  for (const imagePath of imageRefs) {
+    const metadata = await metadataLoader.load(imagePath);
+    const info: ImageStatusInfo = { path: imagePath, metadata };
+    const status = metadata.permissions?.status;
+
+    switch (status) {
+      case "approved":
+        approved.push(info);
+        break;
+      case "pending":
+        pending.push(info);
+        break;
+      case "restricted":
+        restricted.push(info);
+        break;
+      case "rejected":
+        rejected.push(info);
+        break;
+      default:
+        unknown.push(info);
+    }
+  }
+
   console.log("");
   console.log(chalk.bold("Image Permissions Status:"));
   console.log("━".repeat(50));
-  console.log("");
 
-  if (stats.approved > 0) {
-    console.log(
-      chalk.green(`✓ Approved (${stats.approved})`)
-    );
+  // Approved images
+  if (approved.length > 0) {
+    console.log("");
+    console.log(chalk.green(`✓ Approved (${approved.length}):`));
+    for (const info of approved) {
+      const approver = info.metadata.permissions?.approved_by || "unknown";
+      const expires = info.metadata.permissions?.expires || "none";
+      console.log(chalk.green(`  - ${info.path} (${approver}, expires: ${expires})`));
+    }
   }
 
-  if (stats.pending > 0) {
-    console.log(
-      chalk.yellow(`⏳ Pending (${stats.pending})`)
-    );
+  // Pending images
+  if (pending.length > 0) {
+    console.log("");
+    console.log(chalk.yellow(`⏳ Pending (${pending.length}):`));
+    for (const info of pending) {
+      console.log(chalk.yellow(`  - ${info.path}`));
+      const contact = info.metadata.permissions?.pending_contact;
+      if (contact) {
+        console.log(chalk.yellow(`    Contact: ${contact}`));
+      }
+    }
   }
 
-  if (stats.restricted > 0) {
-    console.log(
-      chalk.yellow(`⚠ Restricted (${stats.restricted})`)
-    );
+  // Restricted images
+  if (restricted.length > 0) {
+    console.log("");
+    console.log(chalk.yellow(`⚠ Restricted (${restricted.length}):`));
+    for (const info of restricted) {
+      console.log(chalk.yellow(`  - ${info.path}`));
+      const conditions = info.metadata.permissions?.conditions;
+      if (conditions && conditions.length > 0) {
+        console.log(chalk.yellow(`    Conditions: ${conditions.join(", ")}`));
+      }
+    }
   }
 
-  if (stats.rejected > 0) {
-    console.log(
-      chalk.red(`✗ Rejected (${stats.rejected})`)
-    );
+  // Rejected images
+  if (rejected.length > 0) {
+    console.log("");
+    console.log(chalk.red(`✗ Rejected (${rejected.length}):`));
+    for (const info of rejected) {
+      console.log(chalk.red(`  - ${info.path}`));
+    }
   }
 
-  if (stats.unknown > 0) {
-    console.log(
-      chalk.gray(`? Unknown (${stats.unknown})`)
-    );
+  // Unknown images
+  if (unknown.length > 0) {
+    console.log("");
+    console.log(chalk.gray(`? Unknown (${unknown.length}):`));
+    for (const info of unknown) {
+      console.log(chalk.gray(`  - ${info.path}`));
+    }
   }
 
   console.log("");
