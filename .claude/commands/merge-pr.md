@@ -1,0 +1,1 @@
+CIが通っていればマージして下さい。まだCIが走っている場合は終了するまでまってから確認してください。マージ後、gitworktreeをcleanupし、ブランチをcleanup。タスクをcomplatedに移動し、roadmapの更新をしてcommit pushして下さい
