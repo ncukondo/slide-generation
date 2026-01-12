@@ -13,3 +13,8 @@ export {
   type MissingCitation,
   type CitationLocation,
 } from './validator';
+export {
+  BibliographyGenerator,
+  type BibliographyOptions,
+  type BibliographyResult,
+} from './bibliography';
