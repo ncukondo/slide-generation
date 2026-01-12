@@ -8,7 +8,13 @@ import {
   type Context,
   type MissingItem,
   type Project,
+  type ReferencesSection,
 } from './schema.js';
+import {
+  ReferencesTracker,
+  type PendingReference,
+  type ExistingReference,
+} from './references-tracker.js';
 
 /**
  * Manages the sources.yaml file and sources directory structure
@@ -231,5 +237,47 @@ export class SourcesManager {
   async getSourcesByType(type: SourceEntry['type']): Promise<SourceEntry[]> {
     const data = await this.load();
     return data.sources?.filter((s) => s.type === type) ?? [];
+  }
+
+  /**
+   * Get references from sources.yaml
+   */
+  async getReferences(): Promise<ReferencesSection> {
+    const data = await this.load();
+    const tracker = new ReferencesTracker(data.references);
+    return tracker.toYaml();
+  }
+
+  /**
+   * Add a pending reference that needs to be found
+   */
+  async addPendingReference(ref: PendingReference): Promise<void> {
+    const data = await this.load();
+    const tracker = new ReferencesTracker(data.references);
+    tracker.addPending(ref);
+    data.references = tracker.toYaml();
+    await this.save(data);
+  }
+
+  /**
+   * Mark a pending reference as added with its actual citation key
+   */
+  async markReferenceAdded(pendingId: string, actualId: string): Promise<void> {
+    const data = await this.load();
+    const tracker = new ReferencesTracker(data.references);
+    tracker.markAdded(pendingId, actualId);
+    data.references = tracker.toYaml();
+    await this.save(data);
+  }
+
+  /**
+   * Mark a reference as existing in the bibliography
+   */
+  async markReferenceExisting(ref: ExistingReference): Promise<void> {
+    const data = await this.load();
+    const tracker = new ReferencesTracker(data.references);
+    tracker.markExisting(ref);
+    data.references = tracker.toYaml();
+    await this.save(data);
   }
 }

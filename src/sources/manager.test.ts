@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { SourcesManager } from './manager.js';
 import type { SourceEntry, MissingItem, Context } from './schema.js';
+import type { PendingReference, ExistingReference } from './references-tracker.js';
 
 describe('SourcesManager', () => {
   const testProjectDir = '/tmp/test-sources-manager';
@@ -275,6 +276,132 @@ describe('SourcesManager', () => {
     it('should return false if sources.yaml does not exist', async () => {
       const manager = new SourcesManager(testProjectDir);
       expect(await manager.exists()).toBe(false);
+    });
+  });
+
+  describe('references', () => {
+    it('should load references from sources.yaml', async () => {
+      const manager = new SourcesManager(testProjectDir);
+      await manager.init({ name: 'Test Project' });
+
+      // Manually write a sources.yaml with references
+      const yaml = `project:
+  name: Test
+  created: "2025-01-01"
+references:
+  items:
+    - id: smith2024
+      status: existing
+      slide: 3
+      purpose: Test
+`;
+      await fs.writeFile(
+        path.join(testProjectDir, 'sources', 'sources.yaml'),
+        yaml
+      );
+
+      const data = await manager.load();
+      expect(data.references?.items).toHaveLength(1);
+      expect(data.references?.items[0]?.id).toBe('smith2024');
+    });
+
+    it('should add pending reference', async () => {
+      const manager = new SourcesManager(testProjectDir);
+      await manager.init({ name: 'Test Project' });
+
+      const ref: PendingReference = {
+        id: 'needed2024',
+        slide: 5,
+        purpose: 'Support claim',
+        requirement: 'required',
+      };
+      await manager.addPendingReference(ref);
+
+      const data = await manager.load();
+      expect(data.references?.items).toContainEqual(
+        expect.objectContaining({
+          id: 'needed2024',
+          status: 'pending',
+        })
+      );
+    });
+
+    it('should mark reference as added', async () => {
+      const manager = new SourcesManager(testProjectDir);
+      await manager.init({ name: 'Test Project' });
+
+      await manager.addPendingReference({
+        id: 'pending-ref',
+        slide: 3,
+        purpose: 'Test',
+      });
+
+      await manager.markReferenceAdded('pending-ref', 'smith2024');
+
+      const data = await manager.load();
+      const ref = data.references?.items.find((i) => i.id === 'smith2024');
+      expect(ref?.status).toBe('added');
+    });
+
+    it('should mark reference as existing', async () => {
+      const manager = new SourcesManager(testProjectDir);
+      await manager.init({ name: 'Test Project' });
+
+      const ref: ExistingReference = {
+        id: 'existing2024',
+        slide: 2,
+        purpose: 'Background',
+      };
+      await manager.markReferenceExisting(ref);
+
+      const data = await manager.load();
+      expect(data.references?.items).toContainEqual(
+        expect.objectContaining({
+          id: 'existing2024',
+          status: 'existing',
+        })
+      );
+    });
+
+    it('should get references summary', async () => {
+      const manager = new SourcesManager(testProjectDir);
+      await manager.init({ name: 'Test Project' });
+
+      await manager.addPendingReference({
+        id: 'ref1',
+        slide: 1,
+        purpose: 'Test',
+        requirement: 'required',
+      });
+      await manager.markReferenceExisting({
+        id: 'ref2',
+        slide: 2,
+        purpose: 'Background',
+      });
+
+      const refs = await manager.getReferences();
+      expect(refs.items).toHaveLength(2);
+      expect(refs.status?.pending).toBe(1);
+      expect(refs.status?.found).toBe(1);
+    });
+
+    it('should persist references across load/save', async () => {
+      const manager = new SourcesManager(testProjectDir);
+      await manager.init({ name: 'Test Project' });
+
+      await manager.addPendingReference({
+        id: 'persistent-ref',
+        slide: 1,
+        purpose: 'Test persistence',
+      });
+
+      // Create a new manager instance to simulate reload
+      const manager2 = new SourcesManager(testProjectDir);
+      const refs = await manager2.getReferences();
+
+      expect(refs.items).toContainEqual(
+        expect.objectContaining({ id: 'persistent-ref' })
+      );
     });
   });
 });

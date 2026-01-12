@@ -15,3 +15,4 @@ export * from './manager.js';
 export * from './explorer.js';
 export * from './importer.js';
 export * from './conversation.js';
+export * from './references-tracker.js';

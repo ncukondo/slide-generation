@@ -177,6 +177,41 @@ describe('sources command', () => {
 
       expect(result.output).toContain('Product photo');
     });
+
+    it('should show references status', async () => {
+      const manager = new SourcesManager(testDir);
+      await manager.addPendingReference({
+        id: 'needed2024',
+        slide: 5,
+        purpose: 'Support claim',
+        requirement: 'required',
+      });
+      await manager.markReferenceExisting({
+        id: 'existing2024',
+        slide: 3,
+        purpose: 'Background',
+      });
+
+      const result = await executeSourcesStatus(testDir, {});
+
+      expect(result.output).toContain('References');
+      expect(result.output).toContain('Pending: 1');
+      expect(result.output).toContain('Found: 1');
+    });
+
+    it('should show pending references warning', async () => {
+      const manager = new SourcesManager(testDir);
+      await manager.addPendingReference({
+        id: 'needed-study',
+        slide: 3,
+        purpose: 'Support main claim',
+      });
+
+      const result = await executeSourcesStatus(testDir, {});
+
+      expect(result.output).toContain('needed-study');
+      expect(result.output).toContain('Slide 3');
+    });
   });
 
   describe('sources sync', () => {
