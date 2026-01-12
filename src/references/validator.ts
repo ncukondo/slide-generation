@@ -26,12 +26,23 @@ export interface DetailedValidationResult extends ValidationResult {
 
 export class ReferenceValidator {
   private extractor = new CitationExtractor();
+  private availableCache: boolean | null = null;
 
   constructor(private manager: ReferenceManager) {}
 
+  /**
+   * Check if reference-manager is available (cached)
+   */
+  private async checkAvailable(): Promise<boolean> {
+    if (this.availableCache === null) {
+      this.availableCache = await this.manager.isAvailable();
+    }
+    return this.availableCache;
+  }
+
   async validateCitations(citationIds: string[]): Promise<ValidationResult> {
-    // Check if reference-manager is available
-    const available = await this.manager.isAvailable();
+    // Check if reference-manager is available (cached)
+    const available = await this.checkAvailable();
     if (!available) {
       return {
         valid: true,
@@ -76,8 +87,8 @@ export class ReferenceValidator {
   async validateWithLocations(
     slides: ParsedSlide[]
   ): Promise<DetailedValidationResult> {
-    // Check if reference-manager is available
-    const available = await this.manager.isAvailable();
+    // Check if reference-manager is available (cached)
+    const available = await this.checkAvailable();
     if (!available) {
       return {
         valid: true,
@@ -154,7 +165,7 @@ export class ReferenceValidator {
   /**
    * Generate suggestions for adding missing references
    */
-  generateSuggestions(missingIds: string[]): string {
+  static generateSuggestions(missingIds: string[]): string {
     if (missingIds.length === 0) {
       return '';
     }

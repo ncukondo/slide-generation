@@ -412,13 +412,13 @@ async function executeValidate(
             for (const location of missingDetail.locations) {
               const slideLine = result.slideLines[location.slide - 1];
               result.warnings.push(
-                `Citation not found in library: @${missingDetail.id} (Slide ${location.slide})`
+                `Citation not found in library: ${missingDetail.id} (Slide ${location.slide})`
               );
               const structuredError: StructuredValidationError = {
                 slide: location.slide,
                 template:
                   presentation.slides[location.slide - 1]?.template || 'unknown',
-                message: `Citation not found in library: @${missingDetail.id}`,
+                message: `Citation not found in library: ${missingDetail.id}`,
                 errorType: 'missing_reference',
               };
               if (slideLine !== undefined) {
@@ -544,10 +544,13 @@ function outputResult(result: ValidationResult, options: ValidateOptions): void 
           ` ${result.stats.missingReferences.length} reference(s) not found in library`
       );
       // Show suggestion for adding missing references
-      console.log('');
-      console.log(chalk.cyan('To add missing references:'));
-      console.log(chalk.dim('  ref add --pmid <pmid>     # Add by PubMed ID'));
-      console.log(chalk.dim('  ref add "<doi>"           # Add by DOI'));
+      const suggestions = ReferenceValidator.generateSuggestions(
+        result.stats.missingReferences
+      );
+      if (suggestions) {
+        console.log('');
+        console.log(chalk.dim(suggestions));
+      }
     }
   }
 
