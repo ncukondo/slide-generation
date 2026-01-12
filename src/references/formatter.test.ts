@@ -12,6 +12,7 @@ describe('CitationFormatter', () => {
   let mockManager: {
     getById: ReturnType<typeof vi.fn>;
     getByIds: ReturnType<typeof vi.fn>;
+    isAvailable: ReturnType<typeof vi.fn>;
   };
 
   const mockItems: Record<string, CSLItem> = {
@@ -95,6 +96,7 @@ describe('CitationFormatter', () => {
         }
         return Promise.resolve(map);
       }),
+      isAvailable: vi.fn(() => Promise.resolve(true)),
     };
 
     formatter = new CitationFormatter(

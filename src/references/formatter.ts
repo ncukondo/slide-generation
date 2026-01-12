@@ -41,6 +41,8 @@ const SINGLE_CITATION_PATTERN = /@([\w-]+)(?:,\s*([^;\]]+))?/g;
  */
 export class CitationFormatter {
   private config: Required<FormatterConfig>;
+  private availabilityChecked = false;
+  private isAvailable = false;
 
   constructor(
     private manager: ReferenceManager,
@@ -50,6 +52,17 @@ export class CitationFormatter {
       author: { ...DEFAULT_CONFIG.author, ...config?.author },
       inline: { ...DEFAULT_CONFIG.inline, ...config?.inline },
     };
+  }
+
+  /**
+   * Check if reference-manager is available (cached)
+   */
+  private async checkAvailability(): Promise<boolean> {
+    if (!this.availabilityChecked) {
+      this.isAvailable = await this.manager.isAvailable();
+      this.availabilityChecked = true;
+    }
+    return this.isAvailable;
   }
 
   /**
@@ -82,6 +95,12 @@ export class CitationFormatter {
    * e.g., "[@smith2024]" -> "(Smith et al., 2024; PMID: 12345678)"
    */
   async expandCitations(text: string): Promise<string> {
+    // Check if reference-manager is available
+    if (!(await this.checkAvailability())) {
+      // Return original text if reference-manager is not available
+      return text;
+    }
+
     // First, collect all citation IDs
     const ids = new Set<string>();
     CITATION_BRACKET_PATTERN.lastIndex = 0;

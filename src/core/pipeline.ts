@@ -269,6 +269,16 @@ export class Pipeline {
       return new Map();
     }
 
+    // Check if reference-manager CLI is available
+    const isAvailable = await this.referenceManager.isAvailable();
+    if (!isAvailable) {
+      this.warnings.push(
+        'reference-manager CLI is not available. ' +
+          'Install it to enable citation features: npm install -g @ncukondo/reference-manager'
+      );
+      return new Map();
+    }
+
     try {
       const items = await this.referenceManager.getByIds(ids);
 
@@ -352,6 +362,13 @@ export class Pipeline {
     );
 
     if (!hasBibliographyAutoGenerate) {
+      return presentation;
+    }
+
+    // Check if reference-manager CLI is available
+    const isAvailable = await this.referenceManager.isAvailable();
+    if (!isAvailable) {
+      // Warning already added in resolveReferences, just return
       return presentation;
     }
 

@@ -304,5 +304,42 @@ slides:
       expect(result.citations).toContain('smith2024');
       expect(result.citations).toContain('missing2024');
     });
+
+    it('should warn when reference-manager is not available', async () => {
+      // Mock exec to simulate unavailable reference-manager
+      mockExec.mockImplementation(((_cmd, callback) => {
+        const error = new Error('Command not found');
+        (error as NodeJS.ErrnoException).code = 'ENOENT';
+        (callback as ExecCallback)(error, '', '');
+      }) as typeof exec);
+
+      const inputPath = join(tempDir, 'unavailable-ref.yaml');
+      const yamlContent = `
+meta:
+  title: Test
+  author: Test Author
+  theme: default
+  references:
+    enabled: true
+
+slides:
+  - template: bullet-list
+    content:
+      title: Content
+      items:
+        - "Citation [@smith2024]"
+`;
+
+      await writeFile(inputPath, yamlContent, 'utf-8');
+      const result = await pipeline.runWithResult(inputPath);
+
+      // Should have warning about reference-manager not being available
+      expect(
+        result.warnings.some((w) =>
+          w.includes('reference-manager CLI is not available')
+        )
+      ).toBe(true);
+      expect(result.warnings.some((w) => w.includes('npm install'))).toBe(true);
+    });
   });
 });
