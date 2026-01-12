@@ -73,12 +73,44 @@
 | 27 | [Source Management](./completed/27-source-management.md) | 22, 15 | Done |
 | 28 | [Image Processing (Crop/Blur)](./completed/28-image-processing.md) | 25 | Done |
 
+## Phase 8: Reference Collaboration（文献引用連携）
+
+AI エージェントと協働して学術文献を管理・引用するための機能強化。
+
+| # | タスク | 依存 | 状態 |
+|---|--------|------|------|
+| 30 | [Validate References](./30-validate-references.md) | 08, 12 | Pending |
+| 31 | [Bibliography Auto-Generation](./31-bibliography-auto-generation.md) | 08, 10, 20 | Pending |
+| 32 | [AI Reference Skills](./32-ai-reference-skills.md) | 22, 30 | Pending |
+| 33 | [Sources References Tracking](./33-sources-references-tracking.md) | 27, 30 | Pending |
+
+### Phase 8 実装順序
+
+依存関係に基づく推奨実装順序：
+
+```
+30 (Validate References)
+    ↓
+31 (Bibliography Auto-Generation)  ←── 30と並行可能
+    ↓
+32 (AI Reference Skills)  ←── 30完了後
+    ↓
+33 (Sources References Tracking)  ←── 30完了後、32と並行可能
+```
+
+### 各タスクの概要
+
+1. **30-validate-references**: `slide-gen validate` で引用キーの存在確認
+2. **31-bibliography-auto-generation**: `autoGenerate: true` で参考文献リスト自動生成
+3. **32-ai-reference-skills**: AI エージェント用スキル定義とコマンド
+4. **33-sources-references-tracking**: sources.yaml での引用追跡
+
 ## Progress Summary
 
-- **Total Tasks**: 29
-- **Completed**: 28
+- **Total Tasks**: 33
+- **Completed**: 29
 - **In Progress**: 0
-- **Pending**: 1
+- **Pending**: 4
 
 ## Architecture Overview
 
@@ -99,10 +131,10 @@
 │  (YAML→AST)   │ (Template)    │  (Marp MD)    │   Loader    │
 └───────────────┴───────────────┴───────────────┴─────────────┘
                               │
-┌───────────────┬───────────────┬───────────────┐
-│   Template    │     Icon      │   Reference   │
-│    System     │    System     │    System     │
-└───────────────┴───────────────┴───────────────┘
+┌───────────────┬───────────────┬───────────────────────────┐
+│   Template    │     Icon      │      Reference System     │
+│    System     │    System     │  (+ AI Collaboration)     │
+└───────────────┴───────────────┴───────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
 │                   Content Management                         │
