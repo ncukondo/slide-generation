@@ -61,6 +61,14 @@ describe("IconCache", () => {
   });
 
   describe("TTL (Time To Live)", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("returns cached value within TTL", async () => {
       const ttl = 3600; // 1 hour
       const cache = new IconCache(cacheDir, ttl);
@@ -79,8 +87,8 @@ describe("IconCache", () => {
 
       await cache.set("test-icon", svgContent);
 
-      // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+      // Advance time past TTL
+      vi.advanceTimersByTime(1100);
 
       const result = await cache.get("test-icon");
       expect(result).toBeNull();
@@ -125,13 +133,15 @@ describe("IconCache", () => {
     });
 
     it("returns false for expired entry", async () => {
+      vi.useFakeTimers();
       const ttl = 1;
       const cache = new IconCache(cacheDir, ttl);
       await cache.set("test-icon", "<svg></svg>");
 
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+      vi.advanceTimersByTime(1100);
 
       expect(await cache.has("test-icon")).toBe(false);
+      vi.useRealTimers();
     });
   });
 
@@ -183,19 +193,21 @@ describe("IconCache", () => {
     });
 
     it("fetches again if cache expired", async () => {
+      vi.useFakeTimers();
       const ttl = 1;
       const cache = new IconCache(cacheDir, ttl);
       const oldContent = '<svg>old</svg>';
       const newContent = '<svg>new</svg>';
 
       await cache.set("test-icon", oldContent);
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+      vi.advanceTimersByTime(1100);
 
       const fetchFn = vi.fn().mockResolvedValue(newContent);
       const result = await cache.getOrFetch("test-icon", fetchFn);
 
       expect(result).toBe(newContent);
       expect(fetchFn).toHaveBeenCalledTimes(1);
+      vi.useRealTimers();
     });
 
     it("throws if fetch fails", async () => {
