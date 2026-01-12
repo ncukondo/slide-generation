@@ -423,6 +423,12 @@ Read `.skills/slide-assistant/SKILL.md` for detailed instructions.
 
 File that AI assistants read when presented with a GitHub repository URL.
 
+**Key Design Decisions:**
+
+1. **First Question**: AI must always ask about user's material situation (Pattern A/B/C) before proceeding
+2. **Restart Recommendation**: After `slide-gen init`, recommend starting a new AI session in project directory
+3. **Self-contained Workflows**: Include detailed Pattern A/B/C flows so AI can work without restart
+
 ```markdown
 # slide-gen AI Guide
 
@@ -430,71 +436,48 @@ This file is for AI assistants (Claude Code, OpenCode, Cursor, Codex, etc.).
 
 ## Quick Start
 
-### 1. Initialize Project
+### 1. First Question to User
 
-```bash
+**Always start by asking about the user's material situation:**
+
+"Let's create slides. What materials do you have?
+ A) I have detailed materials organized in a directory
+ B) I have partial materials like a scenario or script
+ C) I don't have materials yet (starting from scratch)"
+
+Then follow the appropriate pattern in "Source Material Collection" section.
+
+### 2. Initialize Project
+
 npx @ncukondo/slide-generation init my-presentation
 cd my-presentation
+
+### 3. After Initialization (Important)
+
+**Recommended**: Ask user to start a new AI agent session in the project directory
+to enable Slash Commands and full AgentSkills support.
+
+**Alternative**: Read `.skills/slide-assistant/SKILL.md` for detailed workflows.
+
+### 4-5. Available Commands & AI-Optimized Output
+
+(See actual AI-GUIDE.md for details)
+
+### 6. Source Material Collection (Three Patterns)
+
+- Pattern A: Explore Mode - Scan directory, analyze files, organize into sources/
+- Pattern B: Supplement Mode - Analyze partial materials, interview for missing info
+- Pattern C: Interview Mode - Collect all info via dialogue
+
+### 7. Slide Creation Workflow
+
+After collecting materials, create presentation.yaml using templates.
+
+(See actual AI-GUIDE.md for complete content)
 ```
 
-### 2. Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `slide-gen convert <input>` | Convert YAML to Marp Markdown |
-| `slide-gen validate <input>` | Validate source file |
-| `slide-gen templates list` | List templates |
-| `slide-gen templates info <name>` | Template details |
-| `slide-gen icons search <query>` | Search icons |
-| `slide-gen preview <input>` | Preview in browser |
-| `slide-gen screenshot <input>` | Take screenshots |
-
-### 3. AI-Optimized Output
-
-Use `--format llm` for token-efficient output:
-```bash
-slide-gen templates list --format llm
-slide-gen templates info <name> --format llm
-```
-
-### 4. Slide Creation Workflow
-
-1. Get manuscript/requirements from user
-2. Check templates: `slide-gen templates list --format llm`
-3. Create presentation.yaml
-4. Validate: `slide-gen validate`
-5. Convert: `slide-gen convert`
-6. Preview or screenshot for review
-
-### 5. YAML Source Format
-
-```yaml
-meta:
-  title: "Title"
-  author: "Author"
-  date: "YYYY-MM-DD"
-  theme: "default"
-
-slides:
-  - template: title
-    content:
-      title: "Main Title"
-      subtitle: "Subtitle"
-
-  - template: bullet-list
-    content:
-      title: "Overview"
-      items:
-        - "Item 1"
-        - "Item 2"
-```
-
-## Detailed Specifications
-
-- [Source Format](spec/source-format.md)
-- [Templates](spec/templates.md)
-- [CLI](spec/cli.md)
-```
+**Note**: The actual `AI-GUIDE.md` in the repository root contains the complete,
+detailed version. The above is a summary of key sections for specification reference.
 
 ---
 
@@ -525,6 +508,19 @@ slides:
 
 AI collects information needed for slide creation based on user's material situation. See [sources.md](./sources.md) for details.
 
+### Entry Point
+
+**AI must always start by asking the user about their material situation:**
+
+```
+"Let's create slides. What materials do you have?
+ A) I have detailed materials organized in a directory
+ B) I have partial materials like a scenario or script
+ C) I don't have materials yet (starting from scratch)"
+```
+
+This question is defined in `AI-GUIDE.md` and should be asked before project initialization.
+
 ### Three Input Patterns
 
 | Pattern | Situation | AI Behavior |
@@ -532,6 +528,11 @@ AI collects information needed for slide creation based on user's material situa
 | A: Exploration Mode | Detailed materials in a directory | Explore and analyze directory, auto-configure sources |
 | B: Supplement Mode | Only scenario or partial materials | Analyze content, supplement missing info via interview |
 | C: Interview Mode | No materials (starting from scratch) | Collect information via dialogue, configure sources |
+
+### Post-Initialization
+
+After `slide-gen init`, AI should recommend starting a new session in the project directory
+to enable full AgentSkills support and Slash Commands. See AI-GUIDE.md section for details.
 
 ---
 

@@ -72,6 +72,7 @@
 | 26 | [Icon Enhancements](./completed/26-icon-enhancements.md) | 07, 14 | Done |
 | 27 | [Source Management](./completed/27-source-management.md) | 22, 15 | Done |
 | 28 | [Image Processing (Crop/Blur)](./completed/28-image-processing.md) | 25 | Done |
+| 34 | [AI Workflow Templates Update](./34-ai-workflow-templates-update.md) | 22, 27 | Pending |
 
 ## Phase 8: Reference Collaboration（文献引用連携）
 
@@ -107,10 +108,10 @@ AI エージェントと協働して学術文献を管理・引用するため�
 
 ## Progress Summary
 
-- **Total Tasks**: 33
+- **Total Tasks**: 34
 - **Completed**: 29
 - **In Progress**: 0
-- **Pending**: 4
+- **Pending**: 5
 
 ## Architecture Overview
 
