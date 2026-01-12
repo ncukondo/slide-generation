@@ -151,6 +151,27 @@ export class ReferenceValidator {
     };
   }
 
+  /**
+   * Generate suggestions for adding missing references
+   */
+  generateSuggestions(missingIds: string[]): string {
+    if (missingIds.length === 0) {
+      return '';
+    }
+
+    const lines: string[] = [
+      'Missing citations:',
+      ...missingIds.map((id) => `  - @${id}`),
+      '',
+      'To add these references, use:',
+      '  ref add --pmid <pmid>     # Add by PubMed ID',
+      '  ref add "<doi>"           # Add by DOI',
+      '  ref add --isbn <isbn>     # Add by ISBN',
+    ];
+
+    return lines.join('\n');
+  }
+
   private findCitationText(slide: ParsedSlide, citationId: string): string {
     // Search through slide content for text containing the citation
     const searchValue = (value: unknown): string | null => {

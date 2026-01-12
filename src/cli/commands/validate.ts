@@ -543,6 +543,11 @@ function outputResult(result: ValidationResult, options: ValidateOptions): void 
         chalk.yellow('⚠') +
           ` ${result.stats.missingReferences.length} reference(s) not found in library`
       );
+      // Show suggestion for adding missing references
+      console.log('');
+      console.log(chalk.cyan('To add missing references:'));
+      console.log(chalk.dim('  ref add --pmid <pmid>     # Add by PubMed ID'));
+      console.log(chalk.dim('  ref add "<doi>"           # Add by DOI'));
     }
   }
 

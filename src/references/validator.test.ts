@@ -153,4 +153,35 @@ describe('ReferenceValidator', () => {
       expect(result.missingDetails).toHaveLength(0);
     });
   });
+
+  describe('generateSuggestions', () => {
+    it('should suggest ref add command for missing citations', () => {
+      const mockManager = {} as ReferenceManager;
+      const validator = new ReferenceValidator(mockManager);
+      const suggestions = validator.generateSuggestions(['unknown2024']);
+
+      expect(suggestions).toContain('ref add --pmid <pmid>');
+      expect(suggestions).toContain('ref add "<doi>"');
+    });
+
+    it('should include citation IDs in suggestions', () => {
+      const mockManager = {} as ReferenceManager;
+      const validator = new ReferenceValidator(mockManager);
+      const suggestions = validator.generateSuggestions([
+        'smith2024',
+        'tanaka2023',
+      ]);
+
+      expect(suggestions).toContain('smith2024');
+      expect(suggestions).toContain('tanaka2023');
+    });
+
+    it('should return empty string for no missing citations', () => {
+      const mockManager = {} as ReferenceManager;
+      const validator = new ReferenceValidator(mockManager);
+      const suggestions = validator.generateSuggestions([]);
+
+      expect(suggestions).toBe('');
+    });
+  });
 });
