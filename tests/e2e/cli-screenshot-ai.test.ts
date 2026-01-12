@@ -57,7 +57,7 @@ const shouldSkip = (() => {
   }
 })();
 
-describe.skipIf(shouldSkip)('E2E: screenshot AI optimization', () => {
+describe.skipIf(shouldSkip)('E2E: screenshot AI optimization', { timeout: 30000 }, () => {
   let testDir: string;
   let yamlPath: string;
 

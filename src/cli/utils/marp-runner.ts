@@ -73,6 +73,77 @@ export function isMarpAvailable(projectDir?: string): boolean {
 }
 
 /**
+ * Error types for Marp CLI browser-related failures
+ */
+export type MarpBrowserErrorType =
+  | 'browser_not_found'
+  | 'missing_libraries'
+  | 'sandbox_error'
+  | 'snap_not_available'
+  | 'unknown';
+
+export interface MarpBrowserError {
+  type: MarpBrowserErrorType;
+  message: string;
+  suggestion: string;
+}
+
+/**
+ * Parse Marp CLI error output to provide user-friendly error messages
+ */
+export function parseMarpBrowserError(errorOutput: string): MarpBrowserError | null {
+  const output = errorOutput.toLowerCase();
+
+  // Browser not found
+  if (output.includes('no suitable browser found')) {
+    return {
+      type: 'browser_not_found',
+      message: 'No browser found for taking screenshots',
+      suggestion: `Install a browser using one of these methods:
+  1. Run: npx puppeteer browsers install chrome
+  2. Install Chrome/Chromium system-wide
+  3. Set CHROME_PATH environment variable to your browser path`,
+    };
+  }
+
+  // Snap package not available (common in Docker containers)
+  if (output.includes('snap to be installed') || output.includes('requires the chromium snap')) {
+    return {
+      type: 'snap_not_available',
+      message: 'Snap packages are not available in this environment (Docker/devcontainer)',
+      suggestion: `Use Puppeteer's bundled Chrome instead:
+  1. Run: npx puppeteer browsers install chrome
+  2. Set: export PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox"`,
+    };
+  }
+
+  // Missing shared libraries
+  if (output.includes('error while loading shared libraries') || output.includes('cannot open shared object file')) {
+    const libMatch = errorOutput.match(/lib[\w.-]+\.so[\d.]*/i);
+    const libName = libMatch ? libMatch[0] : 'unknown library';
+    return {
+      type: 'missing_libraries',
+      message: `Missing Chrome dependency: ${libName}`,
+      suggestion: `Install required libraries:
+  sudo apt-get install -y libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 \\
+    libgbm1 libasound2t64 libxfixes3 fonts-noto-cjk`,
+    };
+  }
+
+  // Sandbox error (TargetCloseError, Target closed)
+  if (output.includes('target closed') || output.includes('targetcloseerror') || output.includes('no-sandbox')) {
+    return {
+      type: 'sandbox_error',
+      message: 'Chrome sandbox error (common in container environments)',
+      suggestion: `Disable sandbox mode:
+  export PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox"`,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Run marp synchronously
  *
  * @param args - Arguments to pass to marp

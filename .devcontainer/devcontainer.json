@@ -31,6 +31,9 @@
       }
     }
   },
-  "postCreateCommand": "sudo chown vscode:vscode /workspaces && pnpm install",
+  "containerEnv": {
+    "PUPPETEER_ARGS": "--no-sandbox --disable-setuid-sandbox"
+  },
+  "postCreateCommand": "sudo chown vscode:vscode /workspaces && pnpm install && npx puppeteer browsers install chrome",
   "remoteUser": "vscode"
 }

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { access, mkdir, readdir, unlink } from 'fs/promises';
+import { access, mkdir, readdir, rename, unlink } from 'fs/promises';
 import { basename, dirname, extname, join } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -7,7 +7,7 @@ import sharp from 'sharp';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ConfigLoader } from '../../config/loader';
 import { ExitCode } from './convert';
-import { runMarp, isMarpAvailable } from '../utils/marp-runner';
+import { runMarp, isMarpAvailable, parseMarpBrowserError } from '../utils/marp-runner';
 
 export interface ScreenshotOptions {
   output?: string;
@@ -82,6 +82,31 @@ export async function filterToSpecificSlide(
  */
 export function checkMarpCliAvailable(projectDir?: string): boolean {
   return isMarpAvailable(projectDir);
+}
+
+/**
+ * Add file extension to screenshot files if missing
+ * Marp CLI v4.2+ may output files without extension
+ */
+export async function ensureFileExtensions(
+  outputDir: string,
+  baseName: string,
+  format: string
+): Promise<string[]> {
+  const files = await readdir(outputDir);
+  const slidePattern = /\.(\d{3})$/; // Files without extension like "basename.001"
+  const renamedFiles: string[] = [];
+
+  for (const file of files) {
+    if (file.startsWith(baseName) && slidePattern.test(file)) {
+      const oldPath = join(outputDir, file);
+      const newPath = join(outputDir, `${file}.${format}`);
+      await rename(oldPath, newPath);
+      renamedFiles.push(`${file}.${format}`);
+    }
+  }
+
+  return renamedFiles;
 }
 
 /**
@@ -464,10 +489,21 @@ export async function executeScreenshot(
     spinner?.succeed(`Screenshots saved to ${outputDir}`);
   } catch (error) {
     spinner?.fail('Failed to take screenshots');
-    const message =
-      error instanceof Error ? error.message : 'Marp CLI failed';
-    console.error(chalk.red(`Error: ${message}`));
-    errors.push(message);
+
+    // Try to parse browser-specific errors for better messages
+    const errorOutput = error instanceof Error ? error.message : String(error);
+    const browserError = parseMarpBrowserError(errorOutput);
+
+    if (browserError) {
+      console.error(chalk.red(`\nError: ${browserError.message}\n`));
+      console.error(chalk.yellow(browserError.suggestion));
+      errors.push(browserError.message);
+    } else {
+      const message = error instanceof Error ? error.message : 'Marp CLI failed';
+      console.error(chalk.red(`Error: ${message}`));
+      errors.push(message);
+    }
+
     process.exitCode = ExitCode.GeneralError;
     await cleanupTempFile();
     return { success: false, errors };
@@ -479,10 +515,13 @@ export async function executeScreenshot(
   let actualWidth = isAiFormat ? 640 : (options.width || 1280);
   let actualHeight = Math.round(actualWidth * 9 / 16); // 16:9 default fallback
 
+  // Add file extensions if missing (Marp CLI v4.2+ may omit them)
+  const mdBaseName = basename(tempMdPath, '.md');
+  await ensureFileExtensions(outputDir, mdBaseName, actualFormat);
+
   // Filter to specific slide if requested
   if (options.slide !== undefined) {
     spinner?.start(`Filtering to slide ${options.slide}...`);
-    const mdBaseName = basename(tempMdPath, '.md');
 
     const filterResult = await filterToSpecificSlide(
       outputDir,
@@ -505,7 +544,6 @@ export async function executeScreenshot(
 
   // Get list of generated files
   const allFiles = await readdir(outputDir);
-  const mdBaseName = basename(tempMdPath, '.md');
   const generatedFiles = allFiles
     .filter((f) => f.startsWith(mdBaseName) && f.endsWith(`.${actualFormat}`))
     .sort();
