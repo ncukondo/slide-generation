@@ -18,3 +18,12 @@ export {
   type BibliographyOptions,
   type BibliographyResult,
 } from './bibliography';
+export {
+  JAPANESE_PATTERN,
+  isJapaneseAuthors,
+  getYear,
+  getIdentifier,
+  getFirstAuthorFamily,
+  formatAuthorsFull,
+  formatFullEntry,
+} from './utils';
