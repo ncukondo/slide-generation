@@ -52,20 +52,24 @@ output: |
   <div class="two-column-container" style="--left-ratio: {{ leftRatio }}; --right-ratio: {{ rightRatio }};">
     <div class="column-left">
       {%- if content.left is iterable and content.left is not string %}
+      <ul>
       {%- for item in content.left %}
-      - {{ item }}
+        <li>{{ item }}</li>
       {%- endfor %}
+      </ul>
       {%- else %}
-      {{ content.left }}
+      <p>{{ content.left }}</p>
       {%- endif %}
     </div>
     <div class="column-right">
       {%- if content.right is iterable and content.right is not string %}
+      <ul>
       {%- for item in content.right %}
-      - {{ item }}
+        <li>{{ item }}</li>
       {%- endfor %}
+      </ul>
       {%- else %}
-      {{ content.right }}
+      <p>{{ content.right }}</p>
       {%- endif %}
     </div>
   </div>

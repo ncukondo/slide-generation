@@ -64,11 +64,13 @@ output: |
       {%- endif %}
       <div class="column-content">
         {%- if column.content is iterable and column.content is not string %}
+        <ul>
         {%- for item in column.content %}
-        - {{ item }}
+          <li>{{ item }}</li>
         {%- endfor %}
+        </ul>
         {%- else %}
-        {{ column.content }}
+        <p>{{ column.content }}</p>
         {%- endif %}
       </div>
     </div>

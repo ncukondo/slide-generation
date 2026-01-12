@@ -66,11 +66,13 @@ output: |
     </div>
     <div class="text-section">
       {%- if content.text is iterable and content.text is not string %}
+      <ul>
       {%- for item in content.text %}
-      - {{ item }}
+        <li>{{ item }}</li>
       {%- endfor %}
+      </ul>
       {%- else %}
-      {{ content.text }}
+      <p>{{ content.text }}</p>
       {%- endif %}
     </div>
   </div>
