@@ -157,6 +157,49 @@ The \`validate --format llm\` command provides:
 - Fix examples from template definitions
 - Contextual hints for unknown templates/icons
 
+## Visual Feedback Loop
+
+After creating or modifying slides, use this workflow to review and iterate:
+
+### Step 1: Take Screenshot
+\`\`\`bash
+# AI-optimized format (recommended)
+slide-gen screenshot presentation.yaml --format ai
+
+# Or contact sheet for overview
+slide-gen screenshot presentation.yaml --contact-sheet
+\`\`\`
+
+### Step 2: Review Images
+Use the Read tool to view the generated screenshots:
+\`\`\`
+Read ./screenshots/presentation.001.jpeg
+\`\`\`
+
+### Step 3: Identify Issues
+Look for:
+- Layout problems (text overflow, alignment)
+- Visual balance (too much/little content)
+- Icon and color appropriateness
+- Readability of text and diagrams
+
+### Step 4: Make Adjustments
+Edit presentation.yaml to fix identified issues.
+
+### Step 5: Repeat
+Take new screenshots and verify improvements.
+
+### Example Iteration Cycle
+
+1. Create initial slides
+2. \`slide-gen screenshot presentation.yaml --format ai --slide 3\`
+3. \`Read ./screenshots/presentation.003.jpeg\`
+4. Notice: "Title text is too long, wrapping awkwardly"
+5. Edit presentation.yaml to shorten title
+6. \`slide-gen screenshot presentation.yaml --format ai --slide 3\`
+7. \`Read ./screenshots/presentation.003.jpeg\`
+8. Verify fix, move to next slide
+
 ## Reference Management
 
 For academic presentations, manage citations and references:

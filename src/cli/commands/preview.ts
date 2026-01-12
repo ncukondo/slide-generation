@@ -630,7 +630,7 @@ export async function executePreview(
 
   const marpCommand = buildMarpCommand(tempDir, {
     ...options,
-    watch: options.watch,
+    watch: options.watch ?? false,
   });
 
   if (verbose) {

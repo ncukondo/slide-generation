@@ -57,6 +57,23 @@ Read \`.skills/slide-assistant/SKILL.md\` for detailed instructions.
 - \`/slide-validate\` - Validate slide source file
 - \`/slide-preview\` - Preview slides in browser
 - \`/slide-screenshot\` - Take screenshots for review
+- \`/slide-review\` - Visual review and iteration workflow
 - \`/slide-theme\` - Adjust theme and styling
+
+## Important: Visual Review
+
+**After creating or editing slides, always run visual review:**
+
+\`\`\`bash
+/slide-review
+\`\`\`
+
+Or manually:
+1. \`slide-gen screenshot presentation.yaml --format ai\`
+2. \`Read ./screenshots/presentation.001.jpeg\`
+3. Check layout, text overflow, visual balance
+4. Edit and repeat until satisfied
+
+This ensures slides look correct before delivery.
 `;
 }
