@@ -660,7 +660,10 @@ function generateSampleYaml(template: TemplateDefinition): string {
     template: template.name,
     content: template.example ?? {},
   };
-  return yaml.stringify({ slides: [slide] });
+  return yaml.stringify({
+    meta: { title: `Template: ${template.name}` },
+    slides: [slide],
+  });
 }
 
 /**
@@ -998,8 +1001,10 @@ export async function executeTemplateScreenshot(
       marpArgs.push('--jpeg-quality', String(options.quality || 80));
     }
 
-    // Marp outputs to the same directory as the markdown file
-    marpArgs.push('-o', tempDir);
+    // Marp CLI's -o option expects a file path (not directory)
+    // Output will be "tempDir/template-name.001.png", etc.
+    const outputBasePath = join(tempDir, template.name);
+    marpArgs.push('-o', outputBasePath);
     marpArgs.push(mdPath);
 
     // Generate screenshot
@@ -1013,6 +1018,10 @@ export async function executeTemplateScreenshot(
       errors.push(`${template.name}: Marp CLI failed`);
       continue;
     }
+
+    // Ensure file extensions (Marp CLI v4.2+ may omit them)
+    const { ensureFileExtensions } = await import('./screenshot');
+    await ensureFileExtensions(tempDir, template.name, imageFormat);
 
     // Find generated image files and rename to template name
     const tempFiles = await readdir(tempDir);
