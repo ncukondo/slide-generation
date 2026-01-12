@@ -183,3 +183,79 @@ describe('PipelineError', () => {
     expect(error).toBeInstanceOf(Error);
   });
 });
+
+describe('Pipeline - bibliography auto-generation', () => {
+  let pipeline: Pipeline;
+  let tempDir: string;
+
+  beforeEach(async () => {
+    pipeline = new Pipeline(mockConfig);
+    await pipeline.initialize();
+    tempDir = join(__dirname, '../../.tmp-test-bib');
+    await mkdir(tempDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('should preserve manual references when autoGenerate is false', async () => {
+    const { writeFile } = await import('fs/promises');
+    const inputPath = join(tempDir, 'manual-bib.yaml');
+
+    const yamlContent = `
+meta:
+  title: Test Presentation
+  author: Test Author
+  theme: default
+slides:
+  - template: bibliography
+    content:
+      title: References
+      references:
+        - id: manual1
+          authors:
+            - "Manual, A."
+          title: Manual Entry
+          year: 2024
+`;
+
+    await writeFile(inputPath, yamlContent, 'utf-8');
+    const output = await pipeline.run(inputPath);
+
+    expect(output).toContain('References');
+    expect(output).toContain('Manual, A.');
+    expect(output).toContain('Manual Entry');
+  });
+
+  it('should handle autoGenerate: true with empty citations', async () => {
+    const { writeFile } = await import('fs/promises');
+    const inputPath = join(tempDir, 'auto-bib.yaml');
+
+    // Use a presentation without citations to avoid reference-manager calls
+    const yamlContent = `
+meta:
+  title: Test Presentation
+  author: Test Author
+  theme: default
+slides:
+  - template: bullet-list
+    content:
+      title: Content
+      items:
+        - "Regular content without citations"
+  - template: bibliography
+    content:
+      title: References
+      autoGenerate: true
+`;
+
+    await writeFile(inputPath, yamlContent, 'utf-8');
+
+    // Should not throw, bibliography will be empty
+    const result = await pipeline.runWithResult(inputPath);
+
+    expect(result.output).toContain('References');
+    expect(result.citations).toEqual([]);
+  });
+});
