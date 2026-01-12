@@ -86,7 +86,7 @@
 | 34 | [AI Workflow Templates Update](./completed/34-ai-workflow-templates-update.md) | 22, 27 | Done |
 | 35 | [Screenshot AI Optimization](./completed/35-screenshot-ai-optimization.md) | 23 | Done |
 | 36 | [Screenshot Documentation Enhancement](./completed/36-screenshot-docs-enhancement.md) | 35 | Done |
-| 37 | [Templates Screenshot Command](./37-templates-screenshot.md) | 13, 23 | Pending |
+| 37 | [Templates Screenshot Command](./completed/37-templates-screenshot.md) | 13, 23 | Done |
 
 ## Phase 8: Reference Collaboration（文献引用連携）
 
@@ -123,9 +123,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 37
-- **Completed**: 36
+- **Completed**: 37
 - **In Progress**: 0
-- **Pending**: 1
+- **Pending**: 0
 
 ## Architecture Overview
 
