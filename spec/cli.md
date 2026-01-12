@@ -559,6 +559,27 @@ slide-gen screenshot presentation.yaml --contact-sheet
 slide-gen screenshot presentation.yaml --format ai --contact-sheet
 ```
 
+### Option Combinations
+
+All options can be combined freely:
+
+```bash
+# Specific slide + AI optimization
+slide-gen screenshot presentation.yaml --slide 3 --format ai
+
+# Specific slide + contact sheet (generates single-slide contact sheet)
+slide-gen screenshot presentation.yaml --slide 3 --contact-sheet
+
+# All combinations: specific slide + AI + contact sheet
+slide-gen screenshot presentation.yaml --slide 3 --format ai --contact-sheet
+
+# Custom width + JPEG quality
+slide-gen screenshot presentation.yaml --width 800 --format jpeg --quality 90
+
+# Contact sheet with custom columns + AI optimization
+slide-gen screenshot presentation.yaml --contact-sheet --columns 4 --format ai
+```
+
 ### AI Optimization Mode
 
 Use `--format ai` for token-efficient screenshots optimized for AI review:
@@ -568,10 +589,20 @@ slide-gen screenshot presentation.yaml --format ai
 ```
 
 The AI format:
-- Uses 640px width (75% token reduction)
+- Uses 640px width (75% token reduction vs 1280px default)
 - Outputs JPEG format
 - Shows estimated token consumption
 - Provides Claude Code read commands
+
+#### Token Estimation
+
+Token consumption is calculated using the formula:
+
+```
+tokens = (width × height) / 750
+```
+
+For a 640×360 image (AI format): ~308 tokens per image.
 
 Output example:
 ```
@@ -597,6 +628,24 @@ slide-gen screenshot presentation.yaml --contact-sheet --columns 3
 
 Creates a grid image with slide thumbnails and numbers for quick review.
 
+#### Contact Sheet Features
+
+- **Slide number overlay**: Each thumbnail displays "Slide N" at the bottom
+- **Automatic grid layout**: Rows are calculated based on slide count and column setting
+- **Consistent sizing**: Thumbnails are resized to match the screenshot dimensions
+- **Padding**: 10px padding between thumbnails
+- **Background**: Light gray (#F5F5F5) canvas background
+
+#### Contact Sheet with AI Optimization
+
+When combined with `--format ai`, the contact sheet uses the AI-optimized image dimensions:
+
+```bash
+slide-gen screenshot presentation.yaml --contact-sheet --format ai
+```
+
+This generates smaller individual screenshots (640px) which are then composed into the contact sheet.
+
 ### Output
 
 ```
@@ -610,9 +659,13 @@ screenshots/
 
 ### Notes
 
-- Marp CLI is required (`npm install -g @marp-team/marp-cli`)
+- Marp CLI is required (global or local installation)
+  - Global: `npm install -g @marp-team/marp-cli`
+  - Local: `npm install -D @marp-team/marp-cli`
 - Internally uses `marp --images` option
 - `--format ai` is recommended for AI-assisted slide review
+- Contact sheet is always output as PNG regardless of `--format` setting
+- Temporary markdown file is automatically cleaned up after screenshot generation
 
 ---
 
