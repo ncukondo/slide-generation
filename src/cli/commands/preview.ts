@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { access, unlink, readdir, mkdir, writeFile, readFile, rm } from 'fs/promises';
+import { access, readdir, mkdir, writeFile, readFile, rm } from 'fs/promises';
 import { basename, dirname, join, extname } from 'path';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -198,7 +198,16 @@ export async function checkMarpCliAvailable(projectDir?: string): Promise<boolea
 }
 
 /**
+ * Generate temporary directory path for preview
+ */
+export function getTempPreviewDir(inputPath: string): string {
+  const base = basename(inputPath, '.yaml');
+  return join(tmpdir(), `slide-gen-preview-${base}-${Date.now()}`);
+}
+
+/**
  * Generate temporary output path for markdown file
+ * @deprecated Use getTempPreviewDir instead for server mode
  */
 export function getTempOutputPath(inputPath: string): string {
   const base = basename(inputPath, '.yaml');
@@ -209,20 +218,14 @@ export function getTempOutputPath(inputPath: string): string {
  * Build marp-cli command for preview (for display purposes)
  */
 export function buildMarpCommand(
-  markdownPath: string,
+  markdownDir: string,
   options: PreviewOptions
 ): string {
-  const parts = ['marp', '--preview', '--no-stdin'];
-
-  if (options.port) {
-    parts.push('-p', String(options.port));
-  }
+  const parts = ['marp', '--server', '-I', markdownDir];
 
   if (options.watch) {
     parts.push('--watch');
   }
-
-  parts.push(markdownPath);
 
   return parts.join(' ');
 }
@@ -599,8 +602,10 @@ export async function executePreview(
     return { success: false, errors };
   }
 
-  // Generate initial markdown
-  const tempMarkdownPath = getTempOutputPath(inputPath);
+  // Create temp directory and generate markdown
+  const tempDir = getTempPreviewDir(inputPath);
+  await mkdir(tempDir, { recursive: true });
+  const tempMarkdownPath = join(tempDir, 'slides.md');
   console.log(`Converting ${chalk.cyan(inputPath)}...`);
 
   try {
@@ -616,26 +621,36 @@ export async function executePreview(
     console.error(chalk.red(`Error: Conversion failed: ${message}`));
     errors.push(message);
     process.exitCode = ExitCode.ConversionError;
+    await rm(tempDir, { recursive: true, force: true });
     return { success: false, errors };
   }
 
-  // Start marp preview server
+  // Start marp server mode (HTTP server without browser auto-open)
   console.log(`\nStarting preview server on port ${chalk.cyan(port)}...`);
 
-  const marpCommand = buildMarpCommand(tempMarkdownPath, {
+  const marpCommand = buildMarpCommand(tempDir, {
     ...options,
-    port,
-    watch: false, // We handle watch ourselves if needed
+    watch: options.watch,
   });
 
   if (verbose) {
     console.log(`Running: ${marpCommand}`);
   }
 
-  const marpProcess = spawnMarp(['--preview', '--no-stdin', '-p', String(port), tempMarkdownPath], {
+  // Use --server -I for HTTP server mode (works in WSL/headless environments)
+  const marpArgs = ['--server', '-I', tempDir];
+  if (options.watch) {
+    marpArgs.push('--watch');
+  }
+
+  const marpProcess = spawnMarp(marpArgs, {
     projectDir: dirname(inputPath),
     stdio: 'inherit',
   });
+
+  // Display URL for user to open manually
+  console.log(`\nPreview available at ${chalk.cyan(`http://localhost:${port}/slides.md`)}`);
+  console.log('Open this URL in your browser to view the slides.');
 
   let watcher: FSWatcher | null = null;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -685,9 +700,9 @@ export async function executePreview(
     watcher?.close();
     marpProcess.kill();
 
-    // Clean up temp file
+    // Clean up temp directory
     try {
-      await unlink(tempMarkdownPath);
+      await rm(tempDir, { recursive: true, force: true });
     } catch {
       // Ignore cleanup errors
     }

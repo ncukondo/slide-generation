@@ -197,18 +197,18 @@ describe('collectSlideInfo', () => {
 });
 
 describe('preview command - marp integration', () => {
-  it('should build correct marp command for preview', async () => {
+  it('should build correct marp command for server mode', async () => {
     const { buildMarpCommand } = await import('./preview');
     const options: PreviewOptions = {
       port: 3000,
     };
 
-    const cmd = buildMarpCommand('/path/to/slides.md', options);
+    const cmd = buildMarpCommand('/path/to/slides', options);
 
     expect(cmd).toContain('marp');
-    expect(cmd).toContain('--preview');
-    expect(cmd).toContain('-p');
-    expect(cmd).toContain('3000');
+    expect(cmd).toContain('--server');
+    expect(cmd).toContain('-I');
+    expect(cmd).toContain('/path/to/slides');
   });
 
   it('should include watch flag when specified', async () => {

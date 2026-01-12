@@ -52,11 +52,12 @@ references:
     expect(typeof available).toBe('boolean');
   });
 
-  it('should build correct marp command', () => {
-    const cmd = buildMarpCommand('/tmp/test.md', { port: 3000 });
+  it('should build correct marp command for server mode', () => {
+    const cmd = buildMarpCommand('/tmp/test-dir', { port: 3000 });
     expect(cmd).toContain('marp');
-    expect(cmd).toContain('--preview');
-    expect(cmd).toContain('3000');
+    expect(cmd).toContain('--server');
+    expect(cmd).toContain('-I');
+    expect(cmd).toContain('/tmp/test-dir');
   });
 
   it('should build marp command with watch flag', () => {
