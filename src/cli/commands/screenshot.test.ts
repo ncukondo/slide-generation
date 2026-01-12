@@ -3,7 +3,14 @@ import { join } from 'path';
 import { mkdir, rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
-import { createScreenshotCommand, ScreenshotOptions } from './screenshot';
+import {
+  createScreenshotCommand,
+  ScreenshotOptions,
+  estimateTokens,
+  estimateTotalTokens,
+  calculateGridDimensions,
+  formatAiOutput,
+} from './screenshot';
 
 describe('screenshot command', () => {
   it('should create command with correct name', () => {
@@ -18,6 +25,9 @@ describe('screenshot command', () => {
     expect(options).toContain('--slide');
     expect(options).toContain('--width');
     expect(options).toContain('--format');
+    expect(options).toContain('--quality');
+    expect(options).toContain('--contact-sheet');
+    expect(options).toContain('--columns');
   });
 
   it('should have input argument', () => {
@@ -31,10 +41,14 @@ describe('screenshot command', () => {
     const outputOpt = cmd.options.find((o) => o.long === '--output');
     const formatOpt = cmd.options.find((o) => o.long === '--format');
     const widthOpt = cmd.options.find((o) => o.long === '--width');
+    const qualityOpt = cmd.options.find((o) => o.long === '--quality');
+    const columnsOpt = cmd.options.find((o) => o.long === '--columns');
 
     expect(outputOpt?.defaultValue).toBe('./screenshots');
     expect(formatOpt?.defaultValue).toBe('png');
     expect(widthOpt?.defaultValue).toBe(1280);
+    expect(qualityOpt?.defaultValue).toBe(80);
+    expect(columnsOpt?.defaultValue).toBe(2);
   });
 });
 
@@ -222,5 +236,186 @@ describe('screenshot command - slide filtering', () => {
     const files = await readdir(outputDir);
     expect(files.length).toBe(1);
     expect(files[0]).toContain('001');
+  });
+});
+
+describe('AI optimization mode', () => {
+  it('should set width to 640 for ai format', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = { format: 'ai' };
+    const args = buildMarpCommandArgs('/test.md', './out', options);
+
+    expect(args).toContain('--image-scale');
+    // 640 / 1280 = 0.5
+    const scaleIndex = args.indexOf('--image-scale');
+    expect(args[scaleIndex + 1]).toBe('0.5');
+  });
+
+  it('should use jpeg for ai format', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = { format: 'ai' };
+    const args = buildMarpCommandArgs('/test.md', './out', options);
+
+    expect(args).toContain('--images');
+    expect(args).toContain('jpeg');
+  });
+
+  it('should apply jpeg quality for ai format', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = { format: 'ai', quality: 90 };
+    const args = buildMarpCommandArgs('/test.md', './out', options);
+
+    expect(args).toContain('--jpeg-quality');
+    expect(args).toContain('90');
+  });
+
+  it('should apply default quality 80 for ai format', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = { format: 'ai' };
+    const args = buildMarpCommandArgs('/test.md', './out', options);
+
+    expect(args).toContain('--jpeg-quality');
+    expect(args).toContain('80');
+  });
+
+  it('should apply jpeg quality for jpeg format', async () => {
+    const { buildMarpCommandArgs } = await import('./screenshot');
+    const options: ScreenshotOptions = { format: 'jpeg', quality: 70 };
+    const args = buildMarpCommandArgs('/test.md', './out', options);
+
+    expect(args).toContain('--jpeg-quality');
+    expect(args).toContain('70');
+  });
+});
+
+describe('token estimation', () => {
+  it('should calculate tokens for 640x360 image', () => {
+    // 640 * 360 = 230400, 230400 / 750 = 307.2, ceil = 308
+    const tokens = estimateTokens(640, 360);
+    expect(tokens).toBe(308);
+  });
+
+  it('should calculate tokens for 1280x720 image', () => {
+    // 1280 * 720 = 921600, 921600 / 750 = 1228.8, ceil = 1229
+    const tokens = estimateTokens(1280, 720);
+    expect(tokens).toBe(1229);
+  });
+
+  it('should calculate total tokens for multiple slides', () => {
+    const total = estimateTotalTokens(640, 360, 5);
+    expect(total).toBe(1540); // 308 * 5
+  });
+
+  it('should return 0 for 0 slides', () => {
+    const total = estimateTotalTokens(640, 360, 0);
+    expect(total).toBe(0);
+  });
+});
+
+describe('contact sheet - grid calculation', () => {
+  it('should calculate grid dimensions for 4 slides with 2 columns', () => {
+    const dims = calculateGridDimensions(4, 2);
+    expect(dims.rows).toBe(2);
+    expect(dims.columns).toBe(2);
+  });
+
+  it('should calculate grid dimensions for 5 slides with 2 columns', () => {
+    const dims = calculateGridDimensions(5, 2);
+    expect(dims.rows).toBe(3);
+    expect(dims.columns).toBe(2);
+  });
+
+  it('should calculate grid dimensions for 6 slides with 3 columns', () => {
+    const dims = calculateGridDimensions(6, 3);
+    expect(dims.rows).toBe(2);
+    expect(dims.columns).toBe(3);
+  });
+
+  it('should handle 1 slide with 2 columns', () => {
+    const dims = calculateGridDimensions(1, 2);
+    expect(dims.rows).toBe(1);
+    expect(dims.columns).toBe(2);
+  });
+});
+
+describe('contact sheet generation', () => {
+  let testDir: string;
+
+  beforeEach(async () => {
+    testDir = join(tmpdir(), `slide-gen-contact-sheet-${randomUUID()}`);
+    await mkdir(testDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(testDir, { recursive: true, force: true });
+  });
+
+  it('should generate contact sheet from slide images', async () => {
+    const { generateContactSheet } = await import('./screenshot');
+    const outputDir = join(testDir, 'screenshots');
+    await mkdir(outputDir, { recursive: true });
+
+    // Create simple test images (1x1 pixel red PNG)
+    const sharp = (await import('sharp')).default;
+    const redPixel = await sharp({
+      create: { width: 640, height: 360, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .png()
+      .toBuffer();
+
+    const bluePixel = await sharp({
+      create: { width: 640, height: 360, channels: 3, background: { r: 0, g: 0, b: 255 } },
+    })
+      .png()
+      .toBuffer();
+
+    await writeFile(join(outputDir, 'slide.001.png'), redPixel);
+    await writeFile(join(outputDir, 'slide.002.png'), bluePixel);
+
+    const slides = [
+      { path: join(outputDir, 'slide.001.png'), index: 1 },
+      { path: join(outputDir, 'slide.002.png'), index: 2 },
+    ];
+
+    const result = await generateContactSheet(slides, {
+      outputPath: join(outputDir, 'contact.png'),
+      columns: 2,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.outputPath).toContain('contact.png');
+
+    // Verify the contact sheet was created
+    const { access } = await import('fs/promises');
+    await expect(access(join(outputDir, 'contact.png'))).resolves.toBeUndefined();
+  });
+});
+
+describe('AI-friendly output', () => {
+  it('should format output for AI consumption', () => {
+    const output = formatAiOutput({
+      files: ['slide.001.jpeg', 'slide.002.jpeg'],
+      width: 640,
+      height: 360,
+      outputDir: './screenshots',
+    });
+
+    expect(output).toContain('AI-optimized');
+    expect(output).toContain('Estimated tokens');
+    expect(output).toContain('~616'); // 308 * 2
+    expect(output).toContain('2 images');
+    expect(output).toContain('Read screenshots/slide.001.jpeg');
+  });
+
+  it('should format output for single image', () => {
+    const output = formatAiOutput({
+      files: ['slide.001.jpeg'],
+      width: 640,
+      height: 360,
+      outputDir: './screenshots',
+    });
+
+    expect(output).toContain('~308'); // 308 * 1
+    expect(output).toContain('1 image');
   });
 });

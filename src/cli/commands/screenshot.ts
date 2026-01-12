@@ -3,6 +3,7 @@ import { access, mkdir, readdir, unlink } from 'fs/promises';
 import { basename, dirname, join } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
+import sharp from 'sharp';
 import { Pipeline, PipelineError } from '../../core/pipeline';
 import { ConfigLoader } from '../../config/loader';
 import { ExitCode } from './convert';
@@ -12,9 +13,12 @@ export interface ScreenshotOptions {
   output?: string;
   slide?: number;
   width?: number;
-  format?: 'png' | 'jpeg';
+  format?: 'png' | 'jpeg' | 'ai';
   config?: string;
   verbose?: boolean;
+  contactSheet?: boolean;
+  columns?: number;
+  quality?: number;
 }
 
 export interface ScreenshotResult {
@@ -81,6 +85,188 @@ export function checkMarpCliAvailable(projectDir?: string): boolean {
 }
 
 /**
+ * Estimate Claude API token consumption for an image
+ * Formula: (width * height) / 750
+ */
+export function estimateTokens(width: number, height: number): number {
+  return Math.ceil((width * height) / 750);
+}
+
+/**
+ * Estimate total tokens for multiple images
+ */
+export function estimateTotalTokens(
+  width: number,
+  height: number,
+  count: number
+): number {
+  return estimateTokens(width, height) * count;
+}
+
+/**
+ * Calculate grid dimensions for contact sheet
+ */
+export function calculateGridDimensions(
+  slideCount: number,
+  columns: number
+): { rows: number; columns: number } {
+  const rows = Math.ceil(slideCount / columns);
+  return { rows, columns };
+}
+
+export interface AiOutputOptions {
+  files: string[];
+  width: number;
+  height: number;
+  outputDir: string;
+}
+
+export interface ContactSheetOptions {
+  outputPath: string;
+  columns: number;
+  slideWidth?: number;
+  slideHeight?: number;
+  padding?: number;
+  showNumbers?: boolean;
+}
+
+export interface ContactSheetResult {
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+}
+
+export interface SlideImage {
+  path: string;
+  index: number;
+}
+
+/**
+ * Create slide number overlay as SVG
+ */
+function createNumberOverlay(number: number, width: number): Buffer {
+  const svg = `
+    <svg width="${width}" height="30">
+      <rect width="${width}" height="30" fill="rgba(0,0,0,0.6)"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="16" fill="white">
+        Slide ${number}
+      </text>
+    </svg>
+  `;
+  return Buffer.from(svg);
+}
+
+/**
+ * Generate contact sheet from slide images
+ */
+export async function generateContactSheet(
+  slides: SlideImage[],
+  options: ContactSheetOptions
+): Promise<ContactSheetResult> {
+  const {
+    columns,
+    padding = 10,
+    showNumbers = true,
+    slideWidth = 640,
+    slideHeight = 360,
+  } = options;
+
+  if (slides.length === 0) {
+    return { success: false, error: 'No slides provided' };
+  }
+
+  try {
+    const { rows } = calculateGridDimensions(slides.length, columns);
+
+    const canvasWidth = columns * slideWidth + (columns + 1) * padding;
+    const canvasHeight = rows * slideHeight + (rows + 1) * padding;
+
+    // Create composites array for all slide images
+    const composites: sharp.OverlayOptions[] = [];
+
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i]!;
+      const col = i % columns;
+      const row = Math.floor(i / columns);
+
+      const x = padding + col * (slideWidth + padding);
+      const y = padding + row * (slideHeight + padding);
+
+      // Resize slide image
+      const resized = await sharp(slide.path)
+        .resize(slideWidth, slideHeight, { fit: 'contain', background: { r: 255, g: 255, b: 255 } })
+        .toBuffer();
+
+      composites.push({
+        input: resized,
+        left: x,
+        top: y,
+      });
+
+      // Add slide number overlay if requested
+      if (showNumbers) {
+        const numberOverlay = createNumberOverlay(slide.index, slideWidth);
+        composites.push({
+          input: numberOverlay,
+          left: x,
+          top: y + slideHeight - 30,
+        });
+      }
+    }
+
+    // Create final image
+    await sharp({
+      create: {
+        width: canvasWidth,
+        height: canvasHeight,
+        channels: 4,
+        background: { r: 245, g: 245, b: 245, alpha: 1 },
+      },
+    })
+      .composite(composites)
+      .png()
+      .toFile(options.outputPath);
+
+    return {
+      success: true,
+      outputPath: options.outputPath,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Format output message for AI consumption
+ */
+export function formatAiOutput(options: AiOutputOptions): string {
+  const { files, width, height, outputDir } = options;
+  const tokensPerImage = estimateTokens(width, height);
+  const totalTokens = tokensPerImage * files.length;
+  const imageLabel = files.length === 1 ? 'image' : 'images';
+
+  const lines: string[] = [
+    'Screenshots saved (AI-optimized):',
+    '',
+  ];
+
+  for (const file of files) {
+    lines.push(`  ${join(outputDir, file)}`);
+  }
+
+  lines.push('');
+  lines.push(`Estimated tokens: ~${totalTokens} (${files.length} ${imageLabel})`);
+  lines.push('');
+  lines.push('To review in Claude Code:');
+  lines.push(`  Read ${join(outputDir, files[0]!)}`);
+
+  return lines.join('\n');
+}
+
+/**
  * Build marp-cli command arguments for taking screenshots
  * Returns an array of arguments (without the 'marp' command itself)
  */
@@ -89,13 +275,23 @@ export function buildMarpCommandArgs(
   outputDir: string,
   options: ScreenshotOptions
 ): string[] {
-  const format = options.format || 'png';
-  const args = ['--images', format];
+  // AI format uses optimized settings
+  const isAiFormat = options.format === 'ai';
+  const imageFormat = isAiFormat ? 'jpeg' : (options.format || 'png');
+  const width = isAiFormat ? 640 : (options.width || 1280);
+
+  const args = ['--images', imageFormat];
 
   // Calculate image scale if width is different from default
-  if (options.width && options.width !== 1280) {
-    const scale = options.width / 1280;
+  if (width !== 1280) {
+    const scale = width / 1280;
     args.push('--image-scale', String(scale));
+  }
+
+  // JPEG quality (Marp CLI uses --jpeg-quality)
+  if (imageFormat === 'jpeg') {
+    const quality = options.quality || 80;
+    args.push('--jpeg-quality', String(quality));
   }
 
   args.push('-o', outputDir);
@@ -114,7 +310,10 @@ export function createScreenshotCommand(): Command {
     .option('-o, --output <path>', 'Output directory', './screenshots')
     .option('-s, --slide <number>', 'Specific slide number (1-based)', parseInt)
     .option('-w, --width <pixels>', 'Image width', parseInt, 1280)
-    .option('-f, --format <fmt>', 'Image format (png/jpeg)', 'png')
+    .option('-f, --format <fmt>', 'Output format (png/jpeg/ai)', 'png')
+    .option('-q, --quality <num>', 'JPEG quality (1-100)', parseInt, 80)
+    .option('--contact-sheet', 'Generate contact sheet')
+    .option('--columns <num>', 'Contact sheet columns', parseInt, 2)
     .option('-c, --config <path>', 'Config file path')
     .option('-v, --verbose', 'Verbose output')
     .action(async (input: string, options: ScreenshotOptions) => {
@@ -262,17 +461,22 @@ export async function executeScreenshot(
     return { success: false, errors };
   }
 
+  // Determine actual output format (ai -> jpeg)
+  const isAiFormat = options.format === 'ai';
+  const actualFormat = isAiFormat ? 'jpeg' : (options.format || 'png');
+  const actualWidth = isAiFormat ? 640 : (options.width || 1280);
+  const actualHeight = Math.round(actualWidth * 9 / 16); // 16:9 aspect ratio
+
   // Filter to specific slide if requested
   if (options.slide !== undefined) {
     spinner?.start(`Filtering to slide ${options.slide}...`);
     const mdBaseName = basename(tempMdPath, '.md');
-    const format = options.format || 'png';
 
     const filterResult = await filterToSpecificSlide(
       outputDir,
       mdBaseName,
       options.slide,
-      format
+      actualFormat
     );
 
     if (!filterResult.success) {
@@ -287,15 +491,65 @@ export async function executeScreenshot(
     spinner?.succeed(`Kept slide ${options.slide}: ${filterResult.keptFile}`);
   }
 
+  // Get list of generated files
+  const allFiles = await readdir(outputDir);
+  const mdBaseName = basename(tempMdPath, '.md');
+  const generatedFiles = allFiles
+    .filter((f) => f.startsWith(mdBaseName) && f.endsWith(`.${actualFormat}`))
+    .sort();
+
+  // Generate contact sheet if requested
+  if (options.contactSheet && generatedFiles.length > 0) {
+    spinner?.start('Generating contact sheet...');
+
+    const slides: SlideImage[] = generatedFiles.map((file, index) => ({
+      path: join(outputDir, file),
+      index: index + 1,
+    }));
+
+    const contactSheetPath = join(outputDir, `${mdBaseName}-contact.png`);
+    const contactResult = await generateContactSheet(slides, {
+      outputPath: contactSheetPath,
+      columns: options.columns || 2,
+      slideWidth: actualWidth,
+      slideHeight: actualHeight,
+    });
+
+    if (!contactResult.success) {
+      spinner?.fail('Failed to generate contact sheet');
+      console.error(chalk.red(`Error: ${contactResult.error}`));
+      errors.push(contactResult.error || 'Contact sheet generation failed');
+    } else {
+      spinner?.succeed(`Contact sheet saved: ${basename(contactSheetPath)}`);
+    }
+  }
+
   // Cleanup temporary markdown file
   await cleanupTempFile();
 
+  // Display output based on format
   console.log('');
-  console.log(`Output: ${chalk.cyan(outputDir)}`);
+
+  if (isAiFormat) {
+    // AI-friendly output
+    const output = formatAiOutput({
+      files: generatedFiles,
+      width: actualWidth,
+      height: actualHeight,
+      outputDir,
+    });
+    console.log(output);
+  } else {
+    console.log(`Output: ${chalk.cyan(outputDir)}`);
+    if (generatedFiles.length > 0) {
+      console.log(`Files: ${generatedFiles.length} screenshot(s)`);
+    }
+  }
 
   return {
     success: true,
     errors,
     outputDir,
+    files: generatedFiles,
   };
 }
