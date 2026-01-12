@@ -183,6 +183,52 @@ Marp CLIでプレビューを表示します（@marp-team/marp-cliが必要）�
 slide-gen preview <input> [options]
 ```
 
+### screenshot
+
+スライドのスクリーンショットを撮影します（@marp-team/marp-cliが必要）。
+
+```bash
+slide-gen screenshot <input> [options]
+```
+
+オプション:
+- `-o, --output <path>` - 出力ディレクトリ（デフォルト: `./screenshots`）
+- `-s, --slide <number>` - 特定のスライドのみ（1始まり）
+- `-w, --width <pixels>` - 画像幅（デフォルト: 1280）
+
+## 参考文献管理
+
+[reference-manager](https://github.com/ncukondo/reference-manager) と連携して学術文献を引用できます。
+
+### 引用記法
+
+コンテンツ内でPandoc互換の `[@id]` 形式を使用:
+
+```yaml
+items:
+  - "この手法は有効である [@smith2024]"
+  - "複数の研究 [@smith2024; @tanaka2023] が示している..."
+```
+
+### 参考文献スライドの自動生成
+
+```yaml
+- template: bibliography
+  content:
+    title: "参考文献"
+    autoGenerate: true  # 引用された文献を自動収集
+```
+
+### 検証
+
+```bash
+# 存在しない引用キーをチェック
+slide-gen validate presentation.yaml
+
+# AI向け最適化出力（修正提案付き）
+slide-gen validate presentation.yaml --format llm
+```
+
 ## 利用可能なテンプレート
 
 ### 基本（Basic）

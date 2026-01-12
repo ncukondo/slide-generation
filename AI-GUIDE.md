@@ -152,7 +152,75 @@ slide-gen validate --check-images   # List missing images
 slide-gen images request --format llm  # Generate request list
 ```
 
-### 9. YAML Source Format
+### 10. Reference Management (Citations)
+
+For academic or research presentations requiring citations:
+
+#### Citation Workflow
+
+**Phase 1: Analyze Content**
+Identify statements requiring citations:
+- Statistical claims → Required
+- Research findings → Required
+- Comparative claims → Recommended
+
+**Phase 2: Search Existing Library**
+```bash
+ref list --format json          # List all references
+ref search "keyword" --format json  # Search by keyword
+```
+
+**Phase 3: Use Found References**
+Insert citations using `[@key]` syntax:
+```yaml
+items:
+  - "This method is effective [@smith2024]"
+  - "Multiple studies [@smith2024; @tanaka2023] show..."
+```
+
+**Phase 4: Request Missing References**
+When references aren't in the library, ask user for:
+- DOI or PMID (preferred)
+- URL (PubMed, journal site, etc.)
+- PDF file
+- Manual citation details
+
+Then add to library:
+```bash
+ref add pmid:38941256
+ref add "10.1038/s41591-024-xxxxx"
+```
+
+**Phase 5: Insert Citations and Generate Bibliography**
+```yaml
+# Auto-generate bibliography slide
+- template: bibliography
+  content:
+    title: "References"
+    autoGenerate: true  # Auto-collect cited references
+```
+
+#### Validation
+```bash
+slide-gen validate presentation.yaml --format llm
+# Checks: missing citation keys, unused references
+```
+
+#### Tracking in sources.yaml
+References are automatically tracked in `sources/sources.yaml`:
+```yaml
+references:
+  status:
+    required: 3
+    found: 2
+    pending: 1
+  items:
+    - id: smith2024
+      status: added
+      slide: 3
+```
+
+### 11. YAML Source Format
 
 ```yaml
 meta:
@@ -234,4 +302,8 @@ slides:
 - [Source Format](spec/source-format.md)
 - [Templates](spec/templates.md)
 - [Icons](spec/icons.md)
+- [References](spec/references.md)
+- [Sources](spec/sources.md)
+- [Images](spec/images.md)
 - [CLI](spec/cli.md)
+- [AI Integration](spec/ai-integration.md)

@@ -184,6 +184,52 @@ Preview with Marp CLI (requires @marp-team/marp-cli).
 slide-gen preview <input> [options]
 ```
 
+### screenshot
+
+Take screenshots of slides (requires @marp-team/marp-cli).
+
+```bash
+slide-gen screenshot <input> [options]
+```
+
+Options:
+- `-o, --output <path>` - Output directory (default: `./screenshots`)
+- `-s, --slide <number>` - Specific slide only (1-based)
+- `-w, --width <pixels>` - Image width (default: 1280)
+
+## Reference Management
+
+Integrate with [reference-manager](https://github.com/ncukondo/reference-manager) for academic citations.
+
+### Citation Syntax
+
+Use Pandoc-compatible `[@id]` format in content:
+
+```yaml
+items:
+  - "This method is effective [@smith2024]"
+  - "Multiple studies [@smith2024; @tanaka2023] show..."
+```
+
+### Bibliography Auto-Generation
+
+```yaml
+- template: bibliography
+  content:
+    title: "References"
+    autoGenerate: true  # Auto-collect cited references
+```
+
+### Validation
+
+```bash
+# Check for missing citation keys
+slide-gen validate presentation.yaml
+
+# AI-optimized output with fix suggestions
+slide-gen validate presentation.yaml --format llm
+```
+
 ## Available Templates
 
 ### Basic
