@@ -85,7 +85,7 @@
 | 28 | [Image Processing (Crop/Blur)](./completed/28-image-processing.md) | 25 | Done |
 | 34 | [AI Workflow Templates Update](./completed/34-ai-workflow-templates-update.md) | 22, 27 | Done |
 | 35 | [Screenshot AI Optimization](./completed/35-screenshot-ai-optimization.md) | 23 | Done |
-| 36 | [Screenshot Documentation Enhancement](./36-screenshot-docs-enhancement.md) | 35 | Done |
+| 36 | [Screenshot Documentation Enhancement](./completed/36-screenshot-docs-enhancement.md) | 35 | Done |
 
 ## Phase 8: Reference Collaboration（文献引用連携）
 
