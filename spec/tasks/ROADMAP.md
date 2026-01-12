@@ -92,7 +92,7 @@ AI エージェントと協働して学術文献を管理・引用するため�
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
 | 30 | [Validate References](./completed/30-validate-references.md) | 08, 12 | Done |
-| 31 | [Bibliography Auto-Generation](./31-bibliography-auto-generation.md) | 08, 10, 20 | Pending |
+| 31 | [Bibliography Auto-Generation](./completed/31-bibliography-auto-generation.md) | 08, 10, 20 | Done |
 | 32 | [AI Reference Skills](./32-ai-reference-skills.md) | 22, 30 | Pending |
 | 33 | [Sources References Tracking](./33-sources-references-tracking.md) | 27, 30 | Pending |
 
@@ -120,9 +120,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 34
-- **Completed**: 31
+- **Completed**: 32
 - **In Progress**: 0
-- **Pending**: 3
+- **Pending**: 2
 
 ## Architecture Overview
 
