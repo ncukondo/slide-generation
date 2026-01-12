@@ -12,6 +12,51 @@ allowed-tools: Read Write Edit Bash Glob Grep
 
 Helps create Marp slides using the slide-gen CLI tool.
 
+## First Question
+
+**Always start by asking about the user's material situation:**
+
+> "Let's create slides. What materials do you have?
+>
+> A) I have detailed materials organized in a directory
+>    (scenarios, scripts, data files, images, etc.)
+>
+> B) I have partial materials like a scenario or script
+>    (but need to supplement with additional info)
+>
+> C) I don't have materials yet
+>    (starting from scratch, will collect info through dialogue)"
+
+Then follow the appropriate pattern below.
+
+## Workflow Patterns
+
+### Pattern A: Explore Mode (Detailed Materials Exist)
+
+When user has materials organized in a directory:
+1. Ask for directory path and scan with Glob
+2. Read and classify files (scenario, scripts, data, images)
+3. Summarize findings and confirm with user
+4. Configure \`sources/\` directory
+
+### Pattern B: Supplement Mode (Partial Materials)
+
+When user has only a scenario or partial materials:
+1. Read and analyze provided content
+2. Identify what's present vs. missing
+3. Ask targeted questions to fill gaps
+4. Configure \`sources/\` directory
+
+### Pattern C: Interview Mode (Starting from Scratch)
+
+When user has no materials:
+1. Ask basic questions (purpose, audience, duration)
+2. Collect data and examples
+3. Propose slide structure for approval
+4. Configure \`sources/\` directory
+
+**See [references/workflows.md](references/workflows.md) for detailed steps.**
+
 ## Capabilities
 
 1. **Project initialization**: \`slide-gen init\`
@@ -21,21 +66,14 @@ Helps create Marp slides using the slide-gen CLI tool.
 5. **Conversion**: \`slide-gen convert\`
 6. **Screenshot**: \`slide-gen screenshot\` (for AI review)
 
-## Workflow
+## Slide Creation Flow
 
-### New Project
+After material collection (Pattern A/B/C above):
 
-1. Run \`slide-gen init <directory>\` to initialize
-2. Gather requirements from user
-3. Check templates with \`slide-gen templates list --format llm\`
-4. Create presentation.yaml
-5. Validate and convert
-
-### Existing Project
-
-1. Read presentation.yaml
-2. Edit according to user request
-3. Validate and convert
+1. Check templates with \`slide-gen templates list --format llm\`
+2. Create presentation.yaml
+3. Validate: \`slide-gen validate presentation.yaml\`
+4. Convert: \`slide-gen convert presentation.yaml\`
 
 ## YAML Source Format
 
