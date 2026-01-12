@@ -1,4 +1,11 @@
 import type { ReferenceManager, CSLItem, CSLAuthor } from './manager';
+import {
+  isJapaneseAuthors,
+  getYear,
+  getIdentifier,
+  getFirstAuthorFamily,
+  formatFullEntry,
+} from './utils';
 
 export interface FormatterConfig {
   author?: {
@@ -28,9 +35,6 @@ const DEFAULT_CONFIG: Required<FormatterConfig> = {
   },
 };
 
-// Pattern to detect Japanese characters
-const JAPANESE_PATTERN = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
-
 // Citation patterns for expansion
 const CITATION_BRACKET_PATTERN =
   /\[(@[\w-]+(?:,\s*[^;\]]+)?(?:;\s*@[\w-]+(?:,\s*[^;\]]+)?)*)\]/g;
@@ -41,6 +45,8 @@ const SINGLE_CITATION_PATTERN = /@([\w-]+)(?:,\s*([^;\]]+))?/g;
  */
 export class CitationFormatter {
   private config: Required<FormatterConfig>;
+  private availabilityChecked = false;
+  private isAvailable = false;
 
   constructor(
     private manager: ReferenceManager,
@@ -50,6 +56,17 @@ export class CitationFormatter {
       author: { ...DEFAULT_CONFIG.author, ...config?.author },
       inline: { ...DEFAULT_CONFIG.inline, ...config?.inline },
     };
+  }
+
+  /**
+   * Check if reference-manager is available (cached)
+   */
+  private async checkAvailability(): Promise<boolean> {
+    if (!this.availabilityChecked) {
+      this.isAvailable = await this.manager.isAvailable();
+      this.availabilityChecked = true;
+    }
+    return this.isAvailable;
   }
 
   /**
@@ -74,7 +91,7 @@ export class CitationFormatter {
       return `[${id}]`;
     }
 
-    return this.formatFullItem(item);
+    return formatFullEntry(item);
   }
 
   /**
@@ -82,6 +99,12 @@ export class CitationFormatter {
    * e.g., "[@smith2024]" -> "(Smith et al., 2024; PMID: 12345678)"
    */
   async expandCitations(text: string): Promise<string> {
+    // Check if reference-manager is available
+    if (!(await this.checkAvailability())) {
+      // Return original text if reference-manager is not available
+      return text;
+    }
+
     // First, collect all citation IDs
     const ids = new Set<string>();
     CITATION_BRACKET_PATTERN.lastIndex = 0;
@@ -164,26 +187,26 @@ export class CitationFormatter {
         .filter((item): item is CSLItem => item !== undefined);
     } else if (sort === 'author') {
       sortedItems = [...items.values()].sort((a, b) => {
-        const authorA = this.getFirstAuthorFamily(a);
-        const authorB = this.getFirstAuthorFamily(b);
+        const authorA = getFirstAuthorFamily(a);
+        const authorB = getFirstAuthorFamily(b);
         return authorA.localeCompare(authorB);
       });
     } else {
       // sort by year
       sortedItems = [...items.values()].sort((a, b) => {
-        const yearA = this.getYear(a);
-        const yearB = this.getYear(b);
+        const yearA = getYear(a);
+        const yearB = getYear(b);
         return yearA - yearB;
       });
     }
 
-    return sortedItems.map((item) => this.formatFullItem(item));
+    return sortedItems.map((item) => formatFullEntry(item));
   }
 
   private formatInlineItem(item: CSLItem): string {
     const author = this.formatAuthorInline(item.author);
-    const year = this.getYear(item);
-    const identifier = this.getIdentifier(item);
+    const year = getYear(item);
+    const identifier = getIdentifier(item);
 
     if (identifier) {
       return `(${author}, ${year}; ${identifier})`;
@@ -191,58 +214,12 @@ export class CitationFormatter {
     return `(${author}, ${year})`;
   }
 
-  private formatFullItem(item: CSLItem): string {
-    const parts: string[] = [];
-
-    // Authors
-    const isJapanese = this.isJapaneseAuthors(item.author);
-    const authors = this.formatAuthorsFull(item.author, isJapanese);
-    parts.push(authors);
-
-    // Year
-    const year = this.getYear(item);
-    parts.push(`(${year}).`);
-
-    // Title
-    if (item.title) {
-      parts.push(`${item.title}.`);
-    }
-
-    // Container (journal)
-    if (item['container-title']) {
-      const journal = isJapanese
-        ? item['container-title']
-        : `*${item['container-title']}*`;
-
-      // Volume, issue, pages
-      let location = '';
-      if (item.volume) {
-        location = item.issue
-          ? `${item.volume}(${item.issue})`
-          : item.volume;
-      }
-      if (item.page) {
-        location = location ? `${location}, ${item.page}` : item.page;
-      }
-
-      parts.push(location ? `${journal}, ${location}.` : `${journal}.`);
-    }
-
-    // Identifier
-    const identifier = this.getIdentifier(item);
-    if (identifier) {
-      parts.push(identifier);
-    }
-
-    return parts.join(' ');
-  }
-
   private formatAuthorInline(authors: CSLAuthor[] | undefined): string {
     if (!authors || authors.length === 0) {
       return 'Unknown';
     }
 
-    const isJapanese = this.isJapaneseAuthors(authors);
+    const japanese = isJapaneseAuthors(authors);
     const { etAl, etAlJa, separatorJa } = this.config.author;
     const firstAuthor = authors[0]!;
 
@@ -251,74 +228,12 @@ export class CitationFormatter {
     }
 
     if (authors.length === 2) {
-      const separator = isJapanese ? separatorJa : ' & ';
+      const separator = japanese ? separatorJa : ' & ';
       return `${firstAuthor.family}${separator}${authors[1]!.family}`;
     }
 
     // 3+ authors
-    const suffix = isJapanese ? etAlJa : ` ${etAl}`;
+    const suffix = japanese ? etAlJa : ` ${etAl}`;
     return `${firstAuthor.family}${suffix}`;
-  }
-
-  private formatAuthorsFull(
-    authors: CSLAuthor[] | undefined,
-    isJapanese: boolean
-  ): string {
-    if (!authors || authors.length === 0) {
-      return 'Unknown';
-    }
-
-    if (isJapanese) {
-      // Japanese: 田中太郎, 山田花子
-      return authors.map((a) => `${a.family}${a.given || ''}`).join(', ');
-    }
-
-    // English: Smith, J., Johnson, A., & Williams, B.
-    if (authors.length === 1) {
-      const a = authors[0]!;
-      const initial = a.given ? `${a.given.charAt(0)}.` : '';
-      return `${a.family}, ${initial}`;
-    }
-
-    const formatted = authors.map((a, i) => {
-      const initial = a.given ? `${a.given.charAt(0)}.` : '';
-      if (i === authors.length - 1) {
-        return `& ${a.family}, ${initial}`;
-      }
-      return `${a.family}, ${initial}`;
-    });
-
-    // Join with ", " for 3+ authors, or ", " for 2 authors
-    return formatted.join(', ').replace(', &', ', &');
-  }
-
-  private isJapaneseAuthors(authors: CSLAuthor[] | undefined): boolean {
-    if (!authors || authors.length === 0) {
-      return false;
-    }
-    // Check first author's family name for Japanese characters
-    return JAPANESE_PATTERN.test(authors[0]!.family);
-  }
-
-  private getFirstAuthorFamily(item: CSLItem): string {
-    return item.author?.[0]?.family || '';
-  }
-
-  private getYear(item: CSLItem): number {
-    const dateParts = item.issued?.['date-parts'];
-    if (dateParts && dateParts[0] && dateParts[0][0]) {
-      return dateParts[0][0];
-    }
-    return 0;
-  }
-
-  private getIdentifier(item: CSLItem): string | null {
-    if (item.PMID) {
-      return `PMID: ${item.PMID}`;
-    }
-    if (item.DOI) {
-      return `DOI: ${item.DOI}`;
-    }
-    return null;
   }
 }

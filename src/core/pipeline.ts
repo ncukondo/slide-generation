@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises';
-import { Parser, type ParsedPresentation } from './parser';
+import { Parser, type ParsedPresentation, type ParsedSlide } from './parser';
 import { Transformer } from './transformer';
 import { Renderer, type RenderOptions } from './renderer';
 import { TemplateEngine } from '../templates/engine';
@@ -9,6 +9,10 @@ import { IconResolver } from '../icons/resolver';
 import { ReferenceManager, type CSLItem } from '../references/manager';
 import { CitationExtractor } from '../references/extractor';
 import { CitationFormatter } from '../references/formatter';
+import {
+  BibliographyGenerator,
+  type BibliographyOptions,
+} from '../references/bibliography';
 import type { Config } from '../config/schema';
 
 /**
@@ -70,6 +74,7 @@ export class Pipeline {
   private referenceManager: ReferenceManager;
   private citationExtractor: CitationExtractor;
   private citationFormatter: CitationFormatter;
+  private bibliographyGenerator: BibliographyGenerator;
   private transformer: Transformer;
   private renderer: Renderer;
   private warnings: string[] = [];
@@ -99,6 +104,7 @@ export class Pipeline {
         },
       }
     );
+    this.bibliographyGenerator = new BibliographyGenerator(this.referenceManager);
     this.transformer = new Transformer(
       this.templateEngine,
       this.templateLoader,
@@ -116,13 +122,16 @@ export class Pipeline {
 
     try {
       // Stage 1: Parse Source
-      const presentation = await this.parseSource(inputPath);
+      let presentation = await this.parseSource(inputPath);
 
       // Stage 2: Collect Citations
       const citationIds = this.collectCitations(presentation);
 
       // Stage 3: Resolve References
       await this.resolveReferences(citationIds);
+
+      // Stage 3.5: Process Bibliography auto-generation
+      presentation = await this.processBibliography(presentation, citationIds);
 
       // Stage 4: Transform Slides
       const transformedSlides = await this.transformSlides(presentation);
@@ -159,13 +168,16 @@ export class Pipeline {
 
     try {
       // Stage 1: Parse Source
-      const presentation = await this.parseSource(inputPath);
+      let presentation = await this.parseSource(inputPath);
 
       // Stage 2: Collect Citations
       const citationIds = this.collectCitations(presentation);
 
       // Stage 3: Resolve References
       await this.resolveReferences(citationIds);
+
+      // Stage 3.5: Process Bibliography auto-generation
+      presentation = await this.processBibliography(presentation, citationIds);
 
       // Stage 4: Transform Slides
       const transformedSlides = await this.transformSlides(presentation);
@@ -260,6 +272,16 @@ export class Pipeline {
       return new Map();
     }
 
+    // Check if reference-manager CLI is available
+    const isAvailable = await this.referenceManager.isAvailable();
+    if (!isAvailable) {
+      this.warnings.push(
+        'reference-manager CLI is not available. ' +
+          'Install it to enable citation features: npm install -g @ncukondo/reference-manager'
+      );
+      return new Map();
+    }
+
     try {
       const items = await this.referenceManager.getByIds(ids);
 
@@ -321,5 +343,126 @@ export class Pipeline {
         error
       );
     }
+  }
+
+  /**
+   * Process bibliography slides with autoGenerate: true
+   * Populates references array from collected citations
+   */
+  private async processBibliography(
+    presentation: ParsedPresentation,
+    citationIds: string[]
+  ): Promise<ParsedPresentation> {
+    if (!this.config.references.enabled || citationIds.length === 0) {
+      return presentation;
+    }
+
+    // Check if any slides have autoGenerate: true
+    const hasBibliographyAutoGenerate = presentation.slides.some(
+      (slide) =>
+        slide.template === 'bibliography' &&
+        slide.content?.['autoGenerate'] === true
+    );
+
+    if (!hasBibliographyAutoGenerate) {
+      return presentation;
+    }
+
+    // Check if reference-manager CLI is available
+    const isAvailable = await this.referenceManager.isAvailable();
+    if (!isAvailable) {
+      // Warning already added in resolveReferences, just return
+      return presentation;
+    }
+
+    // Update bibliography slides
+    try {
+      const updatedSlides = await Promise.all(
+        presentation.slides.map(async (slide) => {
+          if (
+            slide.template === 'bibliography' &&
+            slide.content?.['autoGenerate'] === true
+          ) {
+            // Get sort option from slide content
+            const sort =
+              (slide.content['sort'] as BibliographyOptions['sort']) ||
+              'citation-order';
+
+            // Generate bibliography with the correct sort option directly
+            const result = await this.bibliographyGenerator.generate(
+              citationIds,
+              { sort }
+            );
+
+            // Warn about missing references
+            for (const id of result.missing) {
+              this.warnings.push(`Bibliography: reference not found: ${id}`);
+            }
+
+            // Convert CSL items to template-compatible format
+            const references = result.items.map((item) => ({
+              id: item.id,
+              authors: this.formatAuthorsForTemplate(item.author),
+              title: item.title || '',
+              year: this.getYear(item),
+              journal: item['container-title'],
+              volume: item.volume,
+              pages: item.page,
+              doi: item.DOI,
+              url: item.URL,
+            }));
+
+            return {
+              ...slide,
+              content: {
+                ...slide.content,
+                references,
+                _autoGenerated: true,
+                _generatedEntries: result.entries,
+              },
+            } as ParsedSlide;
+          }
+          return slide;
+        })
+      );
+
+      return {
+        ...presentation,
+        slides: updatedSlides,
+      };
+    } catch (error) {
+      // Non-fatal: log warning and return original presentation
+      this.warnings.push(
+        `Failed to auto-generate bibliography: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      return presentation;
+    }
+  }
+
+  /**
+   * Format authors for template-compatible format
+   */
+  private formatAuthorsForTemplate(
+    authors: CSLItem['author']
+  ): string[] | undefined {
+    if (!authors || authors.length === 0) {
+      return undefined;
+    }
+
+    return authors.map((a) => {
+      const initial = a.given ? `${a.given.charAt(0)}.` : '';
+      return initial ? `${a.family}, ${initial}` : a.family;
+    });
+  }
+
+  /**
+   * Get year from CSL item
+   */
+  private getYear(item: CSLItem): number | undefined {
+    const dateParts = item.issued?.['date-parts'];
+    if (dateParts && dateParts[0] && dateParts[0][0]) {
+      return dateParts[0][0];
+    }
+    return undefined;
   }
 }

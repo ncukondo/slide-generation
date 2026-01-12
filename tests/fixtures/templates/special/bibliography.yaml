@@ -55,18 +55,18 @@ schema:
       type: boolean
       default: false
       description: "プレゼンテーション内の引用から自動生成"
-    sortBy:
+    sort:
       type: string
       enum:
+        - citation-order
         - author
         - year
-        - title
-      default: author
+      default: citation-order
       description: "ソート順"
 
 example:
   title: "参考文献"
-  sortBy: author
+  sort: author
   references:
     - id: knuth1984
       authors:

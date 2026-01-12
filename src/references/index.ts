@@ -13,3 +13,17 @@ export {
   type MissingCitation,
   type CitationLocation,
 } from './validator';
+export {
+  BibliographyGenerator,
+  type BibliographyOptions,
+  type BibliographyResult,
+} from './bibliography';
+export {
+  JAPANESE_PATTERN,
+  isJapaneseAuthors,
+  getYear,
+  getIdentifier,
+  getFirstAuthorFamily,
+  formatAuthorsFull,
+  formatFullEntry,
+} from './utils';
