@@ -395,6 +395,25 @@ export async function executeSourcesStatus(
       }
     }
 
+    // References
+    const refs = await manager.getReferences();
+    if (refs.items.length > 0) {
+      output += '\n';
+      output += chalk.cyan('References:\n');
+      output += `  Required: ${refs.status?.required ?? 0}\n`;
+      output += `  Found: ${refs.status?.found ?? 0}\n`;
+      output += `  Pending: ${refs.status?.pending ?? 0}\n`;
+
+      const pendingRefs = refs.items.filter((i) => i.status === 'pending');
+      if (pendingRefs.length > 0) {
+        output += '\n';
+        output += chalk.yellow('  ⚠ Pending references:\n');
+        for (const ref of pendingRefs) {
+          output += `    - ${ref.id} (Slide ${ref.slide}): ${ref.purpose}\n`;
+        }
+      }
+    }
+
     // Last updated
     if (data.project.updated) {
       output += '\n';
