@@ -259,4 +259,145 @@ Internal product announcement.
     expect(data.context?.audience?.type).toBe('Engineers');
     expect(data.context?.key_messages).toEqual(['Message 1', 'Message 2']);
   });
+
+  describe('References Tracking', () => {
+    it('should track references in sources.yaml', async () => {
+      await executeSourcesInit(testDir, { name: 'References Test' });
+
+      const manager = new SourcesManager(testDir);
+
+      // Add pending reference
+      await manager.addPendingReference({
+        id: 'needed-study',
+        slide: 3,
+        purpose: 'Support accuracy claim',
+        requirement: 'required',
+        suggested_search: ['AI accuracy meta-analysis'],
+      });
+
+      // Add existing reference
+      await manager.markReferenceExisting({
+        id: 'smith2024',
+        slide: 5,
+        purpose: 'Background reference',
+      });
+
+      const refs = await manager.getReferences();
+      expect(refs.items).toHaveLength(2);
+      expect(refs.status?.required).toBe(1);
+      expect(refs.status?.pending).toBe(1);
+      expect(refs.status?.found).toBe(1);
+    });
+
+    it('should display references in status output', async () => {
+      await executeSourcesInit(testDir, { name: 'References Status Test' });
+
+      const manager = new SourcesManager(testDir);
+
+      await manager.addPendingReference({
+        id: 'pending-cost-study',
+        slide: 5,
+        purpose: 'Cost reduction evidence',
+        requirement: 'required',
+      });
+
+      await manager.markReferenceExisting({
+        id: 'jones2023',
+        slide: 3,
+        purpose: 'AI accuracy claim',
+      });
+
+      const result = await executeSourcesStatus(testDir, {});
+
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('References');
+      expect(result.output).toContain('Required: 1');
+      expect(result.output).toContain('Found: 1');
+      expect(result.output).toContain('Pending: 1');
+      expect(result.output).toContain('pending-cost-study');
+      expect(result.output).toContain('Slide 5');
+    });
+
+    it('should mark pending reference as added', async () => {
+      await executeSourcesInit(testDir, { name: 'Add Reference Test' });
+
+      const manager = new SourcesManager(testDir);
+
+      // Add pending reference
+      await manager.addPendingReference({
+        id: 'pending-ref',
+        slide: 3,
+        purpose: 'Need citation',
+      });
+
+      // Mark as added with actual citation key
+      await manager.markReferenceAdded('pending-ref', 'actual-citation-key');
+
+      const refs = await manager.getReferences();
+      const addedRef = refs.items.find((i) => i.id === 'actual-citation-key');
+
+      expect(addedRef).toBeDefined();
+      expect(addedRef?.status).toBe('added');
+      expect(addedRef?.added_date).toBeDefined();
+    });
+
+    it('should persist references across sessions', async () => {
+      await executeSourcesInit(testDir, { name: 'Persistence Test' });
+
+      // First session: add references
+      const manager1 = new SourcesManager(testDir);
+      await manager1.addPendingReference({
+        id: 'persistent-ref',
+        slide: 2,
+        purpose: 'Test persistence',
+      });
+
+      // Second session: verify references persist
+      const manager2 = new SourcesManager(testDir);
+      const refs = await manager2.getReferences();
+
+      expect(refs.items).toHaveLength(1);
+      expect(refs.items[0]?.id).toBe('persistent-ref');
+    });
+
+    it('should handle sources.yaml with references section', async () => {
+      // Initialize sources
+      await executeSourcesInit(testDir, { name: 'YAML References Test' });
+
+      // Manually write sources.yaml with references section
+      const yaml = `project:
+  name: YAML References Test
+  created: "2025-01-01"
+references:
+  status:
+    required: 2
+    found: 1
+    pending: 1
+  items:
+    - id: smith2024
+      status: existing
+      slide: 3
+      purpose: "AI accuracy claim"
+    - id: pending-cost-study
+      status: pending
+      slide: 5
+      purpose: "Cost reduction evidence"
+      requirement: required
+      suggested_search:
+        - "AI healthcare cost reduction"
+`;
+      await fs.writeFile(
+        path.join(testDir, 'sources', 'sources.yaml'),
+        yaml
+      );
+
+      // Load and verify
+      const manager = new SourcesManager(testDir);
+      const refs = await manager.getReferences();
+
+      expect(refs.items).toHaveLength(2);
+      expect(refs.items.find((i) => i.status === 'existing')?.id).toBe('smith2024');
+      expect(refs.items.find((i) => i.status === 'pending')?.id).toBe('pending-cost-study');
+    });
+  });
 });
