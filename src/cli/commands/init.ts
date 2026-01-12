@@ -184,6 +184,7 @@ export async function executeInit(
     }
     if (includeAiConfig) {
       console.log(`  ${chalk.cyan('.skills/')} - AgentSkills configuration`);
+      console.log(`  ${chalk.cyan('.claude/skills/')} - Claude Code skills`);
       console.log(`  ${chalk.cyan('CLAUDE.md')} - Claude Code configuration`);
       console.log(`  ${chalk.cyan('AGENTS.md')} - OpenCode configuration`);
       console.log(`  ${chalk.cyan('.cursorrules')} - Cursor configuration`);
@@ -479,26 +480,31 @@ async function generateAiConfig(targetDir: string): Promise<void> {
   // Create directories
   await mkdir(join(targetDir, '.skills', 'slide-assistant', 'references'), { recursive: true });
   await mkdir(join(targetDir, '.skills', 'slide-assistant', 'scripts'), { recursive: true });
+  await mkdir(join(targetDir, '.claude', 'skills', 'slide-assistant', 'references'), { recursive: true });
   await mkdir(join(targetDir, '.claude', 'commands'), { recursive: true });
   await mkdir(join(targetDir, '.opencode', 'agent'), { recursive: true });
 
-  // Generate AgentSkills (common)
-  await writeFileIfNotExists(
-    join(targetDir, '.skills', 'slide-assistant', 'SKILL.md'),
-    generateSkillMd()
-  );
-  await writeFileIfNotExists(
-    join(targetDir, '.skills', 'slide-assistant', 'references', 'templates.md'),
-    generateTemplatesRef()
-  );
-  await writeFileIfNotExists(
-    join(targetDir, '.skills', 'slide-assistant', 'references', 'workflows.md'),
-    generateWorkflowsRef()
-  );
-  await writeFileIfNotExists(
-    join(targetDir, '.skills', 'slide-assistant', 'references', 'skill.md'),
-    generateReferenceSkillMd()
-  );
+  // Generate AgentSkills (common) - both .skills/ and .claude/skills/
+  const skillDirs = [
+    join(targetDir, '.skills', 'slide-assistant'),
+    join(targetDir, '.claude', 'skills', 'slide-assistant'),
+  ];
+
+  for (const skillDir of skillDirs) {
+    await writeFileIfNotExists(join(skillDir, 'SKILL.md'), generateSkillMd());
+    await writeFileIfNotExists(
+      join(skillDir, 'references', 'templates.md'),
+      generateTemplatesRef()
+    );
+    await writeFileIfNotExists(
+      join(skillDir, 'references', 'workflows.md'),
+      generateWorkflowsRef()
+    );
+    await writeFileIfNotExists(
+      join(skillDir, 'references', 'skill.md'),
+      generateReferenceSkillMd()
+    );
+  }
 
   // Generate Claude Code files
   await writeFileIfNotExists(join(targetDir, 'CLAUDE.md'), generateClaudeMd());
