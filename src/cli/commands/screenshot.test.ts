@@ -388,7 +388,7 @@ describe('contact sheet generation', () => {
     // Verify the contact sheet was created
     const { access } = await import('fs/promises');
     await expect(access(join(outputDir, 'contact.png'))).resolves.toBeUndefined();
-  });
+  }, 15000); // Extended timeout for Windows where sharp can be slow
 });
 
 describe('AI-friendly output', () => {
