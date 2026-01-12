@@ -6,4 +6,10 @@ export {
   type CSLAuthor,
 } from './manager';
 export { CitationFormatter, type FormatterConfig } from './formatter';
-export { ReferenceValidator, type ValidationResult } from './validator';
+export {
+  ReferenceValidator,
+  type ValidationResult,
+  type DetailedValidationResult,
+  type MissingCitation,
+  type CitationLocation,
+} from './validator';

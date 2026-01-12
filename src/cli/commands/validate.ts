@@ -394,7 +394,9 @@ async function executeValidate(
     if (config.references?.enabled && citationIds.length > 0) {
       const refManager = new ReferenceManager();
       const refValidator = new ReferenceValidator(refManager);
-      const refValidationResult = await refValidator.validateCitations(citationIds);
+      const refValidationResult = await refValidator.validateWithLocations(
+        presentation.slides
+      );
 
       if (refValidationResult.skipped) {
         result.warnings.push(
@@ -405,14 +407,25 @@ async function executeValidate(
         result.stats.missingReferences = refValidationResult.missing;
 
         if (!refValidationResult.valid) {
-          for (const missingId of refValidationResult.missing) {
-            result.warnings.push(`Citation not found in library: @${missingId}`);
-            result.structuredErrors.push({
-              slide: 0, // Will be updated with location info in Step 3
-              template: 'unknown',
-              message: `Citation not found in library: @${missingId}`,
-              errorType: 'missing_reference',
-            });
+          for (const missingDetail of refValidationResult.missingDetails) {
+            // Report each location where the missing citation is used
+            for (const location of missingDetail.locations) {
+              const slideLine = result.slideLines[location.slide - 1];
+              result.warnings.push(
+                `Citation not found in library: @${missingDetail.id} (Slide ${location.slide})`
+              );
+              const structuredError: StructuredValidationError = {
+                slide: location.slide,
+                template:
+                  presentation.slides[location.slide - 1]?.template || 'unknown',
+                message: `Citation not found in library: @${missingDetail.id}`,
+                errorType: 'missing_reference',
+              };
+              if (slideLine !== undefined) {
+                structuredError.line = slideLine;
+              }
+              result.structuredErrors.push(structuredError);
+            }
           }
         }
       }
