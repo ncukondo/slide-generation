@@ -122,6 +122,46 @@ export const missingItemSchema = z.object({
 export type MissingItem = z.infer<typeof missingItemSchema>;
 
 /**
+ * Reference item schema
+ * Tracks individual reference/citation items in the presentation
+ */
+export const referenceItemSchema = z.object({
+  id: z.string(),
+  status: z.enum(['pending', 'added', 'existing']),
+  slide: z.number(),
+  purpose: z.string(),
+  requirement: z.enum(['required', 'recommended']).optional(),
+  added_date: z.string().optional(),
+  suggested_search: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+});
+
+export type ReferenceItem = z.infer<typeof referenceItemSchema>;
+
+/**
+ * References status schema
+ * Summary of reference tracking status
+ */
+export const referencesStatusSchema = z.object({
+  required: z.number().default(0),
+  found: z.number().default(0),
+  pending: z.number().default(0),
+});
+
+export type ReferencesStatus = z.infer<typeof referencesStatusSchema>;
+
+/**
+ * References section schema
+ * Contains all reference tracking information
+ */
+export const referencesSectionSchema = z.object({
+  status: referencesStatusSchema.optional(),
+  items: z.array(referenceItemSchema).default([]),
+});
+
+export type ReferencesSection = z.infer<typeof referencesSectionSchema>;
+
+/**
  * Sources YAML schema
  * The main schema for sources.yaml file
  */
@@ -131,6 +171,7 @@ export const sourcesYamlSchema = z.object({
   sources: z.array(sourceEntrySchema).optional(),
   dependencies: z.record(dependencySchema).optional(),
   missing: z.array(missingItemSchema).optional(),
+  references: referencesSectionSchema.optional(),
 });
 
 export type SourcesYaml = z.infer<typeof sourcesYamlSchema>;

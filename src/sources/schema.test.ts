@@ -4,6 +4,9 @@ import {
   sourcesYamlSchema,
   sourceTypeSchema,
   sourceStatusSchema,
+  referenceItemSchema,
+  referencesSectionSchema,
+  type ReferenceItem,
 } from './schema.js';
 
 describe('Sources Schema', () => {
@@ -168,6 +171,119 @@ describe('Sources Schema', () => {
       };
       const result = sourcesYamlSchema.safeParse(data);
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('sources.yaml references schema', () => {
+    it('should accept references section', () => {
+      const sources = {
+        project: {
+          name: 'Test',
+          created: '2025-01-01',
+        },
+        references: {
+          status: {
+            required: 3,
+            found: 2,
+            pending: 1,
+          },
+          items: [
+            {
+              id: 'smith2024',
+              status: 'added',
+              slide: 3,
+              purpose: 'Support accuracy claim',
+              added_date: '2025-01-10',
+            },
+            {
+              id: 'pending-study',
+              status: 'pending',
+              slide: 5,
+              purpose: 'Cost reduction evidence',
+              requirement: 'required',
+              suggested_search: ['cost reduction AI healthcare'],
+            },
+          ],
+        },
+      };
+
+      const result = sourcesYamlSchema.safeParse(sources);
+      expect(result.success).toBe(true);
+    });
+
+    it('should validate reference item status', () => {
+      const item: ReferenceItem = {
+        id: 'test2024',
+        status: 'pending',
+        slide: 1,
+        purpose: 'Test',
+      };
+
+      expect(['pending', 'added', 'existing']).toContain(item.status);
+    });
+
+    it('should require slide and purpose for each item', () => {
+      const invalidItem = {
+        id: 'test2024',
+        status: 'pending',
+        // missing slide and purpose
+      };
+
+      const result = referenceItemSchema.safeParse(invalidItem);
+      expect(result.success).toBe(false);
+    });
+
+    it('should accept valid reference item with all fields', () => {
+      const item = {
+        id: 'smith2024',
+        status: 'added',
+        slide: 3,
+        purpose: 'Support accuracy claim',
+        requirement: 'required',
+        added_date: '2025-01-10',
+        suggested_search: ['AI accuracy meta-analysis'],
+        notes: 'Found in IEEE database',
+      };
+
+      const result = referenceItemSchema.safeParse(item);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject invalid status value', () => {
+      const item = {
+        id: 'test2024',
+        status: 'invalid',
+        slide: 1,
+        purpose: 'Test',
+      };
+
+      const result = referenceItemSchema.safeParse(item);
+      expect(result.success).toBe(false);
+    });
+
+    it('should accept references section with empty items', () => {
+      const section = {
+        items: [],
+      };
+
+      const result = referencesSectionSchema.safeParse(section);
+      expect(result.success).toBe(true);
+    });
+
+    it('should accept references section without status', () => {
+      const section = {
+        items: [
+          {
+            id: 'test2024',
+            status: 'pending',
+            slide: 1,
+            purpose: 'Test',
+          },
+        ],
+      };
+
+      const result = referencesSectionSchema.safeParse(section);
+      expect(result.success).toBe(true);
     });
   });
 });
