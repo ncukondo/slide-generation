@@ -143,8 +143,10 @@ describe('ReferenceManager', () => {
 
   describe('getByIds', () => {
     it('should return a map of references by IDs', async () => {
+      // ref export returns only the requested items
+      const requestedItems = [mockCSLItems[0], mockCSLItems[1]];
       mockExec.mockImplementation(((_cmd, callback) => {
-        (callback as ExecCallback)(null, JSON.stringify(mockCSLItems), '');
+        (callback as ExecCallback)(null, JSON.stringify(requestedItems), '');
       }) as typeof exec);
 
       const items = await manager.getByIds(['smith2024', 'tanaka2023']);
@@ -153,15 +155,21 @@ describe('ReferenceManager', () => {
       expect(items.get('smith2024')?.id).toBe('smith2024');
       expect(items.get('tanaka2023')?.id).toBe('tanaka2023');
       expect(items.has('johnson2022')).toBe(false);
+      expect(mockExec).toHaveBeenCalledWith(
+        'ref export "smith2024" "tanaka2023"',
+        expect.any(Function)
+      );
     });
 
     it('should return empty map for empty IDs array', async () => {
       const items = await manager.getByIds([]);
 
       expect(items.size).toBe(0);
+      expect(mockExec).not.toHaveBeenCalled();
     });
 
     it('should handle partial matches', async () => {
+      // ref export returns only found items
       mockExec.mockImplementation(((_cmd, callback) => {
         (callback as ExecCallback)(
           null,
