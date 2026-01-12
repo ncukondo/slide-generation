@@ -7,7 +7,18 @@
 1. タスクファイルを `spec/tasks/` に作成
 2. ROADMAP.md にリンクを追加
 3. TDDサイクルに従って実装
-4. 完了後、タスクファイルを `completed/` に移動
+4. PRを作成（worktreeでの作業はここまで）
+5. マージ後、mainブランチで:
+   - ROADMAP.md の状態を「Done」に更新
+   - タスクファイルを `completed/` に移動
+
+### 並列作業時の注意
+
+複数のworktreeで並列作業する場合、ROADMAP.mdやタスクファイル移動でのconflictを避けるため:
+
+- **worktree内での作業範囲**: 実装とPR作成まで
+- **mainブランチでの作業**: マージ後にROADMAP更新とcompletedへの移動を実施
+- マージ順序に注意し、先にマージされたものから順次更新
 
 ## Phase 1: Foundation（基盤）
 
@@ -80,7 +91,7 @@ AI エージェントと協働して学術文献を管理・引用するため�
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 30 | [Validate References](./30-validate-references.md) | 08, 12 | Pending |
+| 30 | [Validate References](./completed/30-validate-references.md) | 08, 12 | Done |
 | 31 | [Bibliography Auto-Generation](./31-bibliography-auto-generation.md) | 08, 10, 20 | Pending |
 | 32 | [AI Reference Skills](./32-ai-reference-skills.md) | 22, 30 | Pending |
 | 33 | [Sources References Tracking](./33-sources-references-tracking.md) | 27, 30 | Pending |
@@ -109,9 +120,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 34
-- **Completed**: 29
+- **Completed**: 30
 - **In Progress**: 0
-- **Pending**: 5
+- **Pending**: 4
 
 ## Architecture Overview
 
