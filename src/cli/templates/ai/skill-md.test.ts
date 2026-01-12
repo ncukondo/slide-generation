@@ -30,4 +30,26 @@ describe('generateSkillMd', () => {
     const content = generateSkillMd();
     expect(content).toContain('references/workflows.md');
   });
+
+  it('should include reference management section', () => {
+    const content = generateSkillMd();
+
+    expect(content).toContain('Reference Management');
+    expect(content).toContain('ref search');
+    expect(content).toContain('ref add');
+    expect(content).toContain('slide-gen validate');
+  });
+
+  it('should include quick commands for references', () => {
+    const content = generateSkillMd();
+
+    expect(content).toContain('pmid:');
+    expect(content).toContain('DOI');
+  });
+
+  it('should reference the detailed skill file', () => {
+    const content = generateSkillMd();
+
+    expect(content).toContain('.skills/slide-assistant/references/skill.md');
+  });
 });

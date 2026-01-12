@@ -156,5 +156,32 @@ The \`validate --format llm\` command provides:
 - Error locations with line numbers
 - Fix examples from template definitions
 - Contextual hints for unknown templates/icons
+
+## Reference Management
+
+For academic presentations, manage citations and references:
+
+1. **Analyze** content for citation needs
+2. **Search** existing library: \`ref search\`
+3. **Add** new references: \`ref add pmid:XXX\`
+4. **Validate** citations: \`slide-gen validate\`
+
+See \`.skills/slide-assistant/references/skill.md\` for detailed workflow.
+
+### Quick Commands
+
+\`\`\`bash
+# Search library
+ref search "keyword" --format json
+
+# Add from PMID
+ref add pmid:38941256
+
+# Add from DOI
+ref add "10.1038/xxxxx"
+
+# Validate citations
+slide-gen validate presentation.yaml
+\`\`\`
 `;
 }
