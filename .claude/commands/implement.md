@@ -33,14 +33,22 @@ spec/tasks/ROADMAP.mdを確認し、次に実装すべきタスクを特定し�
 3. 各ステップ完了後にcommit
 4. 次の作業に移る前に残りのcontextを確認し、次のステップ完了までにcompactが必要になりそうなら作業を中断
 
-### 4. 完了処理
+### 4. 完了処理（worktree内）
 
 1. `pnpm test` で全テストが通ることを確認
 2. `pnpm lint && pnpm typecheck` でエラーがないことを確認
 3. E2Eテストを実施
-4. PRを作成、またはmainにマージ
-5. ROADMAP.mdの状態を「Done」に更新
-6. worktreeを削除:
+4. PRを作成（**worktreeでの作業はここまで**）
+
+### 5. マージ後処理（mainブランチで実施）
+
+並列作業時のconflictを避けるため、以下はマージ後にmainブランチで実施:
+
+1. mainブランチに移動し、pullして最新化
+2. ROADMAP.mdの状態を「Done」に更新
+3. タスクファイルを `completed/` に移動
+4. 変更をcommit & push
+5. worktreeを削除:
    ```bash
    git worktree remove ../slide-generation-task-XX
    ```
