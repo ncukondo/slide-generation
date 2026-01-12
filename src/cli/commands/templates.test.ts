@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { Command } from 'commander';
-import { createTemplatesCommand, formatTemplateList, formatTemplateInfo, formatTemplateExample } from './templates';
+import {
+  createTemplatesCommand,
+  formatTemplateList,
+  formatTemplateInfo,
+  formatTemplateExample,
+  type TemplateScreenshotOptions,
+} from './templates';
 import type { TemplateDefinition } from '../../templates';
 
 describe('templates command', () => {
@@ -265,6 +271,83 @@ describe('templates command', () => {
     it('should be properly formatted as slide YAML', () => {
       const output = formatTemplateExample(template);
       expect(output).toMatch(/^- template: /m);
+    });
+  });
+
+  describe('templates screenshot', () => {
+    describe('TemplateScreenshotOptions', () => {
+      it('should have required properties', () => {
+        const options: TemplateScreenshotOptions = {
+          all: false,
+          output: './template-screenshots',
+          format: 'png',
+          width: 1280,
+        };
+        expect(options).toBeDefined();
+        expect(options.all).toBe(false);
+        expect(options.output).toBe('./template-screenshots');
+        expect(options.format).toBe('png');
+        expect(options.width).toBe(1280);
+      });
+
+      it('should support all format options', () => {
+        const pngOptions: TemplateScreenshotOptions = { format: 'png' };
+        const jpegOptions: TemplateScreenshotOptions = { format: 'jpeg' };
+        const aiOptions: TemplateScreenshotOptions = { format: 'ai' };
+
+        expect(pngOptions.format).toBe('png');
+        expect(jpegOptions.format).toBe('jpeg');
+        expect(aiOptions.format).toBe('ai');
+      });
+
+      it('should support contact sheet options', () => {
+        const options: TemplateScreenshotOptions = {
+          contactSheet: true,
+          columns: 4,
+        };
+        expect(options.contactSheet).toBe(true);
+        expect(options.columns).toBe(4);
+      });
+    });
+
+    describe('createTemplatesCommand with screenshot', () => {
+      it('should include screenshot subcommand', () => {
+        const cmd = createTemplatesCommand();
+        const subcommands = cmd.commands.map((c: Command) => c.name());
+        expect(subcommands).toContain('screenshot');
+      });
+
+      it('screenshot should have --all option', () => {
+        const cmd = createTemplatesCommand();
+        const screenshotCmd = cmd.commands.find((c: Command) => c.name() === 'screenshot');
+        expect(screenshotCmd).toBeDefined();
+        const allOption = screenshotCmd?.options.find((o) => o.long === '--all');
+        expect(allOption).toBeDefined();
+      });
+
+      it('screenshot should have --contact-sheet option', () => {
+        const cmd = createTemplatesCommand();
+        const screenshotCmd = cmd.commands.find((c: Command) => c.name() === 'screenshot');
+        expect(screenshotCmd).toBeDefined();
+        const contactOption = screenshotCmd?.options.find((o) => o.long === '--contact-sheet');
+        expect(contactOption).toBeDefined();
+      });
+
+      it('screenshot should have --format option', () => {
+        const cmd = createTemplatesCommand();
+        const screenshotCmd = cmd.commands.find((c: Command) => c.name() === 'screenshot');
+        expect(screenshotCmd).toBeDefined();
+        const formatOption = screenshotCmd?.options.find((o) => o.long === '--format');
+        expect(formatOption).toBeDefined();
+      });
+
+      it('screenshot should have --category option', () => {
+        const cmd = createTemplatesCommand();
+        const screenshotCmd = cmd.commands.find((c: Command) => c.name() === 'screenshot');
+        expect(screenshotCmd).toBeDefined();
+        const categoryOption = screenshotCmd?.options.find((o) => o.long === '--category');
+        expect(categoryOption).toBeDefined();
+      });
     });
   });
 });

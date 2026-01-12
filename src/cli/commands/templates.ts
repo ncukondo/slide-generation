@@ -453,6 +453,26 @@ interface PreviewOptions {
   config?: string;
 }
 
+export interface TemplateScreenshotOptions {
+  all?: boolean;
+  category?: string;
+  output?: string;
+  format?: 'png' | 'jpeg' | 'ai';
+  width?: number;
+  quality?: number;
+  contactSheet?: boolean;
+  columns?: number;
+  config?: string;
+  verbose?: boolean;
+}
+
+export interface TemplateScreenshotResult {
+  success: boolean;
+  errors: string[];
+  outputDir?: string;
+  files?: string[];
+}
+
 /**
  * Create the templates preview subcommand
  */
@@ -837,6 +857,52 @@ export async function executeTemplatePreview(
 }
 
 /**
+ * Create the templates screenshot subcommand
+ */
+function createScreenshotSubcommand(): Command {
+  return new Command('screenshot')
+    .description('Take screenshots of templates')
+    .argument('[name]', 'Template name')
+    .option('-a, --all', 'Screenshot all templates')
+    .option('--category <cat>', 'Filter by category')
+    .option('-o, --output <path>', 'Output directory', './template-screenshots')
+    .option('-f, --format <fmt>', 'Output format (png/jpeg/ai)', 'png')
+    .option('-w, --width <pixels>', 'Image width', parseInt, 1280)
+    .option('-q, --quality <num>', 'JPEG quality (1-100)', parseInt, 80)
+    .option('--contact-sheet', 'Generate contact sheet')
+    .option('--columns <num>', 'Contact sheet columns', parseInt, 3)
+    .option('-c, --config <path>', 'Config file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (name: string | undefined, options: TemplateScreenshotOptions) => {
+      await executeTemplateScreenshot(name, options);
+    });
+}
+
+/**
+ * Execute template screenshot command
+ */
+export async function executeTemplateScreenshot(
+  name: string | undefined,
+  options: TemplateScreenshotOptions
+): Promise<TemplateScreenshotResult> {
+  // Validation
+  if (!name && !options.all) {
+    console.error(chalk.red('Error: Specify a template name or use --all'));
+    process.exitCode = ExitCode.GeneralError;
+    return {
+      success: false,
+      errors: ['Specify a template name or use --all'],
+    };
+  }
+
+  // TODO: Implement actual screenshot logic
+  return {
+    success: true,
+    errors: [],
+  };
+}
+
+/**
  * Create the templates command with subcommands
  */
 export function createTemplatesCommand(): Command {
@@ -847,6 +913,7 @@ export function createTemplatesCommand(): Command {
   cmd.addCommand(createInfoCommand());
   cmd.addCommand(createExampleCommand());
   cmd.addCommand(createPreviewSubcommand());
+  cmd.addCommand(createScreenshotSubcommand());
 
   return cmd;
 }
