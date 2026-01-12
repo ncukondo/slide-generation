@@ -9,6 +9,7 @@ import { TemplateLoader } from '../../templates/loader';
 import { IconRegistryLoader } from '../../icons/registry';
 import { ConfigLoader } from '../../config/loader';
 import { ExitCode } from './convert';
+import { ReferenceManager, ReferenceValidator, CitationExtractor } from '../../references';
 
 /**
  * Validation result structure
@@ -26,6 +27,8 @@ interface ValidationResult {
     templatesFound: boolean;
     iconsResolved: boolean;
     referencesCount: number;
+    referencesValidated: boolean;
+    missingReferences: string[];
   };
 }
 
@@ -44,7 +47,7 @@ export interface StructuredValidationError {
   template: string;
   field?: string;
   message: string;
-  errorType: 'missing_field' | 'invalid_type' | 'unknown_template' | 'unknown_icon' | 'schema_error';
+  errorType: 'missing_field' | 'invalid_type' | 'unknown_template' | 'unknown_icon' | 'schema_error' | 'missing_reference';
   fixExample?: string;
 }
 
@@ -57,6 +60,8 @@ export function getHintForErrorType(errorType: string): string | null {
       return 'Run `slide-gen templates list --format llm` to see available templates.';
     case 'unknown_icon':
       return 'Run `slide-gen icons search <query>` to find icons.';
+    case 'missing_reference':
+      return 'Run `ref add --pmid <pmid>` or `ref add "<doi>"` to add the reference.';
     default:
       return null;
   }
@@ -163,6 +168,8 @@ async function executeValidate(
       templatesFound: false,
       iconsResolved: false,
       referencesCount: 0,
+      referencesValidated: false,
+      missingReferences: [],
     },
   };
 
@@ -377,16 +384,39 @@ async function executeValidate(
       }
     }
 
-    // Step 5: Reference validation
-    const citationPattern = /@([a-zA-Z0-9_-]+)/g;
-    const references: Set<string> = new Set();
-    for (const slide of presentation.slides) {
-      const contentStr = JSON.stringify(slide.content);
-      for (const match of contentStr.matchAll(citationPattern)) {
-        references.add(match[1]!);
+    // Step 5: Reference extraction
+    const citationExtractor = new CitationExtractor();
+    const extractedCitations = citationExtractor.extractFromPresentation(presentation);
+    const citationIds = citationExtractor.getUniqueIds(extractedCitations);
+    result.stats.referencesCount = citationIds.length;
+
+    // Step 6: Reference validation against reference-manager
+    if (config.references?.enabled && citationIds.length > 0) {
+      const refManager = new ReferenceManager();
+      const refValidator = new ReferenceValidator(refManager);
+      const refValidationResult = await refValidator.validateCitations(citationIds);
+
+      if (refValidationResult.skipped) {
+        result.warnings.push(
+          `Reference validation skipped: ${refValidationResult.reason}`
+        );
+      } else {
+        result.stats.referencesValidated = true;
+        result.stats.missingReferences = refValidationResult.missing;
+
+        if (!refValidationResult.valid) {
+          for (const missingId of refValidationResult.missing) {
+            result.warnings.push(`Citation not found in library: @${missingId}`);
+            result.structuredErrors.push({
+              slide: 0, // Will be updated with location info in Step 3
+              template: 'unknown',
+              message: `Citation not found in library: @${missingId}`,
+              errorType: 'missing_reference',
+            });
+          }
+        }
       }
     }
-    result.stats.referencesCount = references.size;
 
     // Final validation result
     if (result.errors.length > 0) {
@@ -434,7 +464,16 @@ function outputResult(result: ValidationResult, options: ValidateOptions): void 
           valid: result.valid,
           errors: result.errors,
           warnings: result.warnings,
-          stats: result.stats,
+          stats: {
+            yamlSyntax: result.stats.yamlSyntax,
+            metaValid: result.stats.metaValid,
+            slideCount: result.stats.slideCount,
+            templatesFound: result.stats.templatesFound,
+            iconsResolved: result.stats.iconsResolved,
+            referencesCount: result.stats.referencesCount,
+            referencesValidated: result.stats.referencesValidated,
+            missingReferences: result.stats.missingReferences,
+          },
         },
         null,
         2
@@ -481,6 +520,17 @@ function outputResult(result: ValidationResult, options: ValidateOptions): void 
 
   if (result.stats.referencesCount > 0) {
     console.log(chalk.green('✓') + ` ${result.stats.referencesCount} references found`);
+  }
+
+  if (result.stats.referencesValidated) {
+    if (result.stats.missingReferences.length === 0) {
+      console.log(chalk.green('✓') + ' All references validated');
+    } else {
+      console.log(
+        chalk.yellow('⚠') +
+          ` ${result.stats.missingReferences.length} reference(s) not found in library`
+      );
+    }
   }
 
   // Errors
