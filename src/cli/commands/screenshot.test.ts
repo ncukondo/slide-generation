@@ -113,7 +113,8 @@ describe('screenshot command - marp integration', () => {
 
     // Args should contain exact paths without escaping (execFileSync handles this)
     expect(args).toContain('/path/with spaces/slides.md');
-    expect(args).toContain('/output dir');
+    // Output path is now "dir/basename" format (Marp CLI -o is a file path, not directory)
+    expect(args).toContain(join('/output dir', 'slides'));
   });
 });
 

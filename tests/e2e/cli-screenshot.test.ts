@@ -95,7 +95,8 @@ references:
       expect(args).toContain('--images');
       expect(args).toContain('png');
       expect(args).toContain('-o');
-      expect(args).toContain('/output');
+      // Output path is "dir/basename" format (Marp CLI -o is a file path, not directory)
+      expect(args).toContain(join('/output', 'slides'));
     });
 
     it('should build correct marp command args for jpeg', () => {
@@ -128,7 +129,8 @@ references:
         format: 'png',
       });
       expect(args).toContain('/path/with spaces/slides.md');
-      expect(args).toContain('/output dir');
+      // Output path is "dir/basename" format (Marp CLI -o is a file path, not directory)
+      expect(args).toContain(join('/output dir', 'slides'));
     });
   });
 

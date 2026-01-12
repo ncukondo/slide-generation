@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { access, mkdir, readdir, unlink } from 'fs/promises';
-import { basename, dirname, join } from 'path';
+import { basename, dirname, extname, join } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import sharp from 'sharp';
@@ -272,6 +272,10 @@ export function formatAiOutput(options: AiOutputOptions): string {
 /**
  * Build marp-cli command arguments for taking screenshots
  * Returns an array of arguments (without the 'marp' command itself)
+ *
+ * Note: Marp CLI's -o option is interpreted as a file path (not directory)
+ * unless --input-dir is used. We construct the output as "dir/basename"
+ * so Marp generates "dir/basename.001.png", "dir/basename.002.png", etc.
  */
 export function buildMarpCommandArgs(
   markdownPath: string,
@@ -297,7 +301,12 @@ export function buildMarpCommandArgs(
     args.push('--jpeg-quality', String(quality));
   }
 
-  args.push('-o', outputDir);
+  // Marp CLI's -o option is a file path, not a directory
+  // Construct output path as "outputDir/basename" (without extension)
+  // Marp will generate "outputDir/basename.001.png", etc.
+  const mdBaseName = basename(markdownPath, extname(markdownPath));
+  const outputPath = join(outputDir, mdBaseName);
+  args.push('-o', outputPath);
   args.push(markdownPath);
 
   return args;
