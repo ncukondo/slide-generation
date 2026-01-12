@@ -212,7 +212,7 @@ export function buildMarpCommand(
   markdownPath: string,
   options: PreviewOptions
 ): string {
-  const parts = ['marp', '--preview'];
+  const parts = ['marp', '--preview', '--no-stdin'];
 
   if (options.port) {
     parts.push('-p', String(options.port));
@@ -632,7 +632,7 @@ export async function executePreview(
     console.log(`Running: ${marpCommand}`);
   }
 
-  const marpProcess = spawnMarp(['--preview', '-p', String(port), tempMarkdownPath], {
+  const marpProcess = spawnMarp(['--preview', '--no-stdin', '-p', String(port), tempMarkdownPath], {
     projectDir: dirname(inputPath),
     stdio: 'inherit',
   });

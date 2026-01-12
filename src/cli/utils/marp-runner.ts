@@ -8,7 +8,7 @@
  */
 
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve, dirname } from 'path';
 import {
   execFileSync,
   spawn,
@@ -29,18 +29,28 @@ export interface MarpSpawnOptions extends SpawnOptions {
 
 /**
  * Get the marp command path
- * Priority: local install > global install
+ * Priority: local install (walking up directory tree) > global install
  *
- * @param projectDir - Directory to search for local marp installation
+ * @param projectDir - Directory to start searching for local marp installation
  * @returns Path to marp command, or null if not found
  */
 export function getMarpCommand(projectDir?: string): string | null {
-  const dir = projectDir ?? process.cwd();
+  const startDir = resolve(projectDir ?? process.cwd());
 
-  // Check local install first (fastest)
-  const localMarp = join(dir, 'node_modules', '.bin', 'marp');
-  if (existsSync(localMarp)) {
-    return localMarp;
+  // Walk up directory tree looking for node_modules/.bin/marp
+  let currentDir = startDir;
+  while (true) {
+    const localMarp = join(currentDir, 'node_modules', '.bin', 'marp');
+    if (existsSync(localMarp)) {
+      return localMarp;
+    }
+
+    const parentDir = dirname(currentDir);
+    if (parentDir === currentDir) {
+      // Reached filesystem root
+      break;
+    }
+    currentDir = parentDir;
   }
 
   // Check global install
