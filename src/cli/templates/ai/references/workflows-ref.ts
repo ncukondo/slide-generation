@@ -5,31 +5,72 @@
 export function generateWorkflowsRef(): string {
   return `# Workflow Reference
 
+## Entry Point
+
+**Always start by asking this question:**
+
+> "Let's create slides. What materials do you have?
+>
+> A) I have detailed materials organized in a directory
+>    (scenarios, scripts, data files, images, etc.)
+>
+> B) I have partial materials like a scenario or script
+>    (but need to supplement with additional info)
+>
+> C) I don't have materials yet
+>    (starting from scratch, will collect info through dialogue)"
+
+Based on the answer, follow the appropriate pattern below.
+
 ## Source Collection Flow
 
-### Pattern A: Directory Exploration
-When user has materials in a directory:
-1. Ask for directory path
-2. Scan with Glob tool
-3. Read and classify files
-4. Summarize and confirm with user
-5. Create sources/sources.yaml
+### Pattern A: Explore Mode (Detailed Materials Exist)
 
-### Pattern B: Supplement Mode
-When user has partial materials:
-1. Read provided file/text
-2. Analyze content
-3. Identify missing information
-4. Ask supplementary questions
-5. Create sources/sources.yaml
+When user has materials organized in a directory:
 
-### Pattern C: Interview Mode
+1. **Ask for the directory path**
+2. **Scan directory structure** with Glob tool
+3. **Read and analyze each file**
+4. **Classify files** into categories:
+   - Scenario/scripts
+   - Data files (CSV, JSON, etc.)
+   - Images and diagrams
+   - Reference documents
+5. **Summarize findings** and confirm with user
+6. **Ask clarifying questions** about gaps
+7. **Configure \`sources/\` directory** with organized materials
+8. Proceed to slide creation
+
+### Pattern B: Supplement Mode (Partial Materials)
+
+When user has only a scenario or partial materials:
+
+1. **Ask user** to provide the file path or paste content
+2. **Analyze the content** thoroughly
+3. **Identify what information is present** vs. missing
+4. **Ask targeted questions** to fill gaps:
+   - Purpose and audience
+   - Duration and format
+   - Key messages
+   - Available data/examples
+5. **Load any additional files** user mentions
+6. **Configure \`sources/\` directory**
+7. Proceed to slide creation
+
+### Pattern C: Interview Mode (Starting from Scratch)
+
 When user has no materials:
-1. Ask basic questions (purpose, audience, duration)
-2. Deep-dive based on purpose
-3. Propose slide structure
-4. Iterate based on feedback
-5. Create sources/sources.yaml
+
+1. **Ask basic questions**:
+   - "What is this presentation about?"
+   - "Who is the audience?"
+   - "How long is the presentation?"
+2. **Ask purpose-specific questions** (proposal, report, introduction, etc.)
+3. **Collect data and examples** user can provide
+4. **Propose slide structure** for approval
+5. **Incorporate feedback**
+6. **Configure \`sources/\` directory** from conversation
+7. Proceed to slide creation
 
 ## Slide Creation Flow
 
