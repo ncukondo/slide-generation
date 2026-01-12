@@ -357,3 +357,30 @@ Example:
       - { label: "Check", icon: "analysis", color: "#FF9800" }
       - { label: "Act", icon: "improvement", color: "#9C27B0" }
 ```
+
+## Template Screenshots
+
+Visual reference images of templates can be generated via CLI:
+
+```bash
+# Screenshot a specific template
+slide-gen templates screenshot cycle-diagram
+
+# Screenshot all templates
+slide-gen templates screenshot --all
+
+# AI-optimized screenshots (smaller, token-efficient)
+slide-gen templates screenshot --all --format ai
+
+# Generate contact sheet (gallery overview)
+slide-gen templates screenshot --all --contact-sheet --columns 4
+```
+
+### Use Cases
+
+1. **Documentation**: Generate visual catalog of available templates
+2. **AI Training**: Provide visual context for AI assistants selecting templates
+3. **Template Selection**: Quick visual comparison before writing YAML
+4. **Quality Assurance**: Verify template rendering with example data
+
+See [cli.md](./cli.md#screenshot-1) for detailed options and examples.

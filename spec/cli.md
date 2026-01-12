@@ -297,6 +297,106 @@ slide-gen templates preview --category diagrams
 
 Displays slide images generated with sample data along with template description and parameter information in the browser.
 
+#### screenshot
+
+Takes screenshots of templates and saves as image files.
+
+```bash
+slide-gen templates screenshot [name] [options]
+```
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--all` | `-a` | Screenshot all templates | |
+| `--category <cat>` | | Filter by category | |
+| `--output <path>` | `-o` | Output directory | `./template-screenshots` |
+| `--format <fmt>` | `-f` | Output format (png/jpeg/ai) | `png` |
+| `--width <pixels>` | `-w` | Image width | `1280` |
+| `--quality <num>` | `-q` | JPEG quality (1-100) | `80` |
+| `--contact-sheet` | | Generate contact sheet | `false` |
+| `--columns <num>` | | Contact sheet columns | `3` |
+
+##### Examples
+
+```bash
+# Screenshot a specific template
+slide-gen templates screenshot cycle-diagram
+
+# Screenshot all templates
+slide-gen templates screenshot --all
+
+# Screenshot by category
+slide-gen templates screenshot --category diagrams
+
+# AI-optimized screenshots (640px, JPEG)
+slide-gen templates screenshot --all --format ai
+
+# Generate contact sheet of all templates
+slide-gen templates screenshot --all --contact-sheet
+
+# Contact sheet with custom columns
+slide-gen templates screenshot --all --contact-sheet --columns 4
+
+# Custom output directory
+slide-gen templates screenshot --all -o ./docs/template-gallery
+```
+
+##### Output Structure
+
+```
+template-screenshots/
+├── cycle-diagram.png           # Individual template screenshots
+├── flow-chart.png
+├── hierarchy.png
+├── matrix.png
+├── timeline.png
+├── ...
+└── templates-contact.png       # Contact sheet (if --contact-sheet)
+```
+
+##### AI Optimization Mode
+
+Use `--format ai` for token-efficient screenshots:
+
+```bash
+slide-gen templates screenshot --all --format ai
+```
+
+Output example:
+```
+Template screenshots saved (AI-optimized):
+
+  template-screenshots/cycle-diagram.jpeg
+  template-screenshots/flow-chart.jpeg
+  template-screenshots/hierarchy.jpeg
+  ...
+
+Estimated tokens: ~2464 (8 templates)
+
+To review in Claude Code:
+  Read template-screenshots/cycle-diagram.jpeg
+```
+
+##### Contact Sheet
+
+Generate a gallery overview of templates:
+
+```bash
+slide-gen templates screenshot --all --contact-sheet --columns 4
+```
+
+Features:
+- **Template name overlay**: Each thumbnail displays the template name
+- **Category grouping**: Templates organized by category in the grid
+- **Automatic layout**: Rows calculated based on template count and column setting
+
+##### Use Cases
+
+1. **Documentation**: Generate visual catalog for documentation
+2. **AI Training**: Provide visual reference for AI assistants
+3. **Template Selection**: Quick visual comparison of available templates
+4. **Quality Review**: Verify template rendering across all templates
+
 ---
 
 ## icons
