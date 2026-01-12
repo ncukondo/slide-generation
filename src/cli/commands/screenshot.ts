@@ -259,9 +259,12 @@ export function formatAiOutput(options: AiOutputOptions): string {
 
   lines.push('');
   lines.push(`Estimated tokens: ~${totalTokens} (${files.length} ${imageLabel})`);
-  lines.push('');
-  lines.push('To review in Claude Code:');
-  lines.push(`  Read ${join(outputDir, files[0]!)}`);
+
+  if (files.length > 0) {
+    lines.push('');
+    lines.push('To review in Claude Code:');
+    lines.push(`  Read ${join(outputDir, files[0]!)}`);
+  }
 
   return lines.join('\n');
 }
@@ -530,7 +533,7 @@ export async function executeScreenshot(
   // Display output based on format
   console.log('');
 
-  if (isAiFormat) {
+  if (isAiFormat && generatedFiles.length > 0) {
     // AI-friendly output
     const output = formatAiOutput({
       files: generatedFiles,
@@ -539,6 +542,10 @@ export async function executeScreenshot(
       outputDir,
     });
     console.log(output);
+  } else if (isAiFormat) {
+    // No files generated in AI format
+    console.log(`Output: ${chalk.cyan(outputDir)}`);
+    console.log('No screenshots generated');
   } else {
     console.log(`Output: ${chalk.cyan(outputDir)}`);
     if (generatedFiles.length > 0) {
