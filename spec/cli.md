@@ -529,7 +529,10 @@ slide-gen screenshot <input> [options]
 | `--output <path>` | `-o` | Output directory | `./screenshots` |
 | `--slide <number>` | `-s` | Specific slide only (1-based) | All slides |
 | `--width <pixels>` | `-w` | Image width | `1280` |
-| `--format <fmt>` | `-f` | Image format (png/jpeg) | `png` |
+| `--format <fmt>` | `-f` | Output format (png/jpeg/ai) | `png` |
+| `--quality <num>` | `-q` | JPEG quality (1-100) | `80` |
+| `--contact-sheet` | | Generate contact sheet | `false` |
+| `--columns <num>` | | Contact sheet columns | `2` |
 
 ### Examples
 
@@ -545,15 +548,63 @@ slide-gen screenshot presentation.yaml --slide 3
 
 # Thumbnail size
 slide-gen screenshot presentation.yaml --width 400
+
+# AI-optimized screenshots (640px, JPEG)
+slide-gen screenshot presentation.yaml --format ai
+
+# Contact sheet for overview
+slide-gen screenshot presentation.yaml --contact-sheet
+
+# AI-optimized contact sheet
+slide-gen screenshot presentation.yaml --format ai --contact-sheet
 ```
+
+### AI Optimization Mode
+
+Use `--format ai` for token-efficient screenshots optimized for AI review:
+
+```bash
+slide-gen screenshot presentation.yaml --format ai
+```
+
+The AI format:
+- Uses 640px width (75% token reduction)
+- Outputs JPEG format
+- Shows estimated token consumption
+- Provides Claude Code read commands
+
+Output example:
+```
+Screenshots saved (AI-optimized):
+
+  screenshots/presentation.001.jpeg
+  screenshots/presentation.002.jpeg
+  screenshots/presentation.003.jpeg
+
+Estimated tokens: ~924 (3 images)
+
+To review in Claude Code:
+  Read screenshots/presentation.001.jpeg
+```
+
+### Contact Sheet
+
+Generate an overview image with all slides:
+
+```bash
+slide-gen screenshot presentation.yaml --contact-sheet --columns 3
+```
+
+Creates a grid image with slide thumbnails and numbers for quick review.
 
 ### Output
 
 ```
 screenshots/
-├── slide-001.png
-├── slide-002.png
-├── slide-003.png
+├── presentation.001.png
+├── presentation.002.png
+├── presentation.003.png
+├── presentation-contact.png    # (if --contact-sheet)
 └── ...
 ```
 
@@ -561,6 +612,7 @@ screenshots/
 
 - Marp CLI is required (`npm install -g @marp-team/marp-cli`)
 - Internally uses `marp --images` option
+- `--format ai` is recommended for AI-assisted slide review
 
 ---
 
