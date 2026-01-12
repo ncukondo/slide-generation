@@ -265,6 +265,32 @@ describe('init command', () => {
       );
       expect(content).toContain('Workflow Reference');
     });
+
+    it('should generate references/skill.md for reference management', async () => {
+      const targetDir = join(testDir, 'ref-skill-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const content = await readFile(
+        join(targetDir, '.skills', 'slide-assistant', 'references', 'skill.md'),
+        'utf-8'
+      );
+      expect(content).toContain('Reference Management');
+      expect(content).toContain('ref add');
+    });
+
+    it('should generate slide-references.md command', async () => {
+      const targetDir = join(testDir, 'slide-refs-cmd-test');
+      await executeInit(targetDir, { skipMarpInstall: true });
+
+      const commands = await readdir(join(targetDir, '.claude', 'commands'));
+      expect(commands).toContain('slide-references.md');
+
+      const content = await readFile(
+        join(targetDir, '.claude', 'commands', 'slide-references.md'),
+        'utf-8'
+      );
+      expect(content).toContain('Manage references');
+    });
   });
 
   describe('Marp CLI installation helpers', () => {

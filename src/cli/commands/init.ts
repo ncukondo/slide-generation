@@ -17,11 +17,13 @@ import {
   generateOpenCodeAgent,
   generateTemplatesRef,
   generateWorkflowsRef,
+  generateReferenceSkillMd,
   generateSlideCreateCommand,
   generateSlideValidateCommand,
   generateSlidePreviewCommand,
   generateSlideScreenshotCommand,
   generateSlideThemeCommand,
+  generateSlideReferencesCommand,
 } from '../templates/ai';
 
 export interface InitOptions {
@@ -493,6 +495,10 @@ async function generateAiConfig(targetDir: string): Promise<void> {
     join(targetDir, '.skills', 'slide-assistant', 'references', 'workflows.md'),
     generateWorkflowsRef()
   );
+  await writeFileIfNotExists(
+    join(targetDir, '.skills', 'slide-assistant', 'references', 'skill.md'),
+    generateReferenceSkillMd()
+  );
 
   // Generate Claude Code files
   await writeFileIfNotExists(join(targetDir, 'CLAUDE.md'), generateClaudeMd());
@@ -504,6 +510,7 @@ async function generateAiConfig(targetDir: string): Promise<void> {
     'slide-preview': generateSlidePreviewCommand,
     'slide-screenshot': generateSlideScreenshotCommand,
     'slide-theme': generateSlideThemeCommand,
+    'slide-references': generateSlideReferencesCommand,
   };
   for (const [name, generator] of Object.entries(commandGenerators)) {
     await writeFileIfNotExists(
