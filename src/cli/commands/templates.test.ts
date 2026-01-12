@@ -5,6 +5,7 @@ import {
   formatTemplateList,
   formatTemplateInfo,
   formatTemplateExample,
+  executeTemplateScreenshot,
   type TemplateScreenshotOptions,
 } from './templates';
 import type { TemplateDefinition } from '../../templates';
@@ -347,6 +348,20 @@ describe('templates command', () => {
         expect(screenshotCmd).toBeDefined();
         const categoryOption = screenshotCmd?.options.find((o) => o.long === '--category');
         expect(categoryOption).toBeDefined();
+      });
+    });
+
+    describe('executeTemplateScreenshot', () => {
+      it('should fail if neither name nor --all is provided', async () => {
+        const result = await executeTemplateScreenshot(undefined, {});
+        expect(result.success).toBe(false);
+        expect(result.errors).toContain('Specify a template name or use --all');
+      });
+
+      it('should fail if template not found', async () => {
+        const result = await executeTemplateScreenshot('nonexistent-template-xyz', {});
+        expect(result.success).toBe(false);
+        expect(result.errors.some((e) => e.includes('not found'))).toBe(true);
       });
     });
   });

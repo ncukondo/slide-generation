@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as yaml from 'yaml';
-import { mkdir, writeFile, rm } from 'fs/promises';
+import { mkdir, writeFile, rm, readdir } from 'fs/promises';
 import { join, basename } from 'path';
 import { tmpdir } from 'os';
 import type { Server } from 'http';
@@ -885,6 +885,8 @@ export async function executeTemplateScreenshot(
   name: string | undefined,
   options: TemplateScreenshotOptions
 ): Promise<TemplateScreenshotResult> {
+  const errors: string[] = [];
+
   // Validation
   if (!name && !options.all) {
     console.error(chalk.red('Error: Specify a template name or use --all'));
@@ -895,10 +897,209 @@ export async function executeTemplateScreenshot(
     };
   }
 
-  // TODO: Implement actual screenshot logic
+  // Check marp-cli availability
+  const marpAvailable = await checkMarpCliAvailable();
+  if (!marpAvailable) {
+    const message = 'Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli';
+    console.error(chalk.red(`Error: ${message}`));
+    process.exitCode = ExitCode.GeneralError;
+    return { success: false, errors: [message] };
+  }
+
+  // Load templates
+  const templateLoader = await loadTemplates(options.config);
+
+  // Get templates to screenshot
+  let templates = templateLoader.list();
+  if (name) {
+    const template = templateLoader.get(name);
+    if (!template) {
+      const message = `Template "${name}" not found`;
+      console.error(chalk.red(`Error: ${message}`));
+      process.exitCode = ExitCode.GeneralError;
+      return { success: false, errors: [message] };
+    }
+    templates = [template];
+  } else if (options.category) {
+    templates = templateLoader.listByCategory(options.category);
+  }
+
+  if (templates.length === 0) {
+    console.log('No templates found.');
+    return { success: true, errors: [], files: [] };
+  }
+
+  // Setup output directory
+  const outputDir = options.output || './template-screenshots';
+  await mkdir(outputDir, { recursive: true });
+
+  // Initialize pipeline
+  const configLoader = new ConfigLoader();
+  const configPath = options.config || (await configLoader.findConfig(process.cwd()));
+  const config = await configLoader.load(configPath);
+  const pipeline = new Pipeline(config);
+
+  try {
+    await pipeline.initialize();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to initialize pipeline';
+    console.error(chalk.red(`Error: ${message}`));
+    process.exitCode = ExitCode.GeneralError;
+    return { success: false, errors: [message] };
+  }
+
+  // Create temp directory for intermediate files
+  const tempDir = join(tmpdir(), `slide-gen-template-screenshot-${Date.now()}`);
+  await mkdir(tempDir, { recursive: true });
+
+  // Determine format settings
+  const isAiFormat = options.format === 'ai';
+  const imageFormat = isAiFormat ? 'jpeg' : (options.format || 'png');
+  const imageWidth = isAiFormat ? 640 : (options.width || 1280);
+
+  const generatedFiles: string[] = [];
+  console.log(`Taking screenshots of ${templates.length} template(s)...`);
+
+  for (const template of templates) {
+    if (options.verbose) {
+      console.log(`Processing: ${template.name}`);
+    }
+
+    // Generate sample YAML
+    const sampleYaml = generateSampleYaml(template);
+    const yamlPath = join(tempDir, `${template.name}.yaml`);
+    await writeFile(yamlPath, sampleYaml);
+
+    // Convert to markdown
+    const mdPath = join(tempDir, `${template.name}.md`);
+    try {
+      await pipeline.runWithResult(yamlPath, { outputPath: mdPath });
+    } catch (error) {
+      const message =
+        error instanceof PipelineError
+          ? `${error.stage}: ${error.message}`
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error';
+      console.warn(chalk.yellow(`  Warning: Failed to convert ${template.name}: ${message}`));
+      errors.push(`${template.name}: ${message}`);
+      continue;
+    }
+
+    // Build marp command args
+    const marpArgs = ['--images', imageFormat];
+
+    if (imageWidth !== 1280) {
+      const scale = imageWidth / 1280;
+      marpArgs.push('--image-scale', String(scale));
+    }
+
+    if (imageFormat === 'jpeg') {
+      marpArgs.push('--jpeg-quality', String(options.quality || 80));
+    }
+
+    // Marp outputs to the same directory as the markdown file
+    marpArgs.push('-o', tempDir);
+    marpArgs.push(mdPath);
+
+    // Generate screenshot
+    try {
+      runMarp(marpArgs, {
+        projectDir: process.cwd(),
+        stdio: options.verbose ? 'inherit' : 'pipe',
+      });
+    } catch {
+      console.warn(chalk.yellow(`  Warning: Failed to generate screenshot for ${template.name}`));
+      errors.push(`${template.name}: Marp CLI failed`);
+      continue;
+    }
+
+    // Find generated image files and rename to template name
+    const tempFiles = await readdir(tempDir);
+    const slideFiles = tempFiles.filter(
+      (f) => f.startsWith(template.name) && f.endsWith(`.${imageFormat}`)
+    );
+
+    // For single-slide templates, just use template name; for multi-slide keep numbering
+    for (const slideFile of slideFiles) {
+      const sourceFile = join(tempDir, slideFile);
+      // Extract slide number if present
+      const match = slideFile.match(/\.(\d{3})\.\w+$/);
+      let targetName: string;
+      if (slideFiles.length === 1 || !match) {
+        targetName = `${template.name}.${imageFormat}`;
+      } else {
+        targetName = slideFile;
+      }
+      const targetFile = join(outputDir, targetName);
+
+      // Copy file to output directory
+      const { copyFile: fsCopyFile } = await import('fs/promises');
+      await fsCopyFile(sourceFile, targetFile);
+      generatedFiles.push(targetName);
+    }
+
+    console.log(chalk.green('✓') + ` ${template.name}`);
+  }
+
+  // Cleanup temp directory
+  await rm(tempDir, { recursive: true, force: true });
+
+  // Generate contact sheet if requested
+  if (options.contactSheet && generatedFiles.length > 0) {
+    console.log('Generating contact sheet...');
+
+    const { generateContactSheet: genContactSheet } = await import('./screenshot');
+
+    // Build slides array with template names as labels
+    const slides = generatedFiles.map((file, index) => ({
+      path: join(outputDir, file),
+      index: index + 1,
+    }));
+
+    const contactSheetPath = join(outputDir, `templates-contact.${imageFormat === 'jpeg' ? 'jpeg' : 'png'}`);
+
+    const contactResult = await genContactSheet(slides, {
+      outputPath: contactSheetPath,
+      columns: options.columns || 3,
+      slideWidth: 320,
+      slideHeight: 180,
+    });
+
+    if (contactResult.success) {
+      generatedFiles.push(basename(contactSheetPath));
+      console.log(chalk.green('✓') + ' Contact sheet generated');
+    } else {
+      console.warn(chalk.yellow(`Warning: ${contactResult.error}`));
+      errors.push(contactResult.error || 'Contact sheet generation failed');
+    }
+  }
+
+  // Output summary
+  console.log('');
+  if (isAiFormat && generatedFiles.length > 0) {
+    // AI-optimized output
+    const { estimateTokens: estTokens } = await import('./screenshot');
+    const tokensPerImage = estTokens(imageWidth, Math.round(imageWidth * 9 / 16));
+    const totalTokens = tokensPerImage * generatedFiles.length;
+
+    console.log('Screenshots saved (AI-optimized):');
+    console.log('');
+    for (const file of generatedFiles) {
+      console.log(`  ${join(outputDir, file)}`);
+    }
+    console.log('');
+    console.log(`Estimated tokens: ~${totalTokens} (${generatedFiles.length} images)`);
+  } else {
+    console.log(`Output: ${chalk.cyan(outputDir)}`);
+    console.log(`Files: ${generatedFiles.length} screenshot(s)`);
+  }
+
   return {
-    success: true,
-    errors: [],
+    success: errors.length === 0,
+    errors,
+    outputDir,
+    files: generatedFiles,
   };
 }
 
