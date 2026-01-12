@@ -404,7 +404,8 @@ describe('AI-friendly output', () => {
     expect(output).toContain('Estimated tokens');
     expect(output).toContain('~616'); // 308 * 2
     expect(output).toContain('2 images');
-    expect(output).toContain('Read screenshots/slide.001.jpeg');
+    // Use join for cross-platform path compatibility
+    expect(output).toContain(`Read ${join('./screenshots', 'slide.001.jpeg')}`);
   });
 
   it('should format output for single image', () => {
