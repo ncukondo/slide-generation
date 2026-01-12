@@ -119,5 +119,68 @@ After user provides images:
 
 ### Phase 4: Iteration
 Handle adjustments (cropping, replacement) as needed.
+
+## Visual Review Flow
+
+### When to Use Visual Review
+
+- After initial slide creation
+- When adjusting layouts or styling
+- Before final delivery
+- When user reports visual issues
+
+### Quick Review Workflow
+
+1. **Generate screenshots**:
+   \`\`\`bash
+   slide-gen screenshot presentation.yaml --format ai
+   \`\`\`
+
+2. **Review each slide**:
+   \`\`\`
+   Read ./screenshots/presentation.001.jpeg
+   Read ./screenshots/presentation.002.jpeg
+   ...
+   \`\`\`
+
+3. **Document issues** found in each slide
+
+4. **Make batch edits** to presentation.yaml
+
+5. **Regenerate and verify**:
+   \`\`\`bash
+   slide-gen screenshot presentation.yaml --format ai
+   \`\`\`
+
+### Contact Sheet Review
+
+For quick overview of all slides:
+
+1. **Generate contact sheet**:
+   \`\`\`bash
+   slide-gen screenshot presentation.yaml --contact-sheet
+   \`\`\`
+
+2. **Review overview**:
+   \`\`\`
+   Read ./screenshots/presentation-contact.png
+   \`\`\`
+
+3. **Identify slides needing attention**
+
+4. **Deep dive on specific slides**:
+   \`\`\`bash
+   slide-gen screenshot presentation.yaml --format ai --slide 5
+   \`\`\`
+
+### Common Visual Issues to Check
+
+| Issue | What to Look For | Fix |
+|-------|------------------|-----|
+| Text overflow | Text cut off or wrapped | Shorten text, use bullet-list |
+| Empty space | Large blank areas | Add content or use different template |
+| Cluttered | Too much content | Split into multiple slides |
+| Poor contrast | Hard to read text | Adjust colors in theme |
+| Icon mismatch | Icon doesn't fit context | Search for better icon |
 `;
 }

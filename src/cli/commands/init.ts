@@ -22,6 +22,7 @@ import {
   generateSlideValidateCommand,
   generateSlidePreviewCommand,
   generateSlideScreenshotCommand,
+  generateSlideReviewCommand,
   generateSlideThemeCommand,
   generateSlideReferencesCommand,
 } from '../templates/ai';
@@ -515,6 +516,7 @@ async function generateAiConfig(targetDir: string): Promise<void> {
     'slide-validate': generateSlideValidateCommand,
     'slide-preview': generateSlidePreviewCommand,
     'slide-screenshot': generateSlideScreenshotCommand,
+    'slide-review': generateSlideReviewCommand,
     'slide-theme': generateSlideThemeCommand,
     'slide-references': generateSlideReferencesCommand,
   };
