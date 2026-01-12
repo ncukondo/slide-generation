@@ -181,4 +181,30 @@ describe('getHintForErrorType', () => {
     expect(getHintForErrorType('invalid_type')).toBeNull();
     expect(getHintForErrorType('schema_error')).toBeNull();
   });
+
+  it('should return hint for missing_reference', () => {
+    const hint = getHintForErrorType('missing_reference');
+
+    expect(hint).toContain('ref add');
+  });
+});
+
+describe('formatLlmValidationResult - references', () => {
+  it('should include missing references in output', () => {
+    const errors: StructuredValidationError[] = [
+      {
+        slide: 1,
+        line: 10,
+        template: 'bullet-list',
+        message: 'Citation not found in library: @unknown2024',
+        errorType: 'missing_reference',
+      },
+    ];
+
+    const result = formatLlmValidationResult(errors, 1);
+
+    expect(result).toContain('Validation failed.');
+    expect(result).toContain('unknown2024');
+    expect(result).toContain('ref add');
+  });
 });

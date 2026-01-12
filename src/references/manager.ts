@@ -68,23 +68,23 @@ export class ReferenceManager {
   }
 
   /**
-   * Get multiple references by IDs
+   * Get multiple references by IDs using ref export for better performance
    */
   async getByIds(ids: string[]): Promise<Map<string, CSLItem>> {
     if (ids.length === 0) {
       return new Map();
     }
 
-    const result = await this.execCommand(`${this.command} list --format json`);
-    const allItems = this.parseJSON(result);
+    // Use ref export with specific IDs instead of fetching all references
+    const idsArg = ids.map((id) => `"${id}"`).join(' ');
+    const result = await this.execCommand(
+      `${this.command} export ${idsArg}`
+    );
+    const items = this.parseJSON(result);
 
-    const idSet = new Set(ids);
     const map = new Map<string, CSLItem>();
-
-    for (const item of allItems) {
-      if (idSet.has(item.id)) {
-        map.set(item.id, item);
-      }
+    for (const item of items) {
+      map.set(item.id, item);
     }
 
     return map;
