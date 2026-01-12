@@ -35,6 +35,17 @@ const shouldSkip = (() => {
       }
     }
 
+    // Check macOS Chrome.app path
+    if (process.platform === 'darwin') {
+      try {
+        const { accessSync } = require('fs');
+        accessSync('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
+        return false; // Browser found, don't skip
+      } catch {
+        // Continue checking
+      }
+    }
+
     // Also check CHROME_PATH
     if (process.env.CHROME_PATH) {
       return false; // Browser found, don't skip

@@ -148,7 +148,7 @@ function createNumberOverlay(number: number, width: number): Buffer {
   const svg = `
     <svg width="${width}" height="30">
       <rect width="${width}" height="30" fill="rgba(0,0,0,0.6)"/>
-      <text x="10" y="22" font-family="sans-serif" font-size="16" fill="white">
+      <text x="10" y="22" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" fill="white">
         Slide ${number}
       </text>
     </svg>
@@ -467,8 +467,8 @@ export async function executeScreenshot(
   // Determine actual output format (ai -> jpeg)
   const isAiFormat = options.format === 'ai';
   const actualFormat = isAiFormat ? 'jpeg' : (options.format || 'png');
-  const actualWidth = isAiFormat ? 640 : (options.width || 1280);
-  const actualHeight = Math.round(actualWidth * 9 / 16); // 16:9 aspect ratio
+  let actualWidth = isAiFormat ? 640 : (options.width || 1280);
+  let actualHeight = Math.round(actualWidth * 9 / 16); // 16:9 default fallback
 
   // Filter to specific slide if requested
   if (options.slide !== undefined) {
@@ -500,6 +500,19 @@ export async function executeScreenshot(
   const generatedFiles = allFiles
     .filter((f) => f.startsWith(mdBaseName) && f.endsWith(`.${actualFormat}`))
     .sort();
+
+  // Get actual dimensions from generated image for accurate token estimation
+  if (generatedFiles.length > 0) {
+    try {
+      const metadata = await sharp(join(outputDir, generatedFiles[0]!)).metadata();
+      if (metadata.width && metadata.height) {
+        actualWidth = metadata.width;
+        actualHeight = metadata.height;
+      }
+    } catch {
+      // Use default on metadata read failure
+    }
+  }
 
   // Generate contact sheet if requested
   if (options.contactSheet && generatedFiles.length > 0) {
