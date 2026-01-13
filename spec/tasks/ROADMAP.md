@@ -120,12 +120,48 @@ AI エージェントと協働して学術文献を管理・引用するため�
 3. **32-ai-reference-skills**: AI エージェント用スキル定義とコマンド
 4. **33-sources-references-tracking**: sources.yaml での引用追跡
 
+## Phase 9: Template Quality Improvement（テンプレート品質改善）
+
+標準テンプレートの品質を改善し、`templates screenshot`コマンドで全テンプレートが正しく表示されるようにする。
+
+| # | タスク | 依存 | 状態 |
+|---|--------|------|------|
+| 38 | [Fix Empty First Slide](./38-fix-empty-first-slide.md) | - | Pending |
+| 39 | [Template CSS Integration](./39-template-css-integration.md) | 38 | Pending |
+| 40 | [Icon Rendering Fix](./40-icon-rendering-fix.md) | 38 | Pending |
+| 41 | [Template Output Format Fix](./41-template-output-format-fix.md) | 38 | Pending |
+| 42 | [Template Examples Fix](./42-template-examples-fix.md) | 40, 41 | Pending |
+
+### Phase 9 実装順序
+
+依存関係に基づく推奨実装順序：
+
+```
+38 (Fix Empty First Slide)
+    ↓
+┌───┴───┬───────┐
+39      40      41
+(CSS)   (Icon)  (Format)
+└───────┴───┬───┘
+            ↓
+           42
+    (Examples Fix)
+```
+
+### 各タスクの概要
+
+1. **38-fix-empty-first-slide**: renderer.tsで最初のスライドの前に`---`が付く問題を修正
+2. **39-template-css-integration**: テンプレートCSSをMarpフロントマターに注入
+3. **40-icon-rendering-fix**: アイコンをプロジェクト内SVGとしてダウンロード・レンダリング
+4. **41-template-output-format-fix**: HTMLタグ後の空行追加、--htmlオプション有効化
+5. **42-template-examples-fix**: テンプレートexampleのアイコン形式・画像URL修正
+
 ## Progress Summary
 
-- **Total Tasks**: 37
+- **Total Tasks**: 42
 - **Completed**: 37
 - **In Progress**: 0
-- **Pending**: 0
+- **Pending**: 5
 
 ## Architecture Overview
 
