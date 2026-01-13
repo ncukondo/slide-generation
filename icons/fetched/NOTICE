@@ -1,0 +1,14 @@
+Fetched Icons Attribution
+=========================
+
+This directory contains icons fetched from external sources.
+All icons are used under their respective licenses.
+
+Material Icons (material-icons/)
+--------------------------------
+Copyright Google LLC
+Licensed under Apache License 2.0
+Source: https://github.com/google/material-design-icons
+Iconify API: https://api.iconify.design/ic/
+
+Icons fetched via Iconify API (https://iconify.design/)

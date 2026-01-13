@@ -158,5 +158,5 @@ vite.config.ts.timestamp-*
 
 .pnpm-store/
 
-# Fetched icon cache (auto-downloaded, not committed)
-icons/fetched/
+# Fetched icon sources tracking (auto-generated)
+icons/fetched/_sources.yaml
