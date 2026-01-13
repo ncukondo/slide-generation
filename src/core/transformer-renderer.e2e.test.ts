@@ -345,9 +345,10 @@ slides:
       expect(output).toContain('theme: gaia');
       expect(output).toContain('paginate: true');
 
-      // Front matter is closed properly before slides
-      // Format: ---\n[front matter]\n---\n\n---\n\n[slide content]
-      expect(output).toMatch(/---\n\n---\n\n# Hello World/);
+      // Front matter ends with ---, slide content follows directly
+      // (no empty slide between front matter and first slide)
+      expect(output).toMatch(/---\n\n# Hello World/);
+      expect(output).not.toMatch(/---\n\n---/);
     });
   });
 

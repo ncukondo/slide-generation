@@ -116,7 +116,11 @@ export class Renderer {
     }
 
     // Join with Marp slide separator (---)
-    return parts.map(slide => `---\n\n${slide}`).join('\n\n');
+    // First slide has no separator (comes right after front matter)
+    // Subsequent slides are separated by ---
+    return parts
+      .map((slide, index) => (index === 0 ? slide : `---\n\n${slide}`))
+      .join('\n\n');
   }
 
   /**

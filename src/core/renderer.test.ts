@@ -50,7 +50,26 @@ describe('Renderer', () => {
   });
 
   describe('render', () => {
-    it('should join slides with --- separator', () => {
+    it('should not add separator before first slide', () => {
+      const meta: PresentationMeta = {
+        title: 'Test',
+        theme: 'default',
+      };
+
+      const slides = ['# Slide 1', '# Slide 2'];
+
+      const result = renderer.render(slides, meta);
+
+      // フロントマター終了後、最初のスライドの前に---がないことを確認
+      // (---\n\n--- というパターンがないこと)
+      expect(result).not.toMatch(/---\n\n---/);
+      // 最初のスライドがフロントマター直後にあることを確認
+      expect(result).toMatch(/---\n\n# Slide 1/);
+      // 2番目のスライドは---で区切られる
+      expect(result).toMatch(/# Slide 1\n\n---\n\n# Slide 2/);
+    });
+
+    it('should join slides with --- separator between slides', () => {
       const meta: PresentationMeta = {
         title: 'Test',
         theme: 'default',
@@ -64,10 +83,11 @@ describe('Renderer', () => {
 
       const result = renderer.render(slides, meta);
 
-      // Should have proper slide separators
+      // First slide should come right after front matter (no --- before)
       expect(result).toMatch(/---\n\n# Slide 1/);
-      expect(result).toMatch(/---\n\n# Slide 2/);
-      expect(result).toMatch(/---\n\n# Slide 3/);
+      // Subsequent slides should have --- separator
+      expect(result).toMatch(/Content 1\n\n---\n\n# Slide 2/);
+      expect(result).toMatch(/Content 2\n\n---\n\n# Slide 3/);
     });
 
     it('should handle empty slides array', () => {
