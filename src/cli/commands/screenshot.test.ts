@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'path';
-import { mkdir, rm, writeFile } from 'fs/promises';
+import { access, mkdir, rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
+import sharp from 'sharp';
 import {
   createScreenshotCommand,
   ScreenshotOptions,
@@ -10,6 +11,7 @@ import {
   estimateTotalTokens,
   calculateGridDimensions,
   formatAiOutput,
+  generateContactSheet,
 } from './screenshot';
 
 describe('screenshot command', () => {
@@ -352,12 +354,10 @@ describe('contact sheet generation', () => {
   });
 
   it('should generate contact sheet from slide images', async () => {
-    const { generateContactSheet } = await import('./screenshot');
     const outputDir = join(testDir, 'screenshots');
     await mkdir(outputDir, { recursive: true });
 
     // Create simple test images (1x1 pixel red PNG)
-    const sharp = (await import('sharp')).default;
     const redPixel = await sharp({
       create: { width: 640, height: 360, channels: 3, background: { r: 255, g: 0, b: 0 } },
     })
@@ -387,7 +387,6 @@ describe('contact sheet generation', () => {
     expect(result.outputPath).toContain('contact.png');
 
     // Verify the contact sheet was created
-    const { access } = await import('fs/promises');
     await expect(access(join(outputDir, 'contact.png'))).resolves.toBeUndefined();
   }, 15000); // Extended timeout for Windows where sharp can be slow
 });
