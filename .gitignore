@@ -157,3 +157,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 .pnpm-store/
+
+# Fetched icon cache (auto-downloaded, not committed)
+icons/fetched/
