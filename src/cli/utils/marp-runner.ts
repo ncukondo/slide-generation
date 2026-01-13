@@ -173,7 +173,9 @@ export function runMarp(args: string[], options: MarpRunOptions = {}): void {
     throw new Error('Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli');
   }
 
-  execFileSync(marpCmd, args, execOptions);
+  // Automatically add --html option for template HTML rendering
+  const finalArgs = addHtmlOption(args);
+  execFileSync(marpCmd, finalArgs, execOptions);
 }
 
 /**
@@ -192,7 +194,9 @@ export function runMarpWithOutput(args: string[], options: MarpRunOptions = {}):
     throw new Error('Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli');
   }
 
-  const result = execFileSync(marpCmd, args, { ...execOptions, encoding: 'utf-8' });
+  // Automatically add --html option for template HTML rendering
+  const finalArgs = addHtmlOption(args);
+  const result = execFileSync(marpCmd, finalArgs, { ...execOptions, encoding: 'utf-8' });
   return result;
 }
 
@@ -212,5 +216,7 @@ export function spawnMarp(args: string[], options: MarpSpawnOptions = {}): Child
     throw new Error('Marp CLI not found. Install it with: npm install -D @marp-team/marp-cli');
   }
 
-  return spawn(marpCmd, args, spawnOptions);
+  // Automatically add --html option for template HTML rendering
+  const finalArgs = addHtmlOption(args);
+  return spawn(marpCmd, finalArgs, spawnOptions);
 }
