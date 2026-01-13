@@ -42,7 +42,8 @@ defaults:
 `
       );
       await loader.load(registryPath);
-      resolver = new IconResolver(loader);
+      // Use temp dir as fetchedDir to avoid using committed SVG files
+      resolver = new IconResolver(loader, { fetchedDir: tempDir, autoFetch: false });
     });
 
     it("renders web-font icon with default options", async () => {
@@ -400,7 +401,8 @@ defaults:
 `
       );
       await loader.load(registryPath);
-      resolver = new IconResolver(loader);
+      // Use temp dir as fetchedDir to avoid using committed SVG files
+      resolver = new IconResolver(loader, { fetchedDir: tempDir, autoFetch: false });
     });
 
     it("should resolve color from palette name", async () => {
@@ -419,13 +421,21 @@ defaults:
     });
 
     it("should use CSS variable for theme colors when enabled", async () => {
-      const resolverWithVars = new IconResolver(loader, { useThemeVariables: true });
+      const resolverWithVars = new IconResolver(loader, {
+        useThemeVariables: true,
+        fetchedDir: tempDir,
+        autoFetch: false,
+      });
       const html = await resolverWithVars.render("planning", { color: "primary" });
       expect(html).toContain("var(--theme-primary)");
     });
 
     it("should still pass through hex colors in CSS variable mode", async () => {
-      const resolverWithVars = new IconResolver(loader, { useThemeVariables: true });
+      const resolverWithVars = new IconResolver(loader, {
+        useThemeVariables: true,
+        fetchedDir: tempDir,
+        autoFetch: false,
+      });
       const html = await resolverWithVars.render("planning", { color: "#FF5722" });
       expect(html).toContain("color: #FF5722");
     });

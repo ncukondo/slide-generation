@@ -73,8 +73,8 @@ defaults:
       expect(registry.aliases).toHaveProperty("success");
       expect(registry.aliases).toHaveProperty("logo");
 
-      // Create resolver
-      const resolver = new IconResolver(loader);
+      // Create resolver with temp dir as fetchedDir to avoid using committed SVG files
+      const resolver = new IconResolver(loader, { fetchedDir: tempDir, autoFetch: false });
 
       // Test web-font rendering via alias
       const successIcon = await resolver.render("success");
