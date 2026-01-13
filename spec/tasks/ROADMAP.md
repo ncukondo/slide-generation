@@ -129,7 +129,7 @@ AI エージェントと協働して学術文献を管理・引用するため�
 | 38 | [Fix Empty First Slide](./completed/38-fix-empty-first-slide.md) | - | Done |
 | 39 | [Template CSS Integration](./completed/39-template-css-integration.md) | 38 | Done |
 | 40 | [Icon Rendering Fix](./completed/40-icon-rendering-fix.md) | 38 | Done |
-| 41 | [Template Output Format Fix](./41-template-output-format-fix.md) | 38 | Pending |
+| 41 | [Template Output Format Fix](./completed/41-template-output-format-fix.md) | 38 | Done |
 | 42 | [Template Examples Fix](./42-template-examples-fix.md) | 40, 41 | Pending |
 
 ### Phase 9 実装順序
@@ -159,9 +159,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 42
-- **Completed**: 40
+- **Completed**: 41
 - **In Progress**: 0
-- **Pending**: 2
+- **Pending**: 1
 
 ## Architecture Overview
 
