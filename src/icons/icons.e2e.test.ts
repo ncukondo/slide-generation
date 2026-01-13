@@ -212,6 +212,127 @@ sources:
     });
   });
 
+  describe("Auto-fetch and cached SVG priority", () => {
+    let fetchedDir: string;
+
+    beforeEach(async () => {
+      fetchedDir = path.join(tempDir, "icons", "fetched");
+      await fs.mkdir(fetchedDir, { recursive: true });
+    });
+
+    it("uses cached SVG instead of web-font when available", async () => {
+      // Create registry with web-font source
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: material-icons
+    type: web-font
+    prefix: mi
+    render: '<span class="material-icons">{{ name }}</span>'
+
+aliases:
+  planning: "mi:event_note"
+
+defaults:
+  size: "24px"
+  color: "currentColor"
+`
+      );
+
+      // Create cached SVG file (simulating a previously fetched icon)
+      const materialIconsDir = path.join(fetchedDir, "material-icons");
+      await fs.mkdir(materialIconsDir, { recursive: true });
+      await fs.writeFile(
+        path.join(materialIconsDir, "event_note.svg"),
+        `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10H7v2h10v-2zm0-3H7v2h10V7z"/></svg>`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+
+      // Create resolver with fetchedDir pointing to our cache
+      const resolver = new IconResolver(loader, { fetchedDir, autoFetch: false });
+
+      // Render via alias - should use cached SVG
+      const html = await resolver.render("planning");
+
+      // Should be inline SVG, not web-font span
+      expect(html).toContain("<svg");
+      expect(html).toContain("viewBox");
+      expect(html).toContain("M17 10H7v2h10v-2z");
+      expect(html).not.toContain("material-icons");
+    });
+
+    it("falls back to web-font when no cached SVG and autoFetch disabled", async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: material-icons
+    type: web-font
+    prefix: mi
+    render: '<span class="material-icons">{{ name }}</span>'
+
+defaults:
+  size: "24px"
+  color: "currentColor"
+`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+
+      // No cached SVG, autoFetch disabled
+      const resolver = new IconResolver(loader, { fetchedDir, autoFetch: false });
+      const html = await resolver.render("mi:home");
+
+      // Should fall back to web-font
+      expect(html).toContain("material-icons");
+      expect(html).toContain("home");
+    });
+
+    it("applies size and color options to cached SVG", async () => {
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: material-icons
+    type: web-font
+    prefix: mi
+
+defaults:
+  size: "24px"
+  color: "currentColor"
+`
+      );
+
+      // Create cached SVG
+      const materialIconsDir = path.join(fetchedDir, "material-icons");
+      await fs.mkdir(materialIconsDir, { recursive: true });
+      await fs.writeFile(
+        path.join(materialIconsDir, "check_circle.svg"),
+        `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>`
+      );
+
+      const loader = new IconRegistryLoader();
+      await loader.load(registryPath);
+      const resolver = new IconResolver(loader, { fetchedDir, autoFetch: false });
+
+      const html = await resolver.render("mi:check_circle", {
+        size: "48px",
+        color: "#4CAF50",
+      });
+
+      expect(html).toContain('width="48px"');
+      expect(html).toContain('height="48px"');
+      expect(html).toContain('fill="#4CAF50"');
+    });
+  });
+
   describe("Registry utilities", () => {
     it("provides access to colors and defaults", async () => {
       const registryPath = path.join(tempDir, "registry.yaml");
