@@ -126,7 +126,7 @@ AI エージェントと協働して学術文献を管理・引用するため�
 
 | # | タスク | 依存 | 状態 |
 |---|--------|------|------|
-| 38 | [Fix Empty First Slide](./38-fix-empty-first-slide.md) | - | Pending |
+| 38 | [Fix Empty First Slide](./completed/38-fix-empty-first-slide.md) | - | Done |
 | 39 | [Template CSS Integration](./39-template-css-integration.md) | 38 | Pending |
 | 40 | [Icon Rendering Fix](./40-icon-rendering-fix.md) | 38 | Pending |
 | 41 | [Template Output Format Fix](./41-template-output-format-fix.md) | 38 | Pending |
@@ -159,9 +159,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 42
-- **Completed**: 37
+- **Completed**: 38
 - **In Progress**: 0
-- **Pending**: 5
+- **Pending**: 4
 
 ## Architecture Overview
 
