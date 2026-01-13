@@ -10,6 +10,8 @@ export interface RenderOptions {
   notes?: (string | undefined)[];
   /** Additional front matter properties */
   additionalFrontMatter?: Record<string, unknown>;
+  /** CSS collected from templates to inject into front matter */
+  templateCss?: string;
 }
 
 /**
@@ -66,6 +68,15 @@ export class Renderer {
     if (options?.additionalFrontMatter) {
       for (const [key, value] of Object.entries(options.additionalFrontMatter)) {
         lines.push(`${key}: ${this.formatFrontMatterValue(value)}`);
+      }
+    }
+
+    // Inject template CSS as style block
+    if (options?.templateCss && options.templateCss.trim()) {
+      lines.push('style: |');
+      const cssLines = options.templateCss.split('\n');
+      for (const line of cssLines) {
+        lines.push(`  ${line}`);
       }
     }
 

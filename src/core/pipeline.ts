@@ -3,7 +3,7 @@ import { Parser, type ParsedPresentation, type ParsedSlide } from './parser';
 import { Transformer } from './transformer';
 import { Renderer, type RenderOptions } from './renderer';
 import { TemplateEngine } from '../templates/engine';
-import { TemplateLoader } from '../templates/loader';
+import { TemplateLoader, CSSCollector } from '../templates';
 import { IconRegistryLoader } from '../icons/registry';
 import { IconResolver } from '../icons/resolver';
 import { ReferenceManager, type CSLItem } from '../references/manager';
@@ -77,6 +77,7 @@ export class Pipeline {
   private bibliographyGenerator: BibliographyGenerator;
   private transformer: Transformer;
   private renderer: Renderer;
+  private cssCollector: CSSCollector;
   private warnings: string[] = [];
 
   constructor(private config: Config) {
@@ -112,6 +113,7 @@ export class Pipeline {
       this.citationFormatter
     );
     this.renderer = new Renderer();
+    this.cssCollector = new CSSCollector(this.templateLoader);
   }
 
   /**
@@ -330,9 +332,16 @@ export class Pipeline {
       // Collect notes from slides
       const notes = presentation.slides.map((slide) => slide.notes);
 
+      // Collect template names used in the presentation
+      const templateNames = presentation.slides.map((slide) => slide.template);
+
+      // Collect CSS from used templates
+      const templateCss = this.cssCollector.collect(templateNames);
+
       const renderOptions: RenderOptions = {
         includeTheme: true,
         notes,
+        ...(templateCss ? { templateCss } : {}),
       };
 
       return this.renderer.render(slides, presentation.meta, renderOptions);

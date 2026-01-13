@@ -208,6 +208,51 @@ describe('Renderer', () => {
       expect(result).toContain('paginate: true');
       expect(result).toContain('footer: Page %number%');
     });
+
+    it('should inject template CSS into front matter style section', () => {
+      const meta: PresentationMeta = {
+        title: 'Test',
+        theme: 'default',
+      };
+
+      const templateCss = `.cycle-container {
+  display: flex;
+}
+.cycle-node {
+  background: var(--node-color);
+}`;
+
+      const result = renderer.render([], meta, { templateCss });
+
+      // Should have style: | in front matter
+      expect(result).toContain('style: |');
+      // CSS should be indented
+      expect(result).toContain('  .cycle-container {');
+      expect(result).toContain('    display: flex;');
+      expect(result).toContain('  .cycle-node {');
+    });
+
+    it('should not add style section when templateCss is empty', () => {
+      const meta: PresentationMeta = {
+        title: 'Test',
+        theme: 'default',
+      };
+
+      const result = renderer.render([], meta, { templateCss: '' });
+
+      expect(result).not.toContain('style:');
+    });
+
+    it('should not add style section when templateCss is undefined', () => {
+      const meta: PresentationMeta = {
+        title: 'Test',
+        theme: 'default',
+      };
+
+      const result = renderer.render([], meta, {});
+
+      expect(result).not.toContain('style:');
+    });
   });
 
   describe('output format', () => {
