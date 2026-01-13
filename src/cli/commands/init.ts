@@ -43,9 +43,13 @@ export interface InitOptions {
 function getPackageRoot(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
 
-  // Check if we're in source (src/) or bundled (dist/)
-  // Use path separator agnostic check for Windows compatibility
-  if (__dirname.includes(`${sep}src${sep}`) || __dirname.includes('/src/')) {
+  // Check if we're in the project's src directory (not just any /src/ in the path)
+  // Pattern: /src/cli/commands or \src\cli\commands at the end of the path
+  const isInSourceDir =
+    __dirname.endsWith(`${sep}src${sep}cli${sep}commands`) ||
+    __dirname.endsWith('/src/cli/commands');
+
+  if (isInSourceDir) {
     // Source: go up from src/cli/commands to package root
     return join(__dirname, '..', '..', '..');
   }
