@@ -152,6 +152,7 @@ aliases:
   support: "mi:support_agent"
 
   # === 人物・組織系 ===
+  user: "mi:person"
   person: "mi:person"
   people: "mi:people"
   group: "mi:group"

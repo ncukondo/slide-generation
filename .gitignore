@@ -157,3 +157,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 .pnpm-store/
+
+# Fetched icon sources tracking (auto-generated)
+icons/fetched/_sources.yaml
