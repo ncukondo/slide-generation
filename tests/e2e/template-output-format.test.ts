@@ -7,7 +7,6 @@ import { addHtmlOption } from '../../src/cli/utils/marp-runner';
 
 describe('E2E: Template output format', () => {
   const testDir = './test-e2e-template-output-format';
-  const fixturesDir = resolve(__dirname, '../fixtures').replace(/\\/g, '/');
   const templatesDir = resolve(__dirname, '../../templates').replace(/\\/g, '/');
   const iconsRegistryPath = resolve(__dirname, '../../icons/registry.yaml').replace(/\\/g, '/');
 
