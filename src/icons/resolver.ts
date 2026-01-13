@@ -2,6 +2,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import nunjucks from "nunjucks";
 import { IconRegistryLoader } from "./registry.js";
+import { IconFetcher, ICON_SOURCES } from "./fetcher.js";
 import type { IconSource } from "./schema.js";
 
 /**
@@ -19,6 +20,10 @@ export interface IconOptions {
 export interface IconResolverOptions {
   /** Use CSS variables for theme colors (e.g., var(--theme-primary)) */
   useThemeVariables?: boolean;
+  /** Directory for cached/fetched icons (default: icons/fetched) */
+  fetchedDir?: string;
+  /** Auto-fetch icons from external sources when not cached (default: true) */
+  autoFetch?: boolean;
 }
 
 /**
@@ -27,12 +32,19 @@ export interface IconResolverOptions {
 export class IconResolver {
   private nunjucksEnv: nunjucks.Environment;
   private options: IconResolverOptions;
+  private fetcher: IconFetcher;
 
   constructor(private registry: IconRegistryLoader, options: IconResolverOptions = {}) {
     this.nunjucksEnv = new nunjucks.Environment(null, {
       autoescape: false,
     });
-    this.options = options;
+    this.options = {
+      autoFetch: true,
+      ...options,
+    };
+    this.fetcher = new IconFetcher({
+      fetchedDir: options.fetchedDir ?? "icons/fetched",
+    });
   }
 
   /**
@@ -64,7 +76,23 @@ export class IconResolver {
       ...(options?.class !== undefined ? { class: options.class } : {}),
     };
 
-    // Render based on source type
+    // Try to use cached/fetched SVG first (for any source type that has external icons)
+    const cachedSvg = await this.tryGetCachedSvg(parsed.prefix, parsed.name);
+    if (cachedSvg) {
+      return this.processSvg(cachedSvg, parsed.name, mergedOptions);
+    }
+
+    // Auto-fetch if enabled and source is fetchable
+    if (this.options.autoFetch && this.isFetchableSource(parsed.prefix)) {
+      try {
+        const fetchedSvg = await this.fetcher.fetchAndSave(`${parsed.prefix}:${parsed.name}`);
+        return this.processSvg(fetchedSvg, parsed.name, mergedOptions);
+      } catch {
+        // Fall through to original rendering
+      }
+    }
+
+    // Render based on source type (fallback)
     switch (source.type) {
       case "web-font":
         return this.renderWebFont(source, parsed.name, mergedOptions);
@@ -77,6 +105,33 @@ export class IconResolver {
       default:
         throw new Error(`Unsupported icon source type: "${source.type}"`);
     }
+  }
+
+  /**
+   * Try to get a cached SVG from the fetched directory
+   */
+  private async tryGetCachedSvg(prefix: string, name: string): Promise<string | null> {
+    const iconSourceConfig = ICON_SOURCES[prefix];
+    if (!iconSourceConfig) {
+      return null;
+    }
+
+    const setDir = iconSourceConfig.set;
+    const fetchedDir = this.options.fetchedDir ?? "icons/fetched";
+    const svgPath = path.join(fetchedDir, setDir, `${name}.svg`);
+
+    try {
+      return await fs.readFile(svgPath, "utf-8");
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Check if a source prefix is fetchable from external API
+   */
+  private isFetchableSource(prefix: string): boolean {
+    return prefix in ICON_SOURCES;
   }
 
   /**

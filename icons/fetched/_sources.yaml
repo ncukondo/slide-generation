@@ -1,0 +1,7 @@
+# Fetched icon sources
+# This file tracks where icons were fetched from for traceability
+
+heroicons/arrow-right.svg:
+  source: https://api.iconify.design/heroicons/arrow-right.svg
+  fetched_at: 2026-01-13T21:17:18.458Z
+  license: MIT

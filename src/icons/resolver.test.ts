@@ -300,6 +300,80 @@ sources:
     });
   });
 
+  describe("auto-fetch icons", () => {
+    let fetchedDir: string;
+
+    beforeEach(async () => {
+      fetchedDir = path.join(tempDir, "icons", "fetched");
+      await fs.mkdir(fetchedDir, { recursive: true });
+
+      const registryPath = path.join(tempDir, "registry.yaml");
+      await fs.writeFile(
+        registryPath,
+        `
+sources:
+  - name: material-icons
+    type: web-font
+    prefix: mi
+    url: "https://fonts.googleapis.com/icon?family=Material+Icons"
+    render: '<span class="material-icons" style="{{ style }}">{{ name }}</span>'
+
+aliases:
+  planning: "mi:event_note"
+
+defaults:
+  size: "24px"
+  color: "currentColor"
+`
+      );
+      await loader.load(registryPath);
+    });
+
+    it("uses cached SVG when available instead of web-font", async () => {
+      // Create a cached SVG file
+      const materialIconsDir = path.join(fetchedDir, "material-icons");
+      await fs.mkdir(materialIconsDir, { recursive: true });
+      await fs.writeFile(
+        path.join(materialIconsDir, "home.svg"),
+        `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`
+      );
+
+      resolver = new IconResolver(loader, { fetchedDir });
+      const html = await resolver.render("mi:home");
+
+      // Should render as inline SVG, not web-font
+      expect(html).toContain("<svg");
+      expect(html).toContain("M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z");
+      expect(html).not.toContain("material-icons");
+    });
+
+    it("uses cached SVG for alias icons", async () => {
+      // Create a cached SVG file for event_note
+      const materialIconsDir = path.join(fetchedDir, "material-icons");
+      await fs.mkdir(materialIconsDir, { recursive: true });
+      await fs.writeFile(
+        path.join(materialIconsDir, "event_note.svg"),
+        `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10H7v2h10v-2z"/></svg>`
+      );
+
+      resolver = new IconResolver(loader, { fetchedDir });
+      const html = await resolver.render("planning");
+
+      // Should render as inline SVG
+      expect(html).toContain("<svg");
+      expect(html).toContain("M17 10H7v2h10v-2z");
+    });
+
+    it("falls back to web-font when cached SVG not available and autoFetch disabled", async () => {
+      resolver = new IconResolver(loader, { fetchedDir, autoFetch: false });
+      const html = await resolver.render("mi:home");
+
+      // Should use web-font fallback
+      expect(html).toContain("material-icons");
+      expect(html).toContain("home");
+    });
+  });
+
   describe("theme color integration", () => {
     beforeEach(async () => {
       const registryPath = path.join(tempDir, "registry.yaml");
