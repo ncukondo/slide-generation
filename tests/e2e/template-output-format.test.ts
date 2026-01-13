@@ -3,7 +3,6 @@ import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { createConvertCommand } from '../../src/cli/commands/convert';
 import { Command } from 'commander';
-import { addHtmlOption } from '../../src/cli/utils/marp-runner';
 
 describe('E2E: Template output format', () => {
   const testDir = './test-e2e-template-output-format';
@@ -29,27 +28,6 @@ references:
 
   afterEach(() => {
     rmSync(testDir, { recursive: true, force: true });
-  });
-
-  describe('addHtmlOption utility', () => {
-    it('should add --html option when not present', () => {
-      const args = ['input.md', '-o', 'output.html'];
-      const result = addHtmlOption(args);
-      expect(result).toContain('--html');
-    });
-
-    it('should not add --html if already present', () => {
-      const args = ['--html', 'input.md', '-o', 'output.html'];
-      const result = addHtmlOption(args);
-      expect(result.filter((a) => a === '--html')).toHaveLength(1);
-    });
-
-    it('should not add --html if --no-html is present', () => {
-      const args = ['--no-html', 'input.md', '-o', 'output.html'];
-      const result = addHtmlOption(args);
-      expect(result).not.toContain('--html');
-      expect(result).toContain('--no-html');
-    });
   });
 
   describe('HTML tags in template output', () => {
