@@ -144,6 +144,21 @@ export function parseMarpBrowserError(errorOutput: string): MarpBrowserError | n
 }
 
 /**
+ * Add --html option to args if not already present
+ * Templates use HTML tags, so --html is required for proper rendering
+ *
+ * @param args - Original arguments
+ * @returns Arguments with --html added if needed
+ */
+export function addHtmlOption(args: string[]): string[] {
+  // Don't add if --html or --no-html is already present
+  if (args.includes('--html') || args.includes('--no-html')) {
+    return args;
+  }
+  return ['--html', ...args];
+}
+
+/**
  * Run marp synchronously
  *
  * @param args - Arguments to pass to marp
