@@ -237,13 +237,24 @@ export async function executeWatch(
 
   state.start();
 
+  // WSL2 has known performance issues with inotify on NTFS mounted via 9P
+  // Use polling mode for more reliable file watching in WSL2 environments
+  const isWSL = !!process.env['WSL_DISTRO_NAME'];
+
   watcher = chokidarWatch(inputPath, {
     persistent: true,
     ignoreInitial: true,
+    usePolling: isWSL,
+    ...(isWSL && { interval: 100 }),
     awaitWriteFinish: {
       stabilityThreshold: 100,
       pollInterval: 50,
     },
+  });
+
+  // Wait for watcher to be ready before proceeding
+  await new Promise<void>((resolve) => {
+    watcher!.on('ready', resolve);
   });
 
   watcher.on('change', handleChange);
