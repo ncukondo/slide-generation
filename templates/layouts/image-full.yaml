@@ -57,10 +57,10 @@ output: |
   </div>
 
 css: |
-  .image-full-slide {
+  section.image-full-slide {
     padding: 0;
   }
-  .image-full-slide .image-full {
+  section.image-full-slide .image-full {
     width: 100%;
     height: 100%;
     background-size: cover;
@@ -71,7 +71,7 @@ css: |
     align-items: center;
     position: relative;
   }
-  .image-full-slide .overlay {
+  section.image-full-slide .overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -79,16 +79,16 @@ css: |
     height: 100%;
     z-index: 1;
   }
-  .image-full-slide .overlay-dark {
+  section.image-full-slide .overlay-dark {
     background: rgba(0, 0, 0, 0.5);
   }
-  .image-full-slide .overlay-light {
+  section.image-full-slide .overlay-light {
     background: rgba(255, 255, 255, 0.5);
   }
-  .image-full-slide .overlay-gradient {
+  section.image-full-slide .overlay-gradient {
     background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.7));
   }
-  .image-full-slide .image-title {
+  section.image-full-slide .image-title {
     position: relative;
     z-index: 2;
     color: white;
@@ -96,7 +96,7 @@ css: |
     font-size: 2.5em;
     margin: 0;
   }
-  .image-full-slide .image-caption {
+  section.image-full-slide .image-caption {
     position: relative;
     z-index: 2;
     color: white;

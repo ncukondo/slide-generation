@@ -78,26 +78,26 @@ output: |
   </div>
 
 css: |
-  .three-column-slide .column-container {
+  section.three-column-slide .column-container {
     display: flex;
     gap: 1.5em;
     width: 100%;
     justify-content: space-between;
   }
-  .three-column-slide .column {
+  section.three-column-slide .column {
     flex: 1;
     text-align: center;
     padding: 1em;
   }
-  .three-column-slide .column-icon {
+  section.three-column-slide .column-icon {
     font-size: 2em;
     display: block;
     margin-bottom: 0.5em;
   }
-  .three-column-slide .column-title {
+  section.three-column-slide .column-title {
     font-weight: bold;
     margin-bottom: 0.5em;
   }
-  .three-column-slide .column-content {
+  section.three-column-slide .column-content {
     text-align: left;
   }

@@ -45,32 +45,32 @@ output: |
   </figure>
 
 css: |
-  .image-caption-slide .image-caption-container {
+  section.image-caption-slide .image-caption-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     margin: 0 auto;
     max-width: 90%;
   }
-  .image-caption-slide .image-caption-container img {
+  section.image-caption-slide .image-caption-container img {
     max-width: 100%;
     max-height: 400px;
     object-fit: contain;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-  .image-caption-slide figcaption {
+  section.image-caption-slide figcaption {
     width: 100%;
     margin-top: 1em;
     text-align: left;
   }
-  .image-caption-slide .caption-text {
+  section.image-caption-slide .caption-text {
     font-size: 0.95em;
     color: #333;
     line-height: 1.5;
     margin: 0;
   }
-  .image-caption-slide .caption-source {
+  section.image-caption-slide .caption-source {
     font-size: 0.85em;
     color: #666;
     font-style: italic;
