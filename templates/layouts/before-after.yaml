@@ -54,10 +54,10 @@ schema:
 example:
   title: "リノベーション結果"
   before:
-    image: "images/photos/before.jpg"
+    image: "https://placehold.co/500x350/9E9E9E/FFF?text=Before"
     caption: "改修前 (2023年1月)"
   after:
-    image: "images/photos/after.jpg"
+    image: "https://placehold.co/500x350/4CAF50/FFF?text=After"
     caption: "改修後 (2024年3月)"
 
 output: |
