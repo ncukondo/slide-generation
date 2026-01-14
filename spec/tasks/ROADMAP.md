@@ -130,7 +130,7 @@ AI エージェントと協働して学術文献を管理・引用するため�
 | 39 | [Template CSS Integration](./completed/39-template-css-integration.md) | 38 | Done |
 | 40 | [Icon Rendering Fix](./completed/40-icon-rendering-fix.md) | 38 | Done |
 | 41 | [Template Output Format Fix](./completed/41-template-output-format-fix.md) | 38 | Done |
-| 42 | [Template Examples Fix](./42-template-examples-fix.md) | 40, 41 | Pending |
+| 42 | [Template Examples Fix](./completed/42-template-examples-fix.md) | 40, 41 | Done |
 | 43 | [Layout CSS Fix](./43-layout-css-fix.md) | - | Pending |
 | 44 | [Template CSS Guidelines](./44-template-css-guidelines.md) | 43 | Pending |
 
@@ -168,9 +168,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 44
-- **Completed**: 41
+- **Completed**: 42
 - **In Progress**: 0
-- **Pending**: 3
+- **Pending**: 2
 
 ## Architecture Overview
 
