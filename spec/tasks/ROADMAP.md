@@ -131,6 +131,8 @@ AI エージェントと協働して学術文献を管理・引用するため�
 | 40 | [Icon Rendering Fix](./completed/40-icon-rendering-fix.md) | 38 | Done |
 | 41 | [Template Output Format Fix](./completed/41-template-output-format-fix.md) | 38 | Done |
 | 42 | [Template Examples Fix](./42-template-examples-fix.md) | 40, 41 | Pending |
+| 43 | [Layout CSS Fix](./43-layout-css-fix.md) | - | Pending |
+| 44 | [Template CSS Guidelines](./44-template-css-guidelines.md) | 43 | Pending |
 
 ### Phase 9 実装順序
 
@@ -146,6 +148,11 @@ AI エージェントと協働して学術文献を管理・引用するため�
             ↓
            42
     (Examples Fix)
+
+43 (Layout CSS Fix)  ← Issue #22対応
+    ↓
+   44
+(CSS Guidelines + Visual Test)
 ```
 
 ### 各タスクの概要
@@ -155,13 +162,15 @@ AI エージェントと協働して学術文献を管理・引用するため�
 3. **40-icon-rendering-fix**: アイコンをプロジェクト内SVGとしてダウンロード・レンダリング
 4. **41-template-output-format-fix**: HTMLタグ後の空行追加、--htmlオプション有効化
 5. **42-template-examples-fix**: テンプレートexampleのアイコン形式・画像URL修正
+6. **43-layout-css-fix**: レイアウトテンプレートのCSSセレクタを`section.class`形式に修正（Issue #22）
+7. **44-template-css-guidelines**: テンプレート作成ガイドライン（CSS/HTML+Markdown）とVisual test手順をドキュメント・スキルに追加
 
 ## Progress Summary
 
-- **Total Tasks**: 42
+- **Total Tasks**: 44
 - **Completed**: 41
 - **In Progress**: 0
-- **Pending**: 1
+- **Pending**: 3
 
 ## Architecture Overview
 
