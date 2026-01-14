@@ -210,7 +210,7 @@ When creating or modifying templates, follow these critical rules.
 
 When using \`<!-- _class: foo -->\`:
 - The class is added to \`<section>\` element itself
-- CSS must use \`section.foo\` format, NOT \`.foo\`
+- Use \`section.foo\` when targeting the \`<section>\` element itself
 
 \`\`\`yaml
 # Correct
@@ -223,10 +223,12 @@ css: |
 \`\`\`
 
 \`\`\`yaml
-# WRONG - This will NOT work
+# WRONG - This does not target the section element itself
 css: |
   .my-slide .container { display: flex; }
 \`\`\`
+
+Note: \`.my-slide .container\` is valid for descendants inside the section, but it does not target the \`<section>\` element itself.
 
 #### 2. HTML + Markdown (CommonMark)
 

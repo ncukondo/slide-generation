@@ -131,15 +131,17 @@ css: |
 
 When using \`<!-- _class: foo -->\`, Marp adds class to the \`<section>\` element.
 
-**Correct:**
+**Correct (targeting the section element):**
 \`\`\`css
 section.foo .child { ... }
 \`\`\`
 
-**Wrong (will NOT work):**
+**Wrong (for targeting the section element):**
 \`\`\`css
 .foo .child { ... }
 \`\`\`
+
+Note: \`.foo .child\` is valid for descendants inside the section, but it does not target the \`<section>\` element itself.
 
 ### Critical HTML Rule: CommonMark
 

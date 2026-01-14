@@ -368,7 +368,7 @@ When creating or modifying templates, follow these critical rules to ensure prop
 ### 1. CSS Selector Rules (Marp Scoping)
 
 When using `<!-- _class: foo -->`, the class is added to the `<section>` element itself.
-Therefore, CSS selectors must use `section.class` format.
+Use `section.class` when you need to target the `<section>` element directly (or avoid matching non-`section` elements).
 
 #### Correct Pattern
 
@@ -380,14 +380,14 @@ section.my-slide .container { display: flex; }
 .container { padding: 1em; }
 ```
 
-#### Incorrect Pattern
+#### Incorrect Pattern (for targeting the section element)
 
 ```css
-/* This does NOT work - selector looks for descendants of .my-slide */
+/* This targets descendants, not the section element itself */
 .my-slide .container { display: flex; }
 ```
 
-**Why this happens**: Marp applies `<!-- _class: foo -->` directly to the `<section>` tag, creating `<section class="foo">`. The selector `.foo .container` looks for `.container` inside an element with class `foo`, but `.container` is inside the same `<section>` element, not a descendant.
+**Why this happens**: Marp applies `<!-- _class: foo -->` directly to the `<section>` tag, creating `<section class="foo">`. The selector `.foo .container` is valid for descendants inside that section, but it does not target the `<section>` element itself.
 
 ### 2. HTML + Markdown Rules (CommonMark)
 
