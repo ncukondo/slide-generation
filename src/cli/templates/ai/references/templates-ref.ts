@@ -86,5 +86,89 @@ Image with text side by side.
 - \`items\` or \`text\`: Content (required)
 
 ## Run \`slide-gen templates list --format llm\` for full list.
+
+---
+
+## Creating Custom Templates
+
+### Template File Structure
+
+\`\`\`yaml
+name: my-template
+description: "Description for LLM"
+category: custom
+
+schema:
+  type: object
+  required: [title]
+  properties:
+    title: { type: string }
+    content: { type: string }
+
+example:
+  title: "Sample"
+  content: "Sample content"
+
+output: |
+  ---
+  <!-- _class: my-template -->
+
+  # {{ title }}
+
+  <div class="content">
+
+  {{ content }}
+
+  </div>
+
+css: |
+  section.my-template .content {
+    padding: 1em;
+  }
+\`\`\`
+
+### Critical CSS Rule: Marp Scoping
+
+When using \`<!-- _class: foo -->\`, Marp adds class to the \`<section>\` element.
+
+**Correct:**
+\`\`\`css
+section.foo .child { ... }
+\`\`\`
+
+**Wrong (will NOT work):**
+\`\`\`css
+.foo .child { ... }
+\`\`\`
+
+### Critical HTML Rule: CommonMark
+
+Markdown inside HTML only parses with blank lines after tags:
+
+**Correct:**
+\`\`\`html
+<div>
+
+## Heading works
+
+</div>
+\`\`\`
+
+**Wrong:**
+\`\`\`html
+<div>
+## Plain text, not heading
+</div>
+\`\`\`
+
+### Visual Verification
+
+Always test templates with screenshots:
+
+\`\`\`bash
+slide-gen templates screenshot <template-name> --format png -o /tmp/test
+\`\`\`
+
+Check: Layout, Markdown parsing, CSS application.
 `;
 }
