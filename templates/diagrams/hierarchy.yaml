@@ -36,20 +36,23 @@ example:
   title: "組織図"
   root:
     label: "CEO"
-    icon: "user"
+    icon: "mi:person"
     color: "#1976D2"
     children:
       - label: "CTO"
+        icon: "mi:computer"
         color: "#388E3C"
         children:
           - { label: "開発部" }
           - { label: "インフラ部" }
       - label: "CFO"
+        icon: "mi:account_balance"
         color: "#F57C00"
         children:
           - { label: "経理部" }
           - { label: "財務部" }
       - label: "COO"
+        icon: "mi:business"
         color: "#7B1FA2"
         children:
           - { label: "営業部" }

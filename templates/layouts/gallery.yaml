@@ -40,13 +40,13 @@ example:
   title: "製品ラインナップ"
   columns: 3
   images:
-    - src: "product1.png"
+    - src: "https://placehold.co/400x300/4CAF50/FFF?text=Product+A"
       alt: "製品A"
       caption: "スタンダードモデル"
-    - src: "product2.png"
+    - src: "https://placehold.co/400x300/2196F3/FFF?text=Product+B"
       alt: "製品B"
       caption: "プロフェッショナルモデル"
-    - src: "product3.png"
+    - src: "https://placehold.co/400x300/9C27B0/FFF?text=Product+C"
       alt: "製品C"
       caption: "エンタープライズモデル"
 

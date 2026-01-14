@@ -37,7 +37,7 @@ schema:
       description: "オーバーレイ効果"
 
 example:
-  image: "images/photos/site-overview.jpg"
+  image: "https://placehold.co/1280x720/31343C/EEE?text=Full+Screen+Image"
   title: "Project Site"
   overlay: dark
 

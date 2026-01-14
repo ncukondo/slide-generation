@@ -23,7 +23,7 @@ schema:
 
 example:
   title: "実験結果"
-  image: "images/figures/experiment-result.png"
+  image: "https://placehold.co/800x500/E3F2FD/1565C0?text=Experiment+Result"
   caption: "図1: 温度変化による材料特性の変化。青線が提案手法、赤線が従来手法。"
   source: "社内実験データ (2024)"
 

@@ -67,11 +67,11 @@ example:
   title: "承認フロー"
   direction: vertical
   steps:
-    - { label: "申請", type: "start", color: "#4CAF50" }
-    - { label: "上司確認", type: "process" }
-    - { label: "承認？", type: "decision", branches: [{ condition: "Yes", target: "完了" }, { condition: "No", target: "差し戻し" }] }
-    - { label: "差し戻し", type: "process", color: "#FF5722" }
-    - { label: "完了", type: "end", color: "#9C27B0" }
+    - { label: "申請", type: "start", icon: "mi:description", color: "#4CAF50" }
+    - { label: "上司確認", type: "process", icon: "mi:person" }
+    - { label: "承認？", type: "decision", icon: "mi:thumb_up", branches: [{ condition: "Yes", target: "完了" }, { condition: "No", target: "差し戻し" }] }
+    - { label: "差し戻し", type: "process", icon: "mi:replay", color: "#FF5722" }
+    - { label: "完了", type: "end", icon: "mi:done_all", color: "#9C27B0" }
 
 output: |
   <!-- _class: diagram-slide flow-slide -->
