@@ -69,6 +69,8 @@ export class ReferenceManager {
 
   /**
    * Get multiple references by IDs using ref export for better performance
+   * Note: ref export returns exit code 1 when references are not found,
+   * but still outputs valid JSON (empty array or partial results) to stdout
    */
   async getByIds(ids: string[]): Promise<Map<string, CSLItem>> {
     if (ids.length === 0) {
@@ -76,9 +78,11 @@ export class ReferenceManager {
     }
 
     // Use ref export with specific IDs instead of fetching all references
+    // ignoreExitCode=true because ref export returns exit code 1 for missing refs
     const idsArg = ids.map((id) => `"${id}"`).join(' ');
     const result = await this.execCommand(
-      `${this.command} export ${idsArg}`
+      `${this.command} export ${idsArg}`,
+      true
     );
     const items = this.parseJSON(result);
 
@@ -90,10 +94,10 @@ export class ReferenceManager {
     return map;
   }
 
-  private execCommand(cmd: string): Promise<string> {
+  private execCommand(cmd: string, ignoreExitCode = false): Promise<string> {
     return new Promise((resolve, reject) => {
       exec(cmd, (error, stdout) => {
-        if (error) {
+        if (error && !ignoreExitCode) {
           reject(
             new ReferenceManagerError(`Failed to execute: ${cmd}`, error)
           );
