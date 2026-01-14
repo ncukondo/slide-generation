@@ -122,8 +122,10 @@ output: |
   </div>
 
 # Associated CSS (included in theme)
+# NOTE: Use section.class format for Marp CSS scoping
 css: |
-  .cycle-container {
+  /* Use section.class for slide-level scoping */
+  section.cycle-slide .cycle-container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -132,7 +134,7 @@ css: |
     height: 70%;
   }
 
-  .cycle-node {
+  section.cycle-slide .cycle-node {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -147,10 +149,10 @@ css: |
   }
 
   /* Node positioning (angle calculation based on element count) */
-  .cycle-3 .cycle-node { /* 3-element positioning */ }
-  .cycle-4 .cycle-node { /* 4-element positioning */ }
-  .cycle-5 .cycle-node { /* 5-element positioning */ }
-  .cycle-6 .cycle-node { /* 6-element positioning */ }
+  section.cycle-slide.cycle-3 .cycle-node { /* 3-element positioning */ }
+  section.cycle-slide.cycle-4 .cycle-node { /* 4-element positioning */ }
+  section.cycle-slide.cycle-5 .cycle-node { /* 5-element positioning */ }
+  section.cycle-slide.cycle-6 .cycle-node { /* 6-element positioning */ }
 ```
 
 ## Built-in Template List
@@ -277,7 +279,8 @@ output: |
   </div>
 
 css: |
-  .my-template .my-content {
+  /* Use section.class format for Marp CSS scoping */
+  section.my-template .my-content {
     /* Style definitions */
   }
 ```
@@ -357,6 +360,83 @@ Example:
       - { label: "Check", icon: "analysis", color: "#FF9800" }
       - { label: "Act", icon: "improvement", color: "#9C27B0" }
 ```
+
+## Template Writing Guidelines
+
+When creating or modifying templates, follow these critical rules to ensure proper rendering.
+
+### 1. CSS Selector Rules (Marp Scoping)
+
+When using `<!-- _class: foo -->`, the class is added to the `<section>` element itself.
+Use `section.class` when you need to target the `<section>` element directly (or avoid matching non-`section` elements).
+
+#### Correct Pattern
+
+```css
+/* Slide class selector - class is ON the section element */
+section.my-slide .container { display: flex; }
+
+/* Child element only (no slide class needed) */
+.container { padding: 1em; }
+```
+
+#### Incorrect Pattern (for targeting the section element)
+
+```css
+/* This targets descendants, not the section element itself */
+.my-slide .container { display: flex; }
+```
+
+**Why this happens**: Marp applies `<!-- _class: foo -->` directly to the `<section>` tag, creating `<section class="foo">`. The selector `.foo .container` is valid for descendants inside that section, but it does not target the `<section>` element itself.
+
+### 2. HTML + Markdown Rules (CommonMark)
+
+Markdown inside HTML tags is only parsed when there's a blank line after the opening tag.
+
+#### Correct Pattern
+
+```html
+<div class="container">
+
+## This heading works
+- This list works
+
+</div>
+```
+
+#### Incorrect Pattern
+
+```html
+<div class="container">
+## This is plain text, not a heading
+- This is plain text, not a list
+</div>
+```
+
+**Why this happens**: CommonMark specification requires a blank line to switch between HTML block and Markdown content. Without the blank line, everything inside the HTML tag is treated as raw HTML/text.
+
+### 3. Visual Verification (Required)
+
+Always verify template rendering with screenshots after creating or modifying templates:
+
+```bash
+slide-gen templates screenshot <template-name> --format png -o /tmp/test
+```
+
+**Check for:**
+- Layout is correct (columns, grids, flexbox working)
+- Markdown is parsed (headings, lists, etc. rendered properly)
+- CSS is not silently failing (elements not positioned as expected)
+- Text and icons display correctly
+
+### 4. Common Pitfalls
+
+| Issue | Symptom | Fix |
+|-------|---------|-----|
+| Wrong CSS selector | Layout/styling doesn't apply | Use `section.class` instead of `.class` |
+| Missing blank line in HTML | Markdown shows as raw text | Add blank line after opening tag |
+| Incorrect icon format | Icon doesn't render | Use `{{ icons.render("name") }}` |
+| Missing `---` separator | Slides merged together | Each slide output must start with `---` |
 
 ## Template Screenshots
 
