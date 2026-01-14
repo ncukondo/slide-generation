@@ -122,8 +122,10 @@ output: |
   </div>
 
 # Associated CSS (included in theme)
+# NOTE: Use section.class format for Marp CSS scoping
 css: |
-  .cycle-container {
+  /* Use section.class for slide-level scoping */
+  section.cycle-slide .cycle-container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -132,7 +134,7 @@ css: |
     height: 70%;
   }
 
-  .cycle-node {
+  section.cycle-slide .cycle-node {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -147,10 +149,10 @@ css: |
   }
 
   /* Node positioning (angle calculation based on element count) */
-  .cycle-3 .cycle-node { /* 3-element positioning */ }
-  .cycle-4 .cycle-node { /* 4-element positioning */ }
-  .cycle-5 .cycle-node { /* 5-element positioning */ }
-  .cycle-6 .cycle-node { /* 6-element positioning */ }
+  section.cycle-slide.cycle-3 .cycle-node { /* 3-element positioning */ }
+  section.cycle-slide.cycle-4 .cycle-node { /* 4-element positioning */ }
+  section.cycle-slide.cycle-5 .cycle-node { /* 5-element positioning */ }
+  section.cycle-slide.cycle-6 .cycle-node { /* 6-element positioning */ }
 ```
 
 ## Built-in Template List
