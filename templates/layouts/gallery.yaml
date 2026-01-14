@@ -67,27 +67,27 @@ output: |
   </div>
 
 css: |
-  .gallery-slide .gallery-container {
+  section.gallery-slide .gallery-container {
     display: grid;
     gap: 1em;
     width: 100%;
     justify-items: center;
   }
-  .gallery-slide .gallery-cols-2 { grid-template-columns: repeat(2, 1fr); }
-  .gallery-slide .gallery-cols-3 { grid-template-columns: repeat(3, 1fr); }
-  .gallery-slide .gallery-cols-4 { grid-template-columns: repeat(4, 1fr); }
-  .gallery-slide .gallery-cols-5 { grid-template-columns: repeat(5, 1fr); }
-  .gallery-slide .gallery-cols-6 { grid-template-columns: repeat(6, 1fr); }
-  .gallery-slide .gallery-item {
+  section.gallery-slide .gallery-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  section.gallery-slide .gallery-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  section.gallery-slide .gallery-cols-4 { grid-template-columns: repeat(4, 1fr); }
+  section.gallery-slide .gallery-cols-5 { grid-template-columns: repeat(5, 1fr); }
+  section.gallery-slide .gallery-cols-6 { grid-template-columns: repeat(6, 1fr); }
+  section.gallery-slide .gallery-item {
     text-align: center;
     margin: 0;
   }
-  .gallery-slide .gallery-item img {
+  section.gallery-slide .gallery-item img {
     max-width: 100%;
     height: auto;
     border-radius: 4px;
   }
-  .gallery-slide .gallery-item figcaption {
+  section.gallery-slide .gallery-item figcaption {
     font-size: 0.85em;
     color: #666;
     margin-top: 0.5em;

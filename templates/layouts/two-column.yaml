@@ -75,15 +75,15 @@ output: |
   </div>
 
 css: |
-  .two-column-slide .two-column-container {
+  section.two-column-slide .two-column-container {
     display: flex;
     gap: 2em;
     width: 100%;
     height: 80%;
   }
-  .two-column-slide .column-left {
+  section.two-column-slide .column-left {
     flex: var(--left-ratio, 50);
   }
-  .two-column-slide .column-right {
+  section.two-column-slide .column-right {
     flex: var(--right-ratio, 50);
   }

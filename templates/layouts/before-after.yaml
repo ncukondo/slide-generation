@@ -83,32 +83,32 @@ output: |
   </div>
 
 css: |
-  .before-after-slide .before-after-container {
+  section.before-after-slide .before-after-container {
     display: flex;
     gap: 2em;
     justify-content: center;
     align-items: flex-start;
     width: 100%;
   }
-  .before-after-slide.layout-horizontal .before-after-container {
+  section.before-after-slide.layout-horizontal .before-after-container {
     flex-direction: row;
   }
-  .before-after-slide.layout-vertical .before-after-container {
+  section.before-after-slide.layout-vertical .before-after-container {
     flex-direction: column;
     align-items: center;
   }
-  .before-after-slide .before-section,
-  .before-after-slide .after-section {
+  section.before-after-slide .before-section,
+  section.before-after-slide .after-section {
     flex: 1;
     text-align: center;
     position: relative;
   }
-  .before-after-slide.layout-vertical .before-section,
-  .before-after-slide.layout-vertical .after-section {
+  section.before-after-slide.layout-vertical .before-section,
+  section.before-after-slide.layout-vertical .after-section {
     width: 80%;
     flex: none;
   }
-  .before-after-slide .comparison-label {
+  section.before-after-slide .comparison-label {
     display: inline-block;
     padding: 0.3em 1em;
     background: #333;
@@ -118,21 +118,21 @@ css: |
     border-radius: 4px;
     margin-bottom: 0.5em;
   }
-  .before-after-slide .before-section .comparison-label {
+  section.before-after-slide .before-section .comparison-label {
     background: #666;
   }
-  .before-after-slide .after-section .comparison-label {
+  section.before-after-slide .after-section .comparison-label {
     background: #2196F3;
   }
-  .before-after-slide .before-section img,
-  .before-after-slide .after-section img {
+  section.before-after-slide .before-section img,
+  section.before-after-slide .after-section img {
     max-width: 100%;
     max-height: 300px;
     object-fit: contain;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
-  .before-after-slide .comparison-caption {
+  section.before-after-slide .comparison-caption {
     font-size: 0.85em;
     color: #666;
     margin-top: 0.5em;
