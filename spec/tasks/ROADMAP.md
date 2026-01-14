@@ -132,7 +132,7 @@ AI エージェントと協働して学術文献を管理・引用するため�
 | 41 | [Template Output Format Fix](./completed/41-template-output-format-fix.md) | 38 | Done |
 | 42 | [Template Examples Fix](./completed/42-template-examples-fix.md) | 40, 41 | Done |
 | 43 | [Layout CSS Fix](./completed/43-layout-css-fix.md) | - | Done |
-| 44 | [Template CSS Guidelines](./44-template-css-guidelines.md) | 43 | Pending |
+| 44 | [Template CSS Guidelines](./completed/44-template-css-guidelines.md) | 43 | Done |
 
 ### Phase 9 実装順序
 
@@ -168,9 +168,9 @@ AI エージェントと協働して学術文献を管理・引用するため�
 ## Progress Summary
 
 - **Total Tasks**: 44
-- **Completed**: 43
+- **Completed**: 44
 - **In Progress**: 0
-- **Pending**: 1
+- **Pending**: 0
 
 ## Architecture Overview
 
