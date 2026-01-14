@@ -200,6 +200,71 @@ Take new screenshots and verify improvements.
 7. \`Read ./screenshots/presentation.003.jpeg\`
 8. Verify fix, move to next slide
 
+## Custom Template Creation
+
+When creating or modifying templates, follow these critical rules.
+
+### Critical Rules
+
+#### 1. CSS Selectors (Marp Scoping)
+
+When using \`<!-- _class: foo -->\`:
+- The class is added to \`<section>\` element itself
+- CSS must use \`section.foo\` format, NOT \`.foo\`
+
+\`\`\`yaml
+# Correct
+output: |
+  <!-- _class: my-slide -->
+  <div class="container">...</div>
+
+css: |
+  section.my-slide .container { display: flex; }
+\`\`\`
+
+\`\`\`yaml
+# WRONG - This will NOT work
+css: |
+  .my-slide .container { display: flex; }
+\`\`\`
+
+#### 2. HTML + Markdown (CommonMark)
+
+Markdown inside HTML is only parsed with blank lines:
+
+\`\`\`yaml
+# Correct - blank line after <div>
+output: |
+  <div class="container">
+
+  ## Heading works
+  - List works
+
+  </div>
+\`\`\`
+
+\`\`\`yaml
+# WRONG - no blank line, Markdown won't parse
+output: |
+  <div class="container">
+  ## This is plain text
+  - Not a list
+  </div>
+\`\`\`
+
+### Visual Regression Test (Required)
+
+After creating/modifying templates, ALWAYS verify with screenshots:
+
+\`\`\`bash
+slide-gen templates screenshot <template-name> --format png -o /tmp/test
+\`\`\`
+
+**Check that:**
+- Layout is correct (columns, grids, flexbox)
+- Markdown is parsed (headings, lists rendered properly)
+- CSS is not silently failing
+
 ## Reference Management
 
 For academic presentations, manage citations and references:
