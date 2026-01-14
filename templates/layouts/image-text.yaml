@@ -43,7 +43,7 @@ schema:
 
 example:
   title: "製品紹介"
-  image: "product-photo.png"
+  image: "https://placehold.co/600x400/EEE/31343C?text=Product+Image"
   alt: "製品の外観写真"
   caption: "新製品のデザイン"
   text:
