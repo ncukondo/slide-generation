@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { IconRegistryLoader } from '../../icons/registry.js';
@@ -10,13 +11,19 @@ import { IconifyApiClient } from '../../icons/iconify-api.js';
 import {
   formatExternalSearchResults,
   type ExternalSearchResult,
-  type OutputFormat as ExternalOutputFormat,
+  type OutputFormat,
 } from '../../icons/search-formatter.js';
+import { SearchCache } from '../../icons/search-cache.js';
 import { ConfigLoader } from '../../config/loader.js';
 import type { IconSource, IconRegistry } from '../../icons/schema.js';
 import { ExitCode } from './convert.js';
 
-type OutputFormat = 'table' | 'json' | 'llm';
+/** Number of top collections to show in LLM format */
+const LLM_TOP_COLLECTIONS = 30;
+/** Number of top collections to show in table format */
+const TABLE_TOP_COLLECTIONS = 50;
+/** Cache TTL in seconds (1 hour) */
+const SEARCH_CACHE_TTL = 3600;
 
 interface ListOptions {
   source?: string;
@@ -974,10 +981,18 @@ function createSearchExternalCommand(): Command {
     .action(async (query: string | undefined, options: SearchExternalOptions) => {
       try {
         const client = new IconifyApiClient();
+        const cacheDir = path.join(os.homedir(), '.cache', 'slide-gen', 'icon-search');
+        const cache = new SearchCache({ directory: cacheDir, ttl: SEARCH_CACHE_TTL });
 
         // Handle --prefixes flag: list available icon sets
         if (options.prefixes) {
-          const collections = await client.getCollections();
+          // Try cache first
+          const cacheKey = 'collections';
+          let collections = await cache.get<Record<string, { name: string; total: number; license?: { spdx?: string; title?: string }; category?: string }>>(cacheKey);
+          if (!collections) {
+            collections = await client.getCollections();
+            await cache.set(cacheKey, collections);
+          }
 
           // Sort by total icons (most popular first)
           const sortedCollections = Object.entries(collections)
@@ -1002,8 +1017,8 @@ function createSearchExternalCommand(): Command {
               '',
             ];
 
-            // Show top 30 most popular
-            const topCollections = sortedCollections.slice(0, 30);
+            // Show top most popular
+            const topCollections = sortedCollections.slice(0, LLM_TOP_COLLECTIONS);
             for (const [prefix, info] of topCollections) {
               lines.push(`- **${prefix}**: ${info.name} (${info.total} icons)`);
             }
@@ -1022,7 +1037,7 @@ function createSearchExternalCommand(): Command {
             console.log('');
 
             // Calculate column widths
-            const displayCollections = sortedCollections.slice(0, 50);
+            const displayCollections = sortedCollections.slice(0, TABLE_TOP_COLLECTIONS);
             const maxPrefixLen = Math.max(...displayCollections.map(([p]) => p.length), 6);
             const maxNameLen = Math.min(Math.max(...displayCollections.map(([, i]) => i.name.length), 4), 40);
 
@@ -1038,9 +1053,9 @@ function createSearchExternalCommand(): Command {
               console.log(`  ${prefixStr}  ${nameStr}  ${String(info.total).padStart(8)}`);
             }
 
-            if (sortedCollections.length > 50) {
+            if (sortedCollections.length > TABLE_TOP_COLLECTIONS) {
               console.log('');
-              console.log(chalk.dim(`... and ${sortedCollections.length - 50} more icon sets`));
+              console.log(chalk.dim(`... and ${sortedCollections.length - TABLE_TOP_COLLECTIONS} more icon sets`));
             }
           }
           return;
@@ -1055,13 +1070,20 @@ function createSearchExternalCommand(): Command {
           return;
         }
 
-        // Perform search
+        // Perform search with cache
         const limit = parseInt(options.limit ?? '20', 10);
         const searchOptions: { limit: number; prefixes?: string[] } = { limit };
         if (options.set && options.set.length > 0) {
           searchOptions.prefixes = options.set;
         }
-        const searchResult = await client.search(query, searchOptions);
+
+        // Build cache key from query and options
+        const cacheKey = `search:${query}:${limit}:${(options.set ?? []).sort().join(',')}`;
+        let searchResult = await cache.get<{ icons: string[]; total: number; limit: number; start: number }>(cacheKey);
+        if (!searchResult) {
+          searchResult = await client.search(query, searchOptions);
+          await cache.set(cacheKey, searchResult);
+        }
 
         // Transform to ExternalSearchResult format
         const results: ExternalSearchResult = {
@@ -1080,7 +1102,7 @@ function createSearchExternalCommand(): Command {
         };
 
         // Output results
-        const format = (options.format ?? 'table') as ExternalOutputFormat;
+        const format = (options.format ?? 'table') as OutputFormat;
         const output = formatExternalSearchResults(results, format);
         console.log(output);
       } catch (error) {

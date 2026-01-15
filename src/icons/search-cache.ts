@@ -38,7 +38,7 @@ export class SearchCache {
    */
   private getFilename(key: string): string {
     // Hash the key to handle special characters and long keys
-    const hash = crypto.createHash('md5').update(key).digest('hex');
+    const hash = crypto.createHash('sha256').update(key).digest('hex');
     return path.join(this.directory, `${hash}.json`);
   }
 
