@@ -30,3 +30,20 @@ export {
   type ParsedReference,
   type IconSourceConfig,
 } from "./fetcher.js";
+
+export {
+  IconifyApiClient,
+  type SearchOptions,
+  type SearchResult,
+  type CollectionInfo,
+  type IconifyApiClientOptions,
+} from "./iconify-api.js";
+
+export {
+  formatExternalSearchResults,
+  type ExternalSearchResult,
+  type ExternalSearchResultIcon,
+  type OutputFormat,
+} from "./search-formatter.js";
+
+export { SearchCache, type SearchCacheOptions } from "./search-cache.js";

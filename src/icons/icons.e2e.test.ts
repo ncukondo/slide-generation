@@ -2,7 +2,11 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
-import { IconRegistryLoader, IconResolver } from "./index.js";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+import { IconRegistryLoader, IconResolver, IconifyApiClient } from "./index.js";
+
+const execAsync = promisify(exec);
 
 describe("Icon System E2E", () => {
   let tempDir: string;
@@ -367,6 +371,99 @@ aliases:
       const aliases = loader.getAliases();
       expect(Object.keys(aliases)).toHaveLength(2);
       expect(aliases["success"]).toBe("mi:check_circle");
+    });
+  });
+
+  describe("External icon search", () => {
+    it("should search icons using IconifyApiClient", async () => {
+      const client = new IconifyApiClient();
+      const results = await client.search("heart", { limit: 5 });
+
+      expect(results.icons.length).toBeGreaterThan(0);
+      expect(results.total).toBeGreaterThan(0);
+      expect(results.icons.some((icon) => icon.includes("heart"))).toBe(true);
+    });
+
+    it("should filter by icon set", async () => {
+      const client = new IconifyApiClient();
+      const results = await client.search("arrow", {
+        limit: 10,
+        prefixes: ["mdi"],
+      });
+
+      expect(results.icons.every((icon) => icon.startsWith("mdi:"))).toBe(true);
+    });
+
+    it("should get available collections", async () => {
+      const client = new IconifyApiClient();
+      const collections = await client.getCollections();
+
+      expect(collections).toHaveProperty("mdi");
+      expect(collections).toHaveProperty("heroicons");
+      expect(collections["mdi"]).toHaveProperty("total");
+    });
+  });
+
+  describe("CLI: icons search-external", () => {
+    const cliPath = "./dist/cli/index.js";
+
+    it("should search and display results from Iconify API", async () => {
+      const { stdout, stderr } = await execAsync(
+        `node ${cliPath} icons search-external heart --limit 5`
+      );
+
+      expect(stderr).toBe("");
+      expect(stdout).toContain("heart");
+      expect(stdout).toMatch(/External Icon Search/);
+    });
+
+    it("should work with --set filter", async () => {
+      const { stdout, stderr } = await execAsync(
+        `node ${cliPath} icons search-external arrow --set mdi --format json`
+      );
+
+      expect(stderr).toBe("");
+      const result = JSON.parse(stdout);
+      expect(
+        result.icons.every((i: { reference: string }) =>
+          i.reference.startsWith("mdi:")
+        )
+      ).toBe(true);
+    });
+
+    it("should output LLM-friendly format for AI agents", async () => {
+      const { stdout, stderr } = await execAsync(
+        `node ${cliPath} icons search-external check --format llm --limit 10`
+      );
+
+      expect(stderr).toBe("");
+      expect(stdout).toContain("# External Icon Search Results");
+      expect(stdout).toContain("slide-gen icons add");
+    });
+
+    it("should list available icon sets with --prefixes", async () => {
+      const { stdout, stderr } = await execAsync(
+        `node ${cliPath} icons search-external --prefixes`
+      );
+
+      expect(stderr).toBe("");
+      expect(stdout).toContain("mdi");
+      expect(stdout).toContain("Available Icon Sets");
+    });
+
+    it("should complete full workflow: search -> validate reference format", async () => {
+      // 1. Search for icon
+      const { stdout } = await execAsync(
+        `node ${cliPath} icons search-external stethoscope --format json --limit 1`
+      );
+
+      const result = JSON.parse(stdout);
+      expect(result.icons.length).toBeGreaterThan(0);
+
+      // 2. The icon reference can be used with 'icons add'
+      // (This verifies the reference format is correct)
+      const iconRef = result.icons[0].reference;
+      expect(iconRef).toMatch(/^[a-z0-9-]+:[a-z0-9-]+$/i);
     });
   });
 });
