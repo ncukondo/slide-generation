@@ -269,6 +269,269 @@ Heroicons (hero:):
   hero:check-badge
 ```
 
+---
+
+## External Icon Search
+
+Searches for icons from external sources (Iconify API) that are not yet registered in the local registry.
+
+### Command Syntax
+
+```bash
+slide-gen icons search-external <query> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `query` | Yes | Search keyword (e.g., "heart", "stethoscope", "arrow") |
+
+### Options
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--limit <n>` | `-l` | 20 | Maximum number of results to return |
+| `--set <name>` | `-s` | (all) | Filter by icon set (e.g., `mdi`, `healthicons`, `heroicons`) |
+| `--style <style>` | | (all) | Filter by style: `outline`, `solid`, `fill`, `line` |
+| `--format <fmt>` | `-f` | `table` | Output format: `table`, `json`, `llm` |
+| `--prefixes` | `-p` | false | Show only unique icon set prefixes |
+
+### Iconify API Integration
+
+The command uses the [Iconify API](https://iconify.design/docs/api/) for searching:
+
+```
+GET https://api.iconify.design/search?query=<query>&limit=<limit>
+```
+
+#### Response Processing
+
+The API returns:
+```json
+{
+  "icons": ["mdi:heart", "mdi:heart-outline", "healthicons:heart", ...],
+  "total": 150,
+  "limit": 20,
+  "start": 0
+}
+```
+
+### Output Formats
+
+#### Table Format (default)
+
+```bash
+$ slide-gen icons search-external "stethoscope"
+
+External Icon Search: "stethoscope"
+Found 12 icons from 5 sets
+
+  Icon Reference                    Set                 Style
+  ─────────────────────────────────────────────────────────────
+  healthicons:stethoscope           Health Icons        solid
+  mdi:stethoscope                   Material Design     solid
+  fa6-solid:stethoscope             Font Awesome 6      solid
+  iconoir:stethoscope               Iconoir             outline
+  tabler:stethoscope                Tabler Icons        outline
+  ph:stethoscope                    Phosphor            regular
+  ph:stethoscope-bold               Phosphor            bold
+  ph:stethoscope-fill               Phosphor            fill
+  ...
+
+To add an icon: slide-gen icons add <alias> --from <reference>
+```
+
+#### JSON Format
+
+```bash
+$ slide-gen icons search-external "stethoscope" --format json
+```
+
+```json
+{
+  "query": "stethoscope",
+  "total": 12,
+  "icons": [
+    {
+      "reference": "healthicons:stethoscope",
+      "set": "healthicons",
+      "setName": "Health Icons",
+      "name": "stethoscope",
+      "style": "solid"
+    },
+    {
+      "reference": "mdi:stethoscope",
+      "set": "mdi",
+      "setName": "Material Design Icons",
+      "name": "stethoscope",
+      "style": "solid"
+    }
+  ]
+}
+```
+
+#### LLM Format
+
+Optimized for AI agent consumption:
+
+```bash
+$ slide-gen icons search-external "stethoscope" --format llm
+```
+
+```yaml
+# External Icon Search Results
+# Query: stethoscope
+# Total: 12 icons found
+
+# Recommended icons by category:
+
+## Medical/Healthcare (recommended for medical presentations)
+- healthicons:stethoscope  # Health Icons - designed for healthcare
+
+## General Purpose
+- mdi:stethoscope          # Material Design Icons - widely compatible
+- fa6-solid:stethoscope    # Font Awesome - popular choice
+
+## Outline Style
+- iconoir:stethoscope      # Iconoir - minimal outline
+- tabler:stethoscope       # Tabler - consistent stroke width
+
+# Usage:
+# slide-gen icons add stethoscope --from "healthicons:stethoscope"
+```
+
+### Filtering by Icon Set
+
+```bash
+# Search only in Health Icons
+$ slide-gen icons search-external "heart" --set healthicons
+
+# Search only in Material Design Icons
+$ slide-gen icons search-external "arrow" --set mdi
+
+# Search in multiple sets
+$ slide-gen icons search-external "check" --set mdi --set heroicons
+```
+
+### Available Icon Sets
+
+Major icon sets available through Iconify:
+
+| Set Prefix | Name | Icons | Best For |
+|------------|------|-------|----------|
+| `healthicons` | Health Icons | 1000+ | Medical, healthcare |
+| `mdi` | Material Design Icons | 7000+ | General purpose |
+| `heroicons` | Heroicons | 450+ | Web UI, minimal |
+| `fa6-solid` | Font Awesome 6 | 2000+ | General purpose |
+| `fa6-regular` | Font Awesome 6 Regular | 150+ | Outline style |
+| `tabler` | Tabler Icons | 4000+ | Consistent line icons |
+| `ph` | Phosphor | 6000+ | Multiple weights |
+| `lucide` | Lucide | 1000+ | Feather-based |
+| `iconoir` | Iconoir | 1300+ | Minimal outline |
+| `ri` | Remix Icon | 2400+ | Versatile |
+| `carbon` | Carbon Icons | 2000+ | IBM design system |
+| `fluent` | Fluent UI | 4000+ | Microsoft design |
+
+### List Available Sets
+
+```bash
+# Show all available icon sets with counts
+$ slide-gen icons search-external --prefixes
+
+Available Icon Sets (via Iconify):
+
+  Prefix          Name                    Icons   Description
+  ───────────────────────────────────────────────────────────────
+  healthicons     Health Icons            1000+   Medical & healthcare
+  mdi             Material Design Icons   7000+   Google Material Design
+  heroicons       Heroicons               450+    Tailwind CSS team
+  fa6-solid       Font Awesome 6 Solid    2000+   Popular icon library
+  tabler          Tabler Icons            4000+   Consistent stroke icons
+  ph              Phosphor                6000+   Flexible icon family
+  ...
+```
+
+### Preview Before Adding
+
+```bash
+# Preview an external icon (fetches and displays)
+$ slide-gen icons preview "iconify:healthicons:stethoscope" --format html > preview.html
+
+# Or open directly in browser (if supported)
+$ slide-gen icons preview "iconify:healthicons:stethoscope" --open
+```
+
+### Complete Workflow Example
+
+```bash
+# 1. Search for icons
+$ slide-gen icons search-external "electrocardiogram" --format table
+
+External Icon Search: "electrocardiogram"
+Found 3 icons from 2 sets
+
+  Icon Reference                    Set                 Style
+  ─────────────────────────────────────────────────────────────
+  healthicons:electrocardiogram     Health Icons        solid
+  mdi:heart-pulse                   Material Design     solid
+  medical-icon:ecg                  Medical Icons       outline
+
+# 2. Preview the best candidate
+$ slide-gen icons preview "iconify:healthicons:electrocardiogram"
+
+# 3. Add to registry with a semantic alias
+$ slide-gen icons add ecg --from "iconify:healthicons:electrocardiogram"
+
+Added alias: ecg -> fetched:healthicons/electrocardiogram
+SVG saved to: icons/fetched/healthicons/electrocardiogram.svg
+
+# 4. Use in presentation
+# presentation.yaml
+slides:
+  - template: content
+    content:
+      title: "Heart Monitoring"
+      icon: ecg  # Uses the newly added alias
+```
+
+### Error Handling
+
+```bash
+# Network error
+$ slide-gen icons search-external "heart"
+Error: Failed to connect to Iconify API. Check your network connection.
+
+# No results
+$ slide-gen icons search-external "xyznonexistent"
+No icons found for "xyznonexistent".
+
+Suggestions:
+- Try different keywords
+- Check spelling
+- Use broader terms (e.g., "medical" instead of "otolaryngology")
+
+# Rate limiting
+$ slide-gen icons search-external "icon" --limit 1000
+Warning: API rate limit reached. Showing first 100 results.
+```
+
+### Caching
+
+External search results are cached to reduce API calls:
+
+```yaml
+# config.yaml
+icons:
+  external_search:
+    cache:
+      enabled: true
+      directory: ".cache/icon-search"
+      ttl: 3600  # 1 hour in seconds
+```
+
+---
+
 ## Integration with Marp Output
 
 Icons are embedded as HTML within Marp Markdown:
@@ -338,17 +601,19 @@ Slide content: "Patient Care Flow"
 AI searches for icons in the following order:
 
 ```
-1. Alias search
-   slide-gen icons list --format llm
+1. Local alias search (fastest)
+   slide-gen icons list --aliases --format llm
    -> Select optimal from registered aliases
 
-2. Source search
+2. Local registry search
    slide-gen icons search "diagnosis" --format llm
-   -> Search each source by keyword
+   -> Search registered sources by keyword
 
-3. External source search (when missing)
-   slide-gen icons search "electrocardiogram" --source health
-   -> Search specific sources like Health Icons
+3. External source search (when not found locally)
+   slide-gen icons search-external "electrocardiogram" --format llm
+   -> Search Iconify API for icons across 100+ icon sets
+   -> Recommended for medical: --set healthicons
+   -> Recommended for general: --set mdi
 ```
 
 ### Phase 3: Missing Icon Detection and Auto-supplement
@@ -359,20 +624,39 @@ AI searches for icons in the following order:
 1. AI identifies desired icon
    Example: Need an "electrocardiogram" icon
 
-2. Search aliases -> Not found
+2. Search local aliases
+   slide-gen icons search "ecg"
+   -> Not found in local registry
 
-3. Search external sources
-   slide-gen icons search "ecg" --all-sources
+3. Search external sources via Iconify API
+   slide-gen icons search-external "ecg" --format llm
 
-4. Candidates found
-   - health:electrocardiogram (Health Icons)
-   - ms:ecg (Material Symbols)
-   - iconify:mdi:heart-pulse (Iconify/MDI)
+   Output:
+   # External Icon Search Results
+   # Query: ecg
+   # Total: 5 icons found
 
-5. Select optimal and propose alias
-   "I suggest registering 'ecg' alias as health:electrocardiogram."
+   ## Medical/Healthcare (recommended)
+   - healthicons:electrocardiogram  # Health Icons
+   - healthicons:ecg                # Health Icons (alternative)
 
-6. After user approval, add to registry.yaml
+   ## General Purpose
+   - mdi:heart-pulse                # Material Design Icons
+
+4. AI analyzes results and selects optimal icon
+   - For medical presentations -> healthicons:electrocardiogram
+   - For general presentations -> mdi:heart-pulse
+
+5. Propose alias registration to user
+   "Found 'healthicons:electrocardiogram' for ECG monitoring.
+    Would you like me to register it as alias 'ecg'?"
+
+6. After user approval, execute:
+   slide-gen icons add ecg --from "healthicons:electrocardiogram"
+
+   Result:
+   - SVG saved to icons/fetched/healthicons/electrocardiogram.svg
+   - Alias added to registry.yaml: ecg -> fetched:healthicons/electrocardiogram
 ```
 
 ### Phase 4: Integration into Slides
@@ -528,22 +812,37 @@ AI Agent:
 1. Scenario Analysis
    "This is medical content. I'll select icons primarily from Health Icons."
 
-2. Alias Search
-   slide-gen icons list --category medical --format llm
-   -> Get list of medical aliases
+2. Local Alias Search
+   slide-gen icons list --aliases --category medical --format llm
+   -> Get list of registered medical aliases
+   -> Found: clinic, stethoscope, lab, medicine
+   -> Missing: rehabilitation
 
-3. Missing Icon Detection
-   "The 'rehabilitation' icon is not registered.
-    I'll search for candidates from Health Icons."
+3. External Icon Search (for missing icons)
+   slide-gen icons search-external "rehabilitation" --set healthicons --format llm
 
-   slide-gen icons search "rehabilitation" --source health
-   -> Found health:physical-therapy
+   Output:
+   # External Icon Search Results
+   # Query: rehabilitation
+   # Total: 4 icons found
 
-4. Alias Registration Proposal
-   "Would you like to register 'rehabilitation' as health:physical-therapy?"
+   ## Medical/Healthcare (recommended)
+   - healthicons:physical-therapy     # Physical therapy
+   - healthicons:exercise-walk        # Walking exercise
+   - healthicons:crutches             # Crutches
+   - healthicons:physiotherapist      # Physiotherapist
 
-5. User Approval
-   -> Add to registry.yaml
+4. Icon Selection and Proposal
+   "Found several options for 'rehabilitation'. I recommend:
+    - healthicons:physical-therapy for general rehabilitation
+    Would you like me to register it?"
+
+5. User Approval and Registration
+   slide-gen icons add rehabilitation --from "healthicons:physical-therapy"
+
+   Result:
+   Added alias: rehabilitation -> fetched:healthicons/physical-therapy
+   SVG saved to: icons/fetched/healthicons/physical-therapy.svg
 
 6. Slide Generation
    Add the following to presentation.yaml:
@@ -562,6 +861,42 @@ AI Agent:
 7. Theme Color Application
    "Applied the medical theme 'medical'.
     Icons will be unified with blue-green colors."
+```
+
+### Scenario Example: Finding Specialized Icons
+
+```
+User: "Add an icon for MRI scan to the diagnostic flow"
+
+AI Agent:
+1. Search local registry first
+   slide-gen icons search "mri"
+   -> No results found
+
+2. Search external sources
+   slide-gen icons search-external "mri" --format llm
+
+   Output:
+   # External Icon Search Results
+   # Query: mri
+   # Total: 3 icons found
+
+   ## Medical/Healthcare (recommended)
+   - healthicons:mri                  # MRI machine icon
+   - healthicons:radiology            # General radiology
+
+   ## General Purpose
+   - mdi:brain                        # Brain (related concept)
+
+3. Recommend best match
+   "For MRI specifically, I recommend 'healthicons:mri'.
+    This icon clearly represents an MRI scanner."
+
+4. Add with semantic alias
+   slide-gen icons add mri-scan --from "healthicons:mri"
+
+5. Use in presentation
+   icon: mri-scan
 ```
 
 ---

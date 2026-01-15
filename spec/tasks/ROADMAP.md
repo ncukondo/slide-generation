@@ -87,6 +87,7 @@
 | 35 | [Screenshot AI Optimization](./completed/35-screenshot-ai-optimization.md) | 23 | Done |
 | 36 | [Screenshot Documentation Enhancement](./completed/36-screenshot-docs-enhancement.md) | 35 | Done |
 | 37 | [Templates Screenshot Command](./completed/37-templates-screenshot.md) | 13, 23 | Done |
+| 45 | [External Icon Search](./45-external-icon-search.md) | 14, 26 | Pending |
 
 ## Phase 8: Reference Collaboration（文献引用連携）
 
@@ -167,10 +168,10 @@ AI エージェントと協働して学術文献を管理・引用するため�
 
 ## Progress Summary
 
-- **Total Tasks**: 44
+- **Total Tasks**: 45
 - **Completed**: 44
 - **In Progress**: 0
-- **Pending**: 0
+- **Pending**: 1
 
 ## Architecture Overview
 
