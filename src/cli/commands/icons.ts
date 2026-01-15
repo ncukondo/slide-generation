@@ -6,6 +6,12 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { IconRegistryLoader } from '../../icons/registry.js';
 import { IconResolver } from '../../icons/resolver.js';
 import { IconFetcher, isExternalSource } from '../../icons/fetcher.js';
+import { IconifyApiClient } from '../../icons/iconify-api.js';
+import {
+  formatExternalSearchResults,
+  type ExternalSearchResult,
+  type OutputFormat as ExternalOutputFormat,
+} from '../../icons/search-formatter.js';
 import { ConfigLoader } from '../../config/loader.js';
 import type { IconSource, IconRegistry } from '../../icons/schema.js';
 import { ExitCode } from './convert.js';
@@ -945,6 +951,147 @@ function createPreviewCommand(): Command {
     });
 }
 
+interface SearchExternalOptions {
+  limit?: string;
+  set?: string[];
+  format?: 'table' | 'json' | 'llm';
+  prefixes?: boolean;
+  config?: string;
+}
+
+/**
+ * Create the icons search-external subcommand
+ */
+function createSearchExternalCommand(): Command {
+  return new Command('search-external')
+    .description('Search external icon sources (Iconify API)')
+    .argument('[query]', 'Search query')
+    .option('-l, --limit <n>', 'Maximum results', '20')
+    .option('-s, --set <name...>', 'Filter by icon set (can specify multiple)')
+    .option('-f, --format <fmt>', 'Output format (table/json/llm)', 'table')
+    .option('-p, --prefixes', 'List available icon set prefixes')
+    .option('-c, --config <path>', 'Config file path')
+    .action(async (query: string | undefined, options: SearchExternalOptions) => {
+      try {
+        const client = new IconifyApiClient();
+
+        // Handle --prefixes flag: list available icon sets
+        if (options.prefixes) {
+          const collections = await client.getCollections();
+
+          // Sort by total icons (most popular first)
+          const sortedCollections = Object.entries(collections)
+            .sort((a, b) => (b[1].total ?? 0) - (a[1].total ?? 0));
+
+          if (options.format === 'json') {
+            const output = sortedCollections.map(([prefix, info]) => ({
+              prefix,
+              name: info.name,
+              total: info.total,
+              license: info.license?.spdx ?? info.license?.title ?? 'Unknown',
+              category: info.category ?? 'Unknown',
+            }));
+            console.log(JSON.stringify(output, null, 2));
+          } else if (options.format === 'llm') {
+            const lines: string[] = [
+              '# Available Icon Sets',
+              '',
+              `Total collections: ${sortedCollections.length}`,
+              '',
+              '## Popular Icon Sets',
+              '',
+            ];
+
+            // Show top 30 most popular
+            const topCollections = sortedCollections.slice(0, 30);
+            for (const [prefix, info] of topCollections) {
+              lines.push(`- **${prefix}**: ${info.name} (${info.total} icons)`);
+            }
+
+            lines.push('');
+            lines.push('## Usage');
+            lines.push('');
+            lines.push('```bash');
+            lines.push('slide-gen icons search-external <query> --set <prefix>');
+            lines.push('```');
+
+            console.log(lines.join('\n'));
+          } else {
+            // Table format
+            console.log('Available Icon Sets');
+            console.log('');
+
+            // Calculate column widths
+            const displayCollections = sortedCollections.slice(0, 50);
+            const maxPrefixLen = Math.max(...displayCollections.map(([p]) => p.length), 6);
+            const maxNameLen = Math.min(Math.max(...displayCollections.map(([, i]) => i.name.length), 4), 40);
+
+            // Header
+            const prefixPad = 'Prefix'.padEnd(maxPrefixLen);
+            const namePad = 'Name'.padEnd(maxNameLen);
+            console.log(`  ${prefixPad}  ${namePad}  Icons`);
+            console.log(`  ${'─'.repeat(maxPrefixLen)}  ${'─'.repeat(maxNameLen)}  ${'─'.repeat(8)}`);
+
+            for (const [prefix, info] of displayCollections) {
+              const prefixStr = prefix.padEnd(maxPrefixLen);
+              const nameStr = info.name.slice(0, maxNameLen).padEnd(maxNameLen);
+              console.log(`  ${prefixStr}  ${nameStr}  ${String(info.total).padStart(8)}`);
+            }
+
+            if (sortedCollections.length > 50) {
+              console.log('');
+              console.log(chalk.dim(`... and ${sortedCollections.length - 50} more icon sets`));
+            }
+          }
+          return;
+        }
+
+        // Search query is required unless --prefixes is specified
+        if (!query) {
+          console.error(chalk.red('Error: Search query is required'));
+          console.error('Usage: slide-gen icons search-external <query>');
+          console.error('       slide-gen icons search-external --prefixes');
+          process.exitCode = ExitCode.GeneralError;
+          return;
+        }
+
+        // Perform search
+        const limit = parseInt(options.limit ?? '20', 10);
+        const searchOptions: { limit: number; prefixes?: string[] } = { limit };
+        if (options.set && options.set.length > 0) {
+          searchOptions.prefixes = options.set;
+        }
+        const searchResult = await client.search(query, searchOptions);
+
+        // Transform to ExternalSearchResult format
+        const results: ExternalSearchResult = {
+          query,
+          total: searchResult.total,
+          icons: searchResult.icons.map((iconRef) => {
+            const colonIndex = iconRef.indexOf(':');
+            const set = colonIndex > 0 ? iconRef.substring(0, colonIndex) : '';
+            const name = colonIndex > 0 ? iconRef.substring(colonIndex + 1) : iconRef;
+            return {
+              reference: iconRef,
+              set,
+              name,
+            };
+          }),
+        };
+
+        // Output results
+        const format = (options.format ?? 'table') as ExternalOutputFormat;
+        const output = formatExternalSearchResults(results, format);
+        console.log(output);
+      } catch (error) {
+        console.error(
+          chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        );
+        process.exitCode = ExitCode.GeneralError;
+      }
+    });
+}
+
 /**
  * Create the icons command with subcommands
  */
@@ -954,6 +1101,7 @@ export function createIconsCommand(): Command {
 
   cmd.addCommand(createListCommand());
   cmd.addCommand(createSearchCommand());
+  cmd.addCommand(createSearchExternalCommand());
   cmd.addCommand(createPreviewCommand());
   cmd.addCommand(createAddCommand());
   cmd.addCommand(createSyncCommand());

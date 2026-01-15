@@ -403,4 +403,25 @@ aliases:
       expect(Object.keys(filtered).length).toBe(2);
     });
   });
+
+  describe('icons search-external command', () => {
+    it('should have search-external subcommand', () => {
+      const cmd = createIconsCommand();
+      const subcommands = cmd.commands.map((c: Command) => c.name());
+
+      expect(subcommands).toContain('search-external');
+    });
+
+    it('should have the correct options', () => {
+      const cmd = createIconsCommand();
+      const searchExternalCmd = cmd.commands.find((c: Command) => c.name() === 'search-external');
+
+      expect(searchExternalCmd).toBeDefined();
+      const options = searchExternalCmd!.options.map((o: { long?: string }) => o.long);
+      expect(options).toContain('--limit');
+      expect(options).toContain('--set');
+      expect(options).toContain('--format');
+      expect(options).toContain('--prefixes');
+    });
+  });
 });
