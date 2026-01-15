@@ -127,6 +127,17 @@ export async function executeInit(
     const targetIconsRegistry = join(targetDir, 'icons', 'registry.yaml');
     await copyFileIfNotExists(sourceIconsRegistry, targetIconsRegistry);
 
+    // Copy fetched icons (pre-bundled SVGs)
+    const sourceIconsFetched = join(packageRoot, 'icons', 'fetched');
+    const targetIconsFetched = join(targetDir, 'icons', 'fetched');
+    try {
+      await access(targetIconsFetched);
+      // Directory already exists, skip copying
+    } catch {
+      // Directory doesn't exist, copy from package
+      await cp(sourceIconsFetched, targetIconsFetched, { recursive: true });
+    }
+
     // Copy default theme
     const sourceDefaultTheme = join(packageRoot, 'themes', 'default.css');
     const targetDefaultTheme = join(targetDir, 'themes', 'default.css');
@@ -558,10 +569,8 @@ templates:
 icons:
   # Path to icon registry file
   registry: ./icons/registry.yaml
-  cache:
-    enabled: true
-    directory: .cache/icons
-    ttl: 86400
+  # Path to fetched/pre-bundled icon SVGs
+  fetched: ./icons/fetched
 
 references:
   enabled: true

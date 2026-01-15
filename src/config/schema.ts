@@ -11,13 +11,7 @@ export const configSchema = z.object({
   icons: z
     .object({
       registry: z.string().default('./icons/registry.yaml'),
-      cache: z
-        .object({
-          enabled: z.boolean().default(true),
-          directory: z.string().default('.cache/icons'),
-          ttl: z.number().default(86400),
-        })
-        .default({}),
+      fetched: z.string().default('./icons/fetched'),
     })
     .default({}),
 

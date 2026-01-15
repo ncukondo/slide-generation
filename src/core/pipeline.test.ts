@@ -11,11 +11,7 @@ const mockConfig: Config = {
   },
   icons: {
     registry: './icons/registry.yaml',
-    cache: {
-      enabled: true,
-      directory: '.cache/icons',
-      ttl: 86400,
-    },
+    fetched: './icons/fetched',
   },
   references: {
     enabled: false, // Disable references for basic tests

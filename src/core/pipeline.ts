@@ -86,7 +86,9 @@ export class Pipeline {
     this.templateEngine = new TemplateEngine();
     this.templateLoader = new TemplateLoader();
     this.iconRegistry = new IconRegistryLoader();
-    this.iconResolver = new IconResolver(this.iconRegistry);
+    this.iconResolver = new IconResolver(this.iconRegistry, {
+      fetchedDir: config.icons.fetched,
+    });
     this.referenceManager = new ReferenceManager(
       config.references.connection.command
     );

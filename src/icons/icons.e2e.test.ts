@@ -2,12 +2,11 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
-import { IconRegistryLoader, IconResolver, IconCache } from "./index.js";
+import { IconRegistryLoader, IconResolver } from "./index.js";
 
 describe("Icon System E2E", () => {
   let tempDir: string;
   let iconsDir: string;
-  let cacheDir: string;
 
   // Normalized path for use in YAML strings (Windows compatibility)
   let iconsDirNormalized: string;
@@ -16,7 +15,6 @@ describe("Icon System E2E", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "icons-e2e-"));
     iconsDir = path.join(tempDir, "icons", "custom");
     iconsDirNormalized = iconsDir.replace(/\\/g, "/");
-    cacheDir = path.join(tempDir, ".cache", "icons");
     await fs.mkdir(iconsDir, { recursive: true });
   });
 
@@ -97,30 +95,6 @@ defaults:
         color: "#FF0000",
       });
       expect(coloredLogo).toContain('fill="#FF0000"');
-    });
-  });
-
-  describe("Cache integration", () => {
-    it("caches and retrieves icon content", async () => {
-      const cache = new IconCache(cacheDir);
-
-      // Simulate caching an SVG
-      const svgContent = '<svg viewBox="0 0 24 24"><path d="M1 1"/></svg>';
-      await cache.set("hero:arrow-right", svgContent);
-
-      // Verify cache hit
-      const cached = await cache.get("hero:arrow-right");
-      expect(cached).toBe(svgContent);
-
-      // Verify getOrFetch uses cache
-      let fetchCalled = false;
-      const result = await cache.getOrFetch("hero:arrow-right", async () => {
-        fetchCalled = true;
-        return "fetched content";
-      });
-
-      expect(fetchCalled).toBe(false);
-      expect(result).toBe(svgContent);
     });
   });
 

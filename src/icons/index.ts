@@ -21,8 +21,6 @@ export {
   type IconResolverOptions,
 } from "./resolver.js";
 
-export { IconCache } from "./cache.js";
-
 export {
   IconFetcher,
   isExternalSource,

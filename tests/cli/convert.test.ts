@@ -8,7 +8,6 @@ describe('CLI: Convert Command', () => {
   const testDir = './test-cli-convert';
   const templatesDir = join(testDir, 'templates').replace(/\\/g, '/');
   const iconsDir = join(testDir, 'icons').replace(/\\/g, '/');
-  const iconsRegistryPath = join(iconsDir, 'registry.yaml').replace(/\\/g, '/');
 
   beforeEach(() => {
     mkdirSync(testDir, { recursive: true });
@@ -65,13 +64,18 @@ aliases: {}
 `;
     writeFileSync(join(iconsDir, 'registry.yaml'), registry);
 
+    // Create icons/fetched directory
+    mkdirSync(join(iconsDir, 'fetched'), { recursive: true });
+
     // Create config file pointing to local templates/icons
+    // Paths are relative to config.yaml location (testDir)
     const configContent = `
 templates:
-  builtin: "${templatesDir}"
+  builtin: "./templates"
 
 icons:
-  registry: "${iconsRegistryPath}"
+  registry: "./icons/registry.yaml"
+  fetched: "./icons/fetched"
 
 references:
   enabled: false

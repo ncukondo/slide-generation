@@ -32,9 +32,7 @@ describe('configSchema', () => {
 
     // icons defaults
     expect(parsed.icons.registry).toBe('./icons/registry.yaml');
-    expect(parsed.icons.cache.enabled).toBe(true);
-    expect(parsed.icons.cache.directory).toBe('.cache/icons');
-    expect(parsed.icons.cache.ttl).toBe(86400);
+    expect(parsed.icons.fetched).toBe('./icons/fetched');
 
     // references defaults
     expect(parsed.references.enabled).toBe(true);
@@ -55,25 +53,16 @@ describe('configSchema', () => {
   it('should allow partial config with deep nesting', () => {
     const config = {
       icons: {
-        cache: {
-          enabled: false,
-        },
+        fetched: './my-icons/fetched',
       },
     };
     const parsed = configSchema.parse(config);
 
-    expect(parsed.icons.cache.enabled).toBe(false);
-    expect(parsed.icons.cache.directory).toBe('.cache/icons'); // default preserved
+    expect(parsed.icons.fetched).toBe('./my-icons/fetched');
+    expect(parsed.icons.registry).toBe('./icons/registry.yaml'); // default preserved
   });
 
   it('should validate type constraints', () => {
-    // Invalid cache ttl type
-    expect(() =>
-      configSchema.parse({
-        icons: { cache: { ttl: 'invalid' } },
-      })
-    ).toThrow();
-
     // Invalid maxAuthors type
     expect(() =>
       configSchema.parse({

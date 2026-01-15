@@ -22,8 +22,7 @@ templates:
 
 icons:
   registry: "./my-icons/registry.yaml"
-  cache:
-    enabled: false
+  fetched: "./my-icons/fetched"
 
 references:
   enabled: true
@@ -44,7 +43,7 @@ output:
 
     expect(config.templates.builtin).toBe('./my-templates');
     expect(config.templates.custom).toBe('./custom-templates');
-    expect(config.icons.cache.enabled).toBe(false);
+    expect(config.icons.fetched).toBe('./my-icons/fetched');
     expect(config.references.connection.command).toBe('my-ref');
     expect(config.output.theme).toBe('academic');
   });
@@ -72,8 +71,7 @@ output:
     // Default values
     expect(config.templates.builtin).toBe('./templates');
     expect(config.icons.registry).toBe('./icons/registry.yaml');
-    expect(config.icons.cache.enabled).toBe(true);
-    expect(config.icons.cache.ttl).toBe(86400);
+    expect(config.icons.fetched).toBe('./icons/fetched');
     expect(config.references.enabled).toBe(true);
     expect(config.references.connection.type).toBe('cli');
     expect(config.references.format.locale).toBe('ja-JP');
@@ -124,9 +122,9 @@ output:
 
   it('should reject invalid type for config values', async () => {
     const configContent = `
-icons:
-  cache:
-    ttl: "not-a-number"
+references:
+  format:
+    maxAuthors: "not-a-number"
 `;
     writeFileSync(join(testDir, 'config.yaml'), configContent);
 

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { access, readFile } from 'fs/promises';
-import { basename, dirname, join } from 'path';
+import { basename, dirname, join, resolve, isAbsolute } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import { parse as parseYaml } from 'yaml';
@@ -173,6 +173,21 @@ async function executeConvert(
     }
 
     const config = await configLoader.load(configPath);
+
+    // Resolve relative paths in config based on config file directory
+    const configDir = configPath ? dirname(configPath) : dirname(inputPath);
+    if (!isAbsolute(config.icons.fetched)) {
+      config.icons.fetched = resolve(configDir, config.icons.fetched);
+    }
+    if (!isAbsolute(config.icons.registry)) {
+      config.icons.registry = resolve(configDir, config.icons.registry);
+    }
+    if (!isAbsolute(config.templates.builtin)) {
+      config.templates.builtin = resolve(configDir, config.templates.builtin);
+    }
+    if (config.templates.custom && !isAbsolute(config.templates.custom)) {
+      config.templates.custom = resolve(configDir, config.templates.custom);
+    }
 
     // Override references if specified
     if (options.references === false) {
